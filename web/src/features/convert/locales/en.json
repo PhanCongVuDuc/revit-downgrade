@@ -2,7 +2,7 @@
   "convert": {
     "title": "Downgrade a Revit file",
     "lead": "Open a newer model in an older Revit. Free. Your file is deleted after 2 hours.",
-    "versions": "Revit 2027 · 2026 · 2025 · 2024 → down to Revit 2023",
+    "versions": "Revit 2027 · 2026 · 2025 · 2024 · 2023 → down to Revit 2022",
     "stats": {
       "label": "Usage so far",
       "people": "people have used it",
@@ -12,8 +12,8 @@
       "since": "Counted since {date}",
       "help": "Downgrading Revit files is hard and takes a lot of real data to get right. Every failed file you send helps us fix bugs and keep improving the tool."
     },
-    "pageTitle": "Downgrade Revit Files Online (2027 → 2023), Free {'|'} Revit Downgrade",
-    "description": "Free online Revit downgrade: save a Revit 2027, 2026, 2025 or 2024 file (.rvt, .rfa, .rte, .rft) to an older version, down to Revit 2023. Nothing to install. Files are deleted after 2 hours.",
+    "pageTitle": "Downgrade Revit Files Online (2027 → 2022), Free {'|'} Revit Downgrade",
+    "description": "Free online Revit downgrade: save a Revit 2027, 2026, 2025, 2024 or 2023 file (.rvt, .rfa, .rte, .rft) to an older version, down to Revit 2022. Nothing to install. Files are deleted after 2 hours.",
     "pairPage": {
       "title": "Downgrade Revit {from} to Revit {to}",
       "pageTitle": "Downgrade Revit {from} to {to} Online, Free {'|'} Revit Downgrade",
@@ -73,7 +73,7 @@
       "button": "Add a Revit file",
       "drop": "or drop it here",
       "limits": ".rvt, .rte, .rfa, .rft - up to 1 GB",
-      "support": "Revit Downgrade is free and runs on a small server I pay for myself, so files are limited to 1 GB. If you find this project useful and would like to help upgrade the server for larger files and faster conversions, my contact details are at the bottom of the page.",
+      "support": "Revit Downgrade is free and runs on a small server I pay for myself, so files are limited to 1 GB. Need to convert larger files, or a private version for your company? Get in touch, my contact details are at the bottom of the page. If you find this project useful and would like to help upgrade the server for larger files and faster conversions, you can reach me there too.",
       "input": "Revit file"
     },
     "kind": {
@@ -170,7 +170,7 @@
     },
     "error": {
       "bad_extension": "This is not a Revit file. Choose a .rvt, .rte, .rfa or .rft file.",
-      "too_large": "The file is larger than 1 GB, which is the limit.",
+      "too_large": "The file is larger than 1 GB, which is the limit. For larger files, contact me at the bottom of the page.",
       "not_ole": "This file is not a Revit file, or it is damaged.",
       "not_revit": "This file does not look like a Revit file, or it is damaged.",
       "unreadable": "The file could not be read in your browser.",
@@ -197,7 +197,7 @@
       "items": {
         "howTo": {
           "q": "How do I downgrade a Revit file to an older version?",
-          "a": "Add your file above, choose the Revit version you need and press Downgrade, then download the converted file and open it in that older Revit. For example, a Revit 2026 model can be opened in Revit 2024. Any file from Revit 2024 to 2027 can go down to Revit 2023, with nothing to install."
+          "a": "Add your file above, choose the Revit version you need and press Downgrade, then download the converted file and open it in that older Revit. For example, a Revit 2026 model can be opened in Revit 2024. Any file from Revit 2023 to 2027 can go down to Revit 2022, with nothing to install."
         },
         "saveOlder": {
           "q": "Can Revit save a file to an older version?",
@@ -205,7 +205,7 @@
         },
         "supported": {
           "q": "Which files and versions are supported?",
-          "a": "Projects (.rvt), project templates (.rte), families (.rfa) and family templates (.rft) saved in Revit 2024, 2025, 2026 or 2027, converted to any older version down to Revit 2023. Files up to 1 GB."
+          "a": "Projects (.rvt), project templates (.rte), families (.rfa) and family templates (.rft) saved in Revit 2023, 2024, 2025, 2026 or 2027, converted to any older version down to Revit 2022. Files up to 1 GB."
         },
         "lost": {
           "q": "Will I lose anything?",

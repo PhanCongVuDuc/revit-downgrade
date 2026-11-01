@@ -2,7 +2,7 @@
   "convert": {
     "title": "Hạ phiên bản file Revit",
     "lead": "Mở model mới bằng Revit cũ. Miễn phí. File tự xoá sau 2 giờ.",
-    "versions": "Revit 2027 · 2026 · 2025 · 2024 → xuống tới Revit 2023",
+    "versions": "Revit 2027 · 2026 · 2025 · 2024 · 2023 → xuống tới Revit 2022",
     "stats": {
       "label": "Số liệu sử dụng",
       "people": "người đã dùng",
@@ -12,8 +12,8 @@
       "since": "Đếm từ {date}",
       "help": "Hạ phiên bản file Revit rất khó và cần nhiều dữ liệu thật để làm đúng. Mỗi file lỗi bạn gửi giúp chúng tôi sửa lỗi và cải thiện công cụ liên tục."
     },
-    "pageTitle": "Hạ phiên bản file Revit online (2027 → 2023), miễn phí {'|'} Revit Downgrade",
-    "description": "Hạ phiên bản file Revit miễn phí: chuyển file Revit 2027, 2026, 2025, 2024 (.rvt, .rfa, .rte, .rft) về bản cũ hơn, xuống tới Revit 2023. Không cần cài đặt. File tự xoá sau 2 giờ.",
+    "pageTitle": "Hạ phiên bản file Revit online (2027 → 2022), miễn phí {'|'} Revit Downgrade",
+    "description": "Hạ phiên bản file Revit miễn phí: chuyển file Revit 2027, 2026, 2025, 2024, 2023 (.rvt, .rfa, .rte, .rft) về bản cũ hơn, xuống tới Revit 2022. Không cần cài đặt. File tự xoá sau 2 giờ.",
     "pairPage": {
       "title": "Hạ file Revit {from} về Revit {to}",
       "pageTitle": "Hạ file Revit {from} về {to} online, miễn phí {'|'} Revit Downgrade",
@@ -73,7 +73,7 @@
       "button": "Thêm file Revit",
       "drop": "hoặc thả file vào đây",
       "limits": ".rvt, .rte, .rfa, .rft - tối đa 1 GB",
-      "support": "Revit Downgrade miễn phí và chạy trên một server nhỏ do tôi tự chi trả, nên tạm giới hạn file 1 GB. Nếu bạn thấy dự án có ích và muốn ủng hộ nâng cấp server để xử lý file lớn hơn, nhanh hơn, thông tin liên hệ ở cuối trang.",
+      "support": "Revit Downgrade miễn phí và chạy trên một server nhỏ do tôi tự chi trả, nên tạm giới hạn file 1 GB. Cần hạ file nặng hơn, hoặc cần một bản private riêng cho công ty, cứ liên hệ tôi, thông tin ở cuối trang. Nếu bạn thấy dự án có ích và muốn ủng hộ nâng cấp server để xử lý file lớn hơn, nhanh hơn, cũng liên hệ tôi ở đó.",
       "input": "File Revit"
     },
     "kind": {
@@ -170,7 +170,7 @@
     },
     "error": {
       "bad_extension": "Đây không phải file Revit. Hãy chọn file .rvt, .rte, .rfa hoặc .rft.",
-      "too_large": "File lớn hơn 1 GB, là giới hạn hiện tại.",
+      "too_large": "File lớn hơn 1 GB, là giới hạn hiện tại. Cần hạ file nặng hơn, hãy liên hệ tôi ở cuối trang.",
       "not_ole": "Đây không phải file Revit, hoặc file bị hỏng.",
       "not_revit": "File này không giống file Revit, hoặc file bị hỏng.",
       "unreadable": "Trình duyệt không đọc được file.",
@@ -197,7 +197,7 @@
       "items": {
         "howTo": {
           "q": "Làm sao hạ phiên bản (downgrade) file Revit về bản cũ?",
-          "a": "Thêm file ở trên, chọn phiên bản Revit cần dùng, bấm Hạ phiên bản rồi tải file đã hạ về mở bằng Revit bản cũ. Ví dụ model Revit 2026 mở được bằng Revit 2024. File từ Revit 2024 đến 2027 đều hạ được xuống tới Revit 2023, không cần cài gì."
+          "a": "Thêm file ở trên, chọn phiên bản Revit cần dùng, bấm Hạ phiên bản rồi tải file đã hạ về mở bằng Revit bản cũ. Ví dụ model Revit 2026 mở được bằng Revit 2024. File từ Revit 2023 đến 2027 đều hạ được xuống tới Revit 2022, không cần cài gì."
         },
         "saveOlder": {
           "q": "Revit có lưu file về phiên bản cũ được không?",
@@ -205,7 +205,7 @@
         },
         "supported": {
           "q": "Hỗ trợ những file và phiên bản nào?",
-          "a": "Project (.rvt), project template (.rte), family (.rfa) và family template (.rft) lưu bằng Revit 2024, 2025, 2026 hoặc 2027, hạ về bất kỳ phiên bản cũ hơn nào xuống tới Revit 2023. File tối đa 1 GB."
+          "a": "Project (.rvt), project template (.rte), family (.rfa) và family template (.rft) lưu bằng Revit 2023, 2024, 2025, 2026 hoặc 2027, hạ về bất kỳ phiên bản cũ hơn nào xuống tới Revit 2022. File tối đa 1 GB."
         },
         "lost": {
           "q": "Có bị mất gì không?",

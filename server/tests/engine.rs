@@ -167,7 +167,7 @@ async fn probe_parses_json() {
         .unwrap();
     assert_eq!(p.kind, FileKind::Rfa);
     assert_eq!(p.year, 2026);
-    assert_eq!(p.targets, vec![2025, 2024, 2023]);
+    assert_eq!(p.targets, vec![2025, 2024, 2023, 2022]);
 }
 
 #[tokio::test]
@@ -175,6 +175,7 @@ async fn capabilities_parses_pairs() {
     let pairs = engine().capabilities().await.unwrap();
     assert!(pairs.contains(&(2026, 2024)));
     assert!(pairs.contains(&(2027, 2023)));
+    assert!(pairs.contains(&(2027, 2022)));
     assert!(!pairs.contains(&(2024, 2026)));
 }
 

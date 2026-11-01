@@ -4,7 +4,7 @@ Save a Revit file back to an older version of Revit, for free, in your browser.
 
 Pick a file, choose the version you need, press **Downgrade**, then download the result.
 
-Works with `.rvt`, `.rte`, `.rfa` and `.rft` files up to 1 GB, Revit 2023 to 2027.
+Works with `.rvt`, `.rte`, `.rfa` and `.rft` files up to 1 GB, Revit 2022 to 2027.
 
 Made by Phan Cong Vu Duc · [LinkedIn](https://www.linkedin.com/in/phancongvuduc/)
 
@@ -53,6 +53,10 @@ it's useful, and the budget is small. That's why files are limited to 1 GB and c
 If you find Revit Downgrade useful and would like to help pay for a bigger server, so it can handle larger files and convert
 faster, please get in touch: phancongvuduc@gmail.com or
 [LinkedIn](https://www.linkedin.com/in/phancongvuduc/). Thank you!
+
+## Larger files or a private version
+
+Need to convert files larger than 1 GB, or a private version for your company? Contact me at phancongvuduc@gmail.com or [LinkedIn](https://www.linkedin.com/in/phancongvuduc/).
 
 ## Run it yourself
 

@@ -9,7 +9,7 @@ use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
-const MIN_YEAR: u32 = 2023;
+const MIN_YEAR: u32 = 2022;
 const MAX_YEAR: u32 = 2027;
 const MODES: [&str; 9] = [
     "ok",

@@ -130,18 +130,19 @@ fn probe_reads_year_and_kind_from_name() {
     let v: Value = serde_json::from_slice(&out.get_output().stdout).unwrap();
     assert_eq!(
         v,
-        serde_json::json!({"kind":"rfa","year":2025,"targets":[2024,2023]})
+        serde_json::json!({"kind":"rfa","year":2025,"targets":[2024,2023,2022]})
     );
 }
 
 #[test]
-fn capabilities_lists_pairs_2023_2027() {
+fn capabilities_lists_pairs_2022_2027() {
     let out = stub().args(["capabilities", "--json"]).assert().success();
     let v: Value = serde_json::from_slice(&out.get_output().stdout).unwrap();
     let pairs = v["pairs"].as_array().unwrap();
-    assert_eq!(pairs.len(), 10);
+    assert_eq!(pairs.len(), 15);
+    assert!(pairs.contains(&serde_json::json!([2027, 2022])));
     assert!(pairs.contains(&serde_json::json!([2026, 2024])));
-    assert!(!pairs.contains(&serde_json::json!([2023, 2023])));
+    assert!(!pairs.contains(&serde_json::json!([2022, 2022])));
 }
 
 #[test]
@@ -165,7 +166,7 @@ fn content_marker_overrides_name() {
     let out = stub().arg("probe").arg(&f).arg("--json").assert().success();
     let v: Value = serde_json::from_slice(&out.get_output().stdout).unwrap();
     assert_eq!(v["year"], 2024);
-    assert_eq!(v["targets"], serde_json::json!([2023]));
+    assert_eq!(v["targets"], serde_json::json!([2023, 2022]));
     stub()
         .arg("downgrade")
         .arg(&f)

@@ -168,8 +168,8 @@ async fn refused_message_comes_from_engine() {
 async fn target_not_offered_is_refused() {
     let f = setup();
     start(&f, 1);
-    // The store accepts 2026 -> 2022, but the engine does not offer 2022 for this file.
-    let job = queue_job_with(&f, &[(2026, 2022)], 1, 2026, 2022, "ok", 2026);
+    // The store accepts 2026 -> 2021, but the engine does not offer 2021 for this file.
+    let job = queue_job_with(&f, &[(2026, 2021)], 1, 2026, 2021, "ok", 2026);
     let failed = wait_terminal(&f, &job.id).await;
     let err = failed.error.unwrap();
     assert_eq!(err.kind, ErrorKind::Refused);

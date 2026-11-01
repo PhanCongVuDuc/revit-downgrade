@@ -1,5 +1,5 @@
 /** Oldest and newest Revit versions the engine converts between. */
-export const OLDEST = 2023;
+export const OLDEST = 2022;
 export const NEWEST = 2027;
 
 export interface Pair {

@@ -28,7 +28,7 @@
             "paragraphs": [
               "Hỏi bên gửi còn bản lưu từ trước khi nâng cấp không. Model đã lưu bằng bản mới thì Revit cũ không mở được nữa, kể cả trên máy của bên gửi.",
               "Trao đổi qua IFC. Revit bản mới xuất IFC, Revit bản cũ link hoặc import vào, nhưng kết quả không còn là model gốc: tường, family và tham số chỉ còn là hình khối, sửa được rất ít.",
-              "Chuyển đổi file. Revit Downgrade ghi lại file Revit 2024 đến 2027 theo định dạng của bản cũ hơn, xuống tới Revit 2023, nên mở được như file gốc. Element mà bản cũ không biết sẽ bị bỏ và được liệt kê cho bạn."
+              "Chuyển đổi file. Revit Downgrade ghi lại file Revit 2023 đến 2027 theo định dạng của bản cũ hơn, xuống tới Revit 2022, nên mở được như file gốc. Element mà bản cũ không biết sẽ bị bỏ và được liệt kê cho bạn."
             ]
           }
         ]
@@ -68,7 +68,7 @@
       },
       "compatibility": {
         "title": "Tương thích phiên bản Revit: Revit nào mở được file nào",
-        "description": "Revit mở được file của bản mình và bản cũ hơn, không bao giờ mở được bản mới hơn. Tra nhanh cho Revit 2023 đến 2027.",
+        "description": "Revit mở được file của bản mình và bản cũ hơn, không bao giờ mở được bản mới hơn. Tra nhanh cho Revit 2022 đến 2027.",
         "sections": [
           {
             "heading": "Quy tắc",
@@ -83,13 +83,14 @@
               "Revit 2026 mở được file từ Revit 2026 trở về trước, không mở được 2027.",
               "Revit 2025 mở được file từ Revit 2025 trở về trước, không mở được 2026, 2027.",
               "Revit 2024 mở được file từ Revit 2024 trở về trước, không mở được 2025 đến 2027.",
-              "Revit 2023 mở được file từ Revit 2023 trở về trước, không mở được 2024 đến 2027."
+              "Revit 2023 mở được file từ Revit 2023 trở về trước, không mở được 2024 đến 2027.",
+              "Revit 2022 mở được file từ Revit 2022 trở về trước, không mở được 2023 đến 2027."
             ]
           },
           {
             "heading": "Chiều ngược lại",
             "paragraphs": [
-              "Muốn mở file bản mới bằng Revit bản cũ thì phải chuyển đổi file trước. Revit Downgrade chuyển file từ Revit 2024 đến 2027 về bất kỳ bản cũ hơn nào, xuống tới Revit 2023."
+              "Muốn mở file bản mới bằng Revit bản cũ thì phải chuyển đổi file trước. Revit Downgrade chuyển file từ Revit 2023 đến 2027 về bất kỳ bản cũ hơn nào, xuống tới Revit 2022."
             ]
           },
           {

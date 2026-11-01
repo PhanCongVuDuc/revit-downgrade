@@ -28,7 +28,7 @@
             "paragraphs": [
               "Ask whether the sender kept a copy from before the upgrade. Once a model has been saved in a newer version, an older Revit cannot open it, even on the sender's computer.",
               "Exchange through IFC. The newer Revit exports IFC and the older one can link or import it, but the result is no longer a native model: walls, families and parameters arrive as geometry with limited editing.",
-              "Convert the file. Revit Downgrade rewrites a Revit 2024 to 2027 file in the format of an older version, down to Revit 2023, so it opens natively. Elements the older version does not know are removed and listed for you."
+              "Convert the file. Revit Downgrade rewrites a Revit 2023 to 2027 file in the format of an older version, down to Revit 2022, so it opens natively. Elements the older version does not know are removed and listed for you."
             ]
           }
         ]
@@ -68,7 +68,7 @@
       },
       "compatibility": {
         "title": "Revit version compatibility: which Revit opens which file",
-        "description": "Revit opens files from its own version and older ones, never newer. A quick reference for Revit 2023 to 2027.",
+        "description": "Revit opens files from its own version and older ones, never newer. A quick reference for Revit 2022 to 2027.",
         "sections": [
           {
             "heading": "The rule",
@@ -83,13 +83,14 @@
               "Revit 2026 opens files from Revit 2026 and earlier, but not 2027.",
               "Revit 2025 opens files from Revit 2025 and earlier, but not 2026 or 2027.",
               "Revit 2024 opens files from Revit 2024 and earlier, but not 2025 to 2027.",
-              "Revit 2023 opens files from Revit 2023 and earlier, but not 2024 to 2027."
+              "Revit 2023 opens files from Revit 2023 and earlier, but not 2024 to 2027.",
+              "Revit 2022 opens files from Revit 2022 and earlier, but not 2023 to 2027."
             ]
           },
           {
             "heading": "Going the other way",
             "paragraphs": [
-              "To open a newer file in an older Revit, the file has to be converted first. Revit Downgrade converts files from Revit 2024 to 2027 down to any older version from Revit 2023."
+              "To open a newer file in an older Revit, the file has to be converted first. Revit Downgrade converts files from Revit 2023 to 2027 down to any older version from Revit 2022."
             ]
           },
           {

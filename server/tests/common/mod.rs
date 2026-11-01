@@ -79,7 +79,7 @@ pub fn process_alive(pid: u32) -> bool {
     }
 }
 
-/// Application state for route tests: stub engine, every 2023-2027 pair, default limits, data under `data_dir`.
+/// Application state for route tests: stub engine, every 2022-2027 pair, default limits, data under `data_dir`.
 pub fn test_state(
     data_dir: &Path,
     clock: std::sync::Arc<revit_downgrade_server::clock::ManualClock>,
@@ -95,8 +95,8 @@ pub fn test_state(
     })
     .expect("test config");
     let mut pairs = Vec::new();
-    for from in 2023..=2027u16 {
-        for to in 2023..from {
+    for from in 2022..=2027u16 {
+        for to in 2022..from {
             pairs.push((from, to));
         }
     }
