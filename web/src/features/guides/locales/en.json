@@ -1,11 +1,15 @@
 {
   "guides": {
-    "title": "Guides",
+    "title": "Revit downgrade guides",
     "pageTitle": "Revit downgrade guides {'|'} Revit Downgrade",
     "intro": "Short answers about Revit versions: why Revit cannot save to an older version, which Revit opens which file, and how to downgrade a file.",
     "cta": "Downgrade a Revit file",
     "others": "More guides",
     "all": "All guides",
+    "published": "Published {date}",
+    "updated": "Updated {date}",
+    "by": "By {name}",
+    "pairsTitle": "Downgrade a file now",
     "articles": {
       "saveAsOlder": {
         "title": "Can you save a Revit file as an older version?",
@@ -14,42 +18,66 @@
           {
             "heading": "The short answer",
             "paragraphs": [
-              "No. Revit only moves files forward. When you open a file from an older version, Revit upgrades it, and every save writes the version you are running. The Save As dialog has no option for an older release."
+              "No. Revit only moves files forward. When you open a file from an older version, Revit upgrades it, and every save writes the version you are running. The Save As dialog has no option for an older release, and Revit has no export to a previous Revit version."
+            ]
+          },
+          {
+            "heading": "Why Revit works this way",
+            "paragraphs": [
+              "Each Revit release changes how a model is stored: it adds new kinds of elements, new settings and new data on existing elements. An older Revit was built before those changes existed, so it has no way to read them. Revit upgrades files as it opens them and offers no way back."
             ]
           },
           {
             "heading": "Why it matters",
             "paragraphs": [
-              "Teams rarely upgrade at the same time. A consultant on Revit 2026 sends a model to a client still on Revit 2024, and the client cannot open it. The same happens with families downloaded from manufacturers, which are often saved in the newest release."
+              "Teams rarely upgrade at the same time. A consultant on Revit 2026 sends a model to a client still on Revit 2024, and the client cannot open it. The same happens with families downloaded from manufacturers, which are often saved in the newest release, and inside one company when one office moves to a new release before another."
             ]
           },
           {
             "heading": "What you can do",
-            "paragraphs": [
+            "list": [
               "Ask whether the sender kept a copy from before the upgrade. Once a model has been saved in a newer version, an older Revit cannot open it, even on the sender's computer.",
               "Exchange through IFC. The newer Revit exports IFC and the older one can link or import it, but the result is no longer a native model: walls, families and parameters arrive as geometry with limited editing.",
+              "Export to DWG for reference. You get lines and shapes to look at or trace over, not Revit elements.",
               "Convert the file. Revit Downgrade rewrites a Revit 2023 to 2027 file in the format of an older version, down to Revit 2022, so it opens natively. Elements the older version does not know are removed and listed for you."
             ]
+          },
+          {
+            "heading": "The options side by side",
+            "table": {
+              "head": ["Option", "What the older Revit gets", "Editable Revit elements"],
+              "rows": [
+                ["Copy saved before the upgrade", "A native file", "Yes, but without the changes made since"],
+                ["IFC", "A linked or imported IFC model", "Limited"],
+                ["DWG export", "CAD lines and shapes", "No"],
+                [
+                  "Revit Downgrade",
+                  "A native file of the older version",
+                  "Yes; elements the older version does not know are removed and listed"
+                ]
+              ]
+            }
           }
         ]
       },
       "openInOlder": {
         "title": "How to open a newer Revit file in an older version of Revit",
-        "description": "Step by step: downgrade a Revit 2027, 2026, 2025 or 2024 file so it opens in an older Revit, for free.",
+        "description": "Step by step: downgrade a Revit 2027, 2026, 2025, 2024 or 2023 file so it opens in an older Revit, down to Revit 2022, for free.",
         "sections": [
           {
             "heading": "Before you start",
             "paragraphs": [
-              "Find out which version saved the file and which version you will open it in. Revit Downgrade reads the version in your browser as soon as you add the file, so you do not need to open it in Revit first."
+              "Find out which version saved the file and which version you will open it in. Revit Downgrade reads the version in your browser as soon as you add the file, so you do not need to open it in Revit first.",
+              "If several people will open the file, convert it once to the oldest version anyone uses. A file converted to Revit 2023 still opens in Revit 2024 and later, which simply upgrade it as usual."
             ]
           },
           {
             "heading": "Steps",
-            "paragraphs": [
-              "1. Open revitdowngrade.com and add the .rvt, .rfa, .rte or .rft file.",
-              "2. Click the Revit version you will open it in and press Downgrade.",
-              "3. Wait for the conversion. Small files take about a minute, large models a few minutes for each version they go down.",
-              "4. Download the converted file and open it in the older Revit."
+            "ordered": [
+              "Open revitdowngrade.com and add the .rvt, .rfa, .rte or .rft file.",
+              "Click the Revit version you will open it in and press Downgrade.",
+              "Wait for the conversion. Small files take about a minute, large models a few minutes for each version they go down.",
+              "Download the converted file and open it in the older Revit."
             ]
           },
           {
@@ -59,9 +87,15 @@
             ]
           },
           {
+            "heading": "Families and linked models",
+            "paragraphs": [
+              "An older Revit also refuses to load a family or link a Revit model saved in a newer release. Convert each family (.rfa) and each linked model to the same version as the project, then load or reload them in the older Revit."
+            ]
+          },
+          {
             "heading": "If something is wrong",
             "paragraphs": [
-              "If a conversion fails, the result page lets you send the file to us so we can fix the cause. For anything else, the contact details are at the bottom of every page."
+              "If a conversion fails, or the converted file does not open, the result page lets you send the file to me so I can fix the cause. For anything else, the contact details are at the bottom of every page."
             ]
           }
         ]
@@ -78,13 +112,22 @@
           },
           {
             "heading": "Quick reference",
+            "table": {
+              "head": ["Revit version", "Opens files from", "Cannot open files from"],
+              "rows": [
+                ["Revit 2027", "Revit 2027 and earlier", "—"],
+                ["Revit 2026", "Revit 2026 and earlier", "Revit 2027"],
+                ["Revit 2025", "Revit 2025 and earlier", "Revit 2026 and 2027"],
+                ["Revit 2024", "Revit 2024 and earlier", "Revit 2025 to 2027"],
+                ["Revit 2023", "Revit 2023 and earlier", "Revit 2024 to 2027"],
+                ["Revit 2022", "Revit 2022 and earlier", "Revit 2023 to 2027"]
+              ]
+            }
+          },
+          {
+            "heading": "Families and links follow the same rule",
             "paragraphs": [
-              "Revit 2027 opens files from Revit 2027 and earlier.",
-              "Revit 2026 opens files from Revit 2026 and earlier, but not 2027.",
-              "Revit 2025 opens files from Revit 2025 and earlier, but not 2026 or 2027.",
-              "Revit 2024 opens files from Revit 2024 and earlier, but not 2025 to 2027.",
-              "Revit 2023 opens files from Revit 2023 and earlier, but not 2024 to 2027.",
-              "Revit 2022 opens files from Revit 2022 and earlier, but not 2023 to 2027."
+              "A project open in Revit 2024 cannot load a family or link a Revit model saved in Revit 2025 or later. Families and links have to be in the project's version or older."
             ]
           },
           {
@@ -108,25 +151,33 @@
           {
             "heading": "What is kept",
             "paragraphs": [
-              "Most of the model. Elements that exist in both versions are written in the older format and open as normal elements."
+              "Most of the model. Elements that exist in both versions are written in the older format and open as normal, editable elements."
             ]
           },
           {
             "heading": "What can be removed",
             "paragraphs": [
-              "Each Revit release adds new kinds of elements and settings. An older Revit has no place for them, so they are removed. Styles and settings that belonged only to a removed element go with it."
+              "Each Revit release adds new kinds of elements and settings. An older Revit has no place for them, so they are removed. Styles and settings that belonged only to a removed element go with it. The further down a file goes, the more releases' additions can be removed."
             ]
           },
           {
             "heading": "See exactly what was removed",
             "paragraphs": [
-              "The result page lists every removed element with its class and the reason, and you can download the list as CSV. Use the ElementIds to find the elements in the original model and decide whether anything needs to be redrawn."
+              "The result page lists every removed element, and you can download the list as CSV. For each kind of element it shows:"
+            ],
+            "list": [
+              "the class of the element, which says what kind of element it was;",
+              "the reason it was removed;",
+              "how many were removed, and their ElementIds."
             ]
           },
           {
-            "heading": "Before you share the file",
-            "paragraphs": [
-              "Open the converted file in the older Revit, review its warnings and check the key views and sheets."
+            "heading": "Check the converted file",
+            "list": [
+              "Open it in the older Revit and read the warnings.",
+              "Use the ElementIds from the list to find the removed elements in the original model and decide whether anything needs to be redrawn.",
+              "Check the key views and sheets before you share the file.",
+              "Save it once in the older Revit."
             ]
           }
         ]

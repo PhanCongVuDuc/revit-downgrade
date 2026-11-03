@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { RouterLink } from 'vue-router';
 
@@ -11,15 +10,29 @@ import {
   REPO_LABEL,
   REPO_URL as REPO,
 } from '@/shared/contact/contact';
-import { setPageMeta } from '@/shared/seo/pageMeta';
+import { useLocalePath } from '@/shared/locale/localePath';
+import { SITE_NAME, usePageMeta } from '@/shared/seo/pageMeta';
+import { authorNode, breadcrumbNode, graph } from '@/shared/seo/structuredData';
 
 const ROWS = ['unfinished', 'cancelled', 'original', 'failed', 'output', 'report'] as const;
 
 const { t } = useI18n();
+const lp = useLocalePath();
 
-watchEffect(() => {
-  setPageMeta({ title: t('about.pageTitle'), description: t('about.intro'), path: '/how-it-works' });
-});
+usePageMeta(() => ({
+  title: t('about.pageTitle'),
+  description: t('about.intro'),
+  path: lp('/how-it-works'),
+  jsonLd: [
+    graph(
+      authorNode(),
+      breadcrumbNode([
+        { name: SITE_NAME, path: lp('/') },
+        { name: t('about.title'), path: lp('/how-it-works') },
+      ]),
+    ),
+  ],
+}));
 </script>
 
 <template>
@@ -84,6 +97,9 @@ watchEffect(() => {
       </li>
     </ul>
 
+    <h2>{{ t('about.who.title') }}</h2>
+    <p>{{ t('about.who.body', { name: AUTHOR_NAME }) }}</p>
+
     <i18n-t keypath="about.author" tag="p" scope="global" class="author">
       <template #name>{{ AUTHOR_NAME }}</template>
       <template #linkedin>
@@ -92,7 +108,7 @@ watchEffect(() => {
     </i18n-t>
 
     <p>
-      <RouterLink :to="{ name: 'convert' }">{{ t('about.back') }}</RouterLink>
+      <RouterLink :to="lp('/')">{{ t('about.back') }}</RouterLink>
     </p>
   </article>
 </template>

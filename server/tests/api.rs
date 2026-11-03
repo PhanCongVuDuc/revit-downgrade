@@ -478,13 +478,13 @@ async fn forwarded_for_used_only_when_trusted() {
 }
 
 #[tokio::test]
-async fn spa_fallback_serves_index() {
+async fn build_without_prerendered_pages_serves_index_for_every_address() {
     let web = tempfile::tempdir().unwrap();
     std::fs::write(web.path().join("index.html"), "<html>home</html>").unwrap();
     std::fs::write(web.path().join("app.js"), "console.log(1)").unwrap();
     let path = web.path().to_path_buf();
     let f = setup_with(move |c| c.web_dir = Some(path));
-    for uri in ["/", "/convert/steps", "/index.html"] {
+    for uri in ["/", "/convert/steps"] {
         let resp = send(&f, get(uri)).await;
         assert_eq!(resp.status(), StatusCode::OK, "{uri}");
         assert_eq!(body_bytes(resp).await, b"<html>home</html>");
@@ -492,6 +492,126 @@ async fn spa_fallback_serves_index() {
     let resp = send(&f, get("/app.js")).await;
     assert_eq!(resp.status(), StatusCode::OK);
     assert_eq!(body_bytes(resp).await, b"console.log(1)");
+}
+
+/// A web directory laid out like the build: the shell, prerendered pages, the 404 page and a hashed asset.
+fn prerendered_web() -> tempfile::TempDir {
+    let web = tempfile::tempdir().unwrap();
+    let pages = web.path().join("pages");
+    std::fs::create_dir_all(pages.join("guides")).unwrap();
+    std::fs::create_dir_all(web.path().join("assets")).unwrap();
+    std::fs::write(web.path().join("index.html"), "<html>shell</html>").unwrap();
+    std::fs::write(web.path().join("robots.txt"), "User-agent: *").unwrap();
+    std::fs::write(web.path().join("assets").join("index-abc.js"), "console.log(1)").unwrap();
+    std::fs::write(pages.join("index.html"), "<html>home</html>").unwrap();
+    std::fs::write(pages.join("revit-2026-to-2024.html"), "<html>pair</html>").unwrap();
+    std::fs::write(pages.join("guides.html"), "<html>guides</html>").unwrap();
+    std::fs::write(pages.join("guides").join("compat.html"), "<html>guide</html>").unwrap();
+    std::fs::write(pages.join("404.html"), "<html>not found</html>").unwrap();
+    std::fs::create_dir_all(pages.join("vi")).unwrap();
+    std::fs::write(pages.join("vi.html"), "<html>trang chu</html>").unwrap();
+    std::fs::write(pages.join("vi").join("guides.html"), "<html>huong dan</html>").unwrap();
+    std::fs::write(pages.join("vi").join("404.html"), "<html>khong tim thay</html>").unwrap();
+    web
+}
+
+#[tokio::test]
+async fn prerendered_pages_are_served_at_their_address() {
+    let web = prerendered_web();
+    let path = web.path().to_path_buf();
+    let f = setup_with(move |c| c.web_dir = Some(path));
+    for (uri, body) in [
+        ("/", "<html>home</html>"),
+        ("/revit-2026-to-2024", "<html>pair</html>"),
+        ("/guides", "<html>guides</html>"),
+        ("/guides/compat", "<html>guide</html>"),
+        ("/vi", "<html>trang chu</html>"),
+        ("/vi/guides", "<html>huong dan</html>"),
+    ] {
+        let resp = send(&f, get(uri)).await;
+        assert_eq!(resp.status(), StatusCode::OK, "{uri}");
+        assert_eq!(resp.headers()["content-type"], "text/html; charset=utf-8");
+        assert_eq!(resp.headers()["cache-control"], "no-cache");
+        assert_eq!(body_bytes(resp).await, body.as_bytes(), "{uri}");
+    }
+}
+
+#[tokio::test]
+async fn unknown_addresses_get_the_404_page() {
+    let web = prerendered_web();
+    let path = web.path().to_path_buf();
+    let f = setup_with(move |c| c.web_dir = Some(path));
+    for uri in [
+        "/no-such-page",
+        "/revit-2022-to-2021",
+        "/guides/nope",
+        "/llms-missing.txt",
+        "/assets/gone.js",
+        "/pages/guides.html",
+        "/404",
+        "/Guides",
+    ] {
+        let resp = send(&f, get(uri)).await;
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND, "{uri}");
+        assert_eq!(body_bytes(resp).await, b"<html>not found</html>", "{uri}");
+    }
+}
+
+#[tokio::test]
+async fn unknown_vietnamese_addresses_get_the_vietnamese_404_page() {
+    let web = prerendered_web();
+    let path = web.path().to_path_buf();
+    let f = setup_with(move |c| c.web_dir = Some(path));
+    for uri in ["/vi/no-such-page", "/vi/guides/nope", "/vi/404"] {
+        let resp = send(&f, get(uri)).await;
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND, "{uri}");
+        assert_eq!(body_bytes(resp).await, b"<html>khong tim thay</html>", "{uri}");
+    }
+}
+
+#[tokio::test]
+async fn one_address_per_page() {
+    let web = prerendered_web();
+    let path = web.path().to_path_buf();
+    let f = setup_with(move |c| c.web_dir = Some(path));
+    for (uri, target) in [
+        ("/index.html", "/"),
+        ("/guides/", "/guides"),
+        ("/revit-2026-to-2024/", "/revit-2026-to-2024"),
+        ("/guides/?x=1", "/guides?x=1"),
+    ] {
+        let resp = send(&f, get(uri)).await;
+        assert_eq!(resp.status(), StatusCode::PERMANENT_REDIRECT, "{uri}");
+        assert_eq!(resp.headers()["location"], target, "{uri}");
+    }
+}
+
+#[tokio::test]
+async fn a_job_address_gets_the_shell_kept_out_of_search() {
+    let web = prerendered_web();
+    let path = web.path().to_path_buf();
+    let f = setup_with(move |c| c.web_dir = Some(path));
+    let resp = send(&f, get("/job/0123456789abcdef0123456789abcdef")).await;
+    assert_eq!(resp.status(), StatusCode::OK);
+    assert_eq!(resp.headers()["x-robots-tag"], "noindex");
+    assert_eq!(body_bytes(resp).await, b"<html>shell</html>");
+}
+
+#[tokio::test]
+async fn hashed_assets_are_cached_for_a_year_other_files_for_an_hour() {
+    let web = prerendered_web();
+    let path = web.path().to_path_buf();
+    let f = setup_with(move |c| c.web_dir = Some(path));
+    let resp = send(&f, get("/assets/index-abc.js")).await;
+    assert_eq!(resp.status(), StatusCode::OK);
+    assert_eq!(
+        resp.headers()["cache-control"],
+        "public, max-age=31536000, immutable"
+    );
+    assert_eq!(body_bytes(resp).await, b"console.log(1)");
+    let resp = send(&f, get("/robots.txt")).await;
+    assert_eq!(resp.status(), StatusCode::OK);
+    assert_eq!(resp.headers()["cache-control"], "public, max-age=3600");
 }
 
 #[tokio::test]
@@ -608,7 +728,13 @@ async fn responses_carry_security_headers() {
             "{uri}"
         );
         assert_eq!(h["x-frame-options"], "DENY");
-        assert_eq!(h["referrer-policy"], "no-referrer");
+        assert_eq!(h["referrer-policy"], "strict-origin-when-cross-origin");
+        assert_eq!(h["strict-transport-security"], "max-age=31536000");
+        assert_eq!(h["x-content-type-options"], "nosniff");
+        assert_eq!(
+            h["permissions-policy"],
+            "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        );
     }
 }
 

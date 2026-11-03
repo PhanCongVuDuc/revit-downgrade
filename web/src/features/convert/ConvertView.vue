@@ -1,25 +1,31 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, useTemplateRef, watch, watchEffect } from 'vue';
+import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
-import { setPageMeta } from '@/shared/seo/pageMeta';
+import { pairPath, type Pair } from '@/shared/catalog/pairs';
+import { useLocalePath } from '@/shared/locale/localePath';
+import { SITE_NAME, usePageMeta } from '@/shared/seo/pageMeta';
+import { authorNode, breadcrumbNode, graph, webApplicationNode, websiteNode } from '@/shared/seo/structuredData';
 
 import AddFile from './components/AddFile.vue';
 import ErrorPanel from './components/ErrorPanel.vue';
 import FailurePanel from './components/FailurePanel.vue';
 import FaqSection from './components/FaqSection.vue';
 import FileSummary from './components/FileSummary.vue';
+import GuideLinks from './components/GuideLinks.vue';
 import GuideSections from './components/GuideSections.vue';
+import PairDetails from './components/PairDetails.vue';
 import PairLinks from './components/PairLinks.vue';
 import ProgressPanel from './components/ProgressPanel.vue';
 import ResultPanel from './components/ResultPanel.vue';
+import SupportNote from './components/SupportNote.vue';
 import UsageStats from './components/UsageStats.vue';
 import { formatBytes } from './format';
-import { pairPath, type Pair } from './pairs';
 import { useConvertStore } from './stores/convertStore';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const lp = useLocalePath();
 const store = useConvertStore();
 const route = useRoute();
 const router = useRouter();
@@ -32,19 +38,43 @@ const pair = computed<Pair | null>(() =>
 );
 const heading = computed(() => (pair.value ? t('convert.pairPage.title', { ...pair.value }) : t('convert.title')));
 
-watchEffect(() => {
+usePageMeta(() => {
   if (route.name === 'job') {
-    return;
+    // A job's address belongs to one visitor; it is never a page to find in search.
+    return { title: t('convert.pageTitle'), description: t('convert.description'), path: route.path, noindex: true };
   }
-  setPageMeta(
-    pair.value
-      ? {
-          title: t('convert.pairPage.pageTitle', { ...pair.value }),
-          description: t('convert.pairPage.description', { ...pair.value }),
-          path: pairPath(pair.value),
-        }
-      : { title: t('convert.pageTitle'), description: t('convert.description'), path: '/' },
-  );
+  if (pair.value) {
+    const path = lp(pairPath(pair.value));
+    const description = t('convert.pairPage.description', { ...pair.value });
+    return {
+      title: t('convert.pairPage.pageTitle', { ...pair.value }),
+      description,
+      path,
+      jsonLd: [
+        graph(
+          authorNode(),
+          webApplicationNode({ name: t('convert.pairPage.title', { ...pair.value }), description, path }),
+          breadcrumbNode([
+            { name: SITE_NAME, path: lp('/') },
+            { name: t('convert.pairs.link', { ...pair.value }), path },
+          ]),
+        ),
+      ],
+    };
+  }
+  const description = t('convert.description');
+  return {
+    title: t('convert.pageTitle'),
+    description,
+    path: lp('/'),
+    jsonLd: [
+      graph(
+        authorNode(),
+        websiteNode(description, locale.value),
+        webApplicationNode({ name: SITE_NAME, description, path: lp('/') }),
+      ),
+    ],
+  };
 });
 
 watch(
@@ -117,7 +147,7 @@ watch(
     if (id && (route.name === 'convert' || route.name === 'pair')) {
       void router.replace({ name: 'job', params: { id } });
     } else if (!id && route.name === 'job') {
-      void router.replace({ name: 'convert' });
+      void router.replace(lp('/'));
     }
   },
 );
@@ -134,7 +164,7 @@ watch(
 async function follow(id?: string) {
   const found = await store.resume(id);
   if (!found && route.name === 'job') {
-    await router.replace({ name: 'convert' });
+    await router.replace(lp('/'));
   }
 }
 
@@ -219,12 +249,15 @@ onMounted(() => {
         @choose-another="store.cancel"
       />
     </div>
+    <SupportNote v-if="store.phase === 'pick'" />
     <!-- Outside the steps, so it is fetched once per page load and stays put while a file converts. -->
     <UsageStats />
     <template v-if="store.phase === 'pick'">
+      <PairDetails v-if="pair" :pair="pair" />
       <GuideSections />
-      <FaqSection />
-      <PairLinks />
+      <FaqSection :pair="pair" />
+      <GuideLinks />
+      <PairLinks :current="pair" />
     </template>
     <p class="visually-hidden" role="status" aria-live="polite">{{ announcement }}</p>
   </section>

@@ -20,3 +20,11 @@ export function isPair(from: number, to: number): boolean {
 export function pairPath({ from, to }: Pair): string {
   return `/revit-${String(from)}-to-${String(to)}`;
 }
+
+/** The versions a file passes through, one step at a time: 2026 → 2024 is [2026, 2025, 2024]. */
+export function pairVersions({ from, to }: Pair): number[] {
+  return Array.from({ length: from - to + 1 }, (_, i) => from - i);
+}
+
+/** Date the pair pages and the home page last changed in substance (ISO yyyy-mm-dd), for the sitemap. */
+export const CONVERT_PAGES_UPDATED = '2026-11-03';

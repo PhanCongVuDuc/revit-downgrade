@@ -1,6 +1,6 @@
 {
   "convert": {
-    "title": "Hạ phiên bản file Revit",
+    "title": "Hạ phiên bản file Revit về bản cũ hơn",
     "lead": "Mở model mới bằng Revit cũ. Miễn phí. File tự xoá sau 2 giờ.",
     "versions": "Revit 2027 · 2026 · 2025 · 2024 · 2023 → xuống tới Revit 2022",
     "stats": {
@@ -10,14 +10,51 @@
       "failed": "file bị lỗi",
       "contributed": "file lỗi được gửi để sửa",
       "since": "Đếm từ {date}",
-      "help": "Hạ phiên bản file Revit rất khó và cần nhiều dữ liệu thật để làm đúng. Mỗi file lỗi bạn gửi giúp chúng tôi sửa lỗi và cải thiện công cụ liên tục."
+      "help": "Hạ phiên bản file Revit rất khó và cần nhiều dữ liệu thật để làm đúng. Mỗi file lỗi bạn gửi giúp tôi sửa lỗi và cải thiện công cụ liên tục."
     },
     "pageTitle": "Hạ phiên bản file Revit online (2027 → 2022), miễn phí {'|'} Revit Downgrade",
-    "description": "Hạ phiên bản file Revit miễn phí: chuyển file Revit 2027, 2026, 2025, 2024, 2023 (.rvt, .rfa, .rte, .rft) về bản cũ hơn, xuống tới Revit 2022. Không cần cài đặt. File tự xoá sau 2 giờ.",
+    "description": "Hạ phiên bản file Revit miễn phí: mở file Revit 2027 đến 2023 (.rvt, .rfa, .rte, .rft) bằng Revit cũ hơn, xuống tới 2022. Không cần cài đặt.",
     "pairPage": {
       "title": "Hạ file Revit {from} về Revit {to}",
       "pageTitle": "Hạ file Revit {from} về {to} online, miễn phí {'|'} Revit Downgrade",
-      "description": "Chuyển file Revit {from} (.rvt, .rfa, .rte, .rft) để mở được bằng Revit {to}. Miễn phí, không cần cài đặt, file tự xoá sau 2 giờ."
+      "description": "Chuyển file Revit {from} (.rvt, .rfa, .rte, .rft) để mở được bằng Revit {to}. Miễn phí, không cần cài đặt, file tự xoá sau 2 giờ.",
+      "details": {
+        "title": "Về việc hạ Revit {from} xuống Revit {to}",
+        "why": "Revit {to} không mở được file lưu bằng Revit {from}: mỗi bản Revit chỉ mở file của chính nó và các bản cũ hơn. Revit Downgrade viết lại file theo định dạng Revit {to}, nên file mở được trong Revit {to} như một file Revit bình thường, sửa được, không phải qua IFC hay bất kỳ cách xuất nào khác.",
+        "steps": "Đây là bước hạ một phiên bản, {route}. Những gì Revit {to} không biết sẽ bị bỏ, và mọi element bị bỏ đều được liệt kê ở trang kết quả. | File được hạ {n} phiên bản, từng bản một: {route}. Mỗi bước bỏ những gì bản dưới không biết, và mọi element bị bỏ đều được liệt kê ở trang kết quả.",
+        "time": "File nhỏ mất khoảng một phút; model lớn mất vài phút. | File nhỏ mất một đến hai phút; model lớn mất vài phút cho mỗi bản trong {n} phiên bản.",
+        "opensIn": "File đã hạ mở được bằng Revit {to} và mọi bản Revit mới hơn, bản mới sẽ tự nâng file như thường lệ. Lưu file một lần trong Revit {to}, từ đó nó là file Revit {to} bình thường.",
+        "files": "Cách làm như nhau cho project (.rvt), project template (.rte), family (.rfa) và family template (.rft) lưu bằng Revit {from}, tối đa 1 GB."
+      }
+    },
+    "changes": {
+      "title": "Những gì Revit {to} không hỗ trợ",
+      "intro": "Mỗi bản Revit thêm loại element mới. Khi hạ file, element mà bản cũ không có chỗ chứa sẽ bị bỏ, và từng element đều được liệt kê ở trang kết quả kèm ElementId, để bạn tìm lại trong model gốc.",
+      "step": "Revit {from} → Revit {to}",
+      "removedLabel": "Revit {to} không có:",
+      "otherLabel": "Thay đổi khác:",
+      "whatsNew": "Revit {year} có gì mới (Autodesk Help)",
+      "2027": {
+        "removed": "boundary condition dạng điểm, đường, mặt thuộc các category mới của Revit 2027, rebar distribution path và rebar concrete edge.",
+        "other": "loại không gian \"Server Room\" thành không có loại; cỡ và màu số bậc thang trở về cách của Revit 2026."
+      },
+      "2026": {
+        "removed": "rebar crank type và màu tô của MEP system zone.",
+        "other": "subdivision của toposolid vẫn giữ dưới dạng toposolid; toposolid tạo hình từ lưới mặt giữ khối nhưng mất hình lưới; loại cáp và cỡ dây dẫn đổi về loại dây và cỡ dây của Revit 2025."
+      },
+      "2025": {
+        "removed": "sheet collection, đoạn phân tích của ống và ống gió, loại mối nối thép và đường mối nối.",
+        "other": "nhãn \"Apparent power\" trở về cách gọi \"load\" cũ."
+      },
+      "2024": {
+        "removed": "electrical connector, electrical load case, rebar bending detail, và element lớp tường, lớp sàn."
+      },
+      "2023": {
+        "removed": "plumbing equipment, mechanical control device, MEP ancillary framing, gân tăng cứng ống gió fabrication, electrical load set, feeder và máy biến áp phân tích, analytical panel và opening, và tag của các category chỉ gắn tag được từ Revit 2023 (như tag cột, model group, link)."
+      }
+    },
+    "guideLinks": {
+      "title": "Hướng dẫn"
     },
     "guide": {
       "stepsTitle": "Cách hạ phiên bản file Revit",
@@ -47,16 +84,17 @@
         },
         "deleted": {
           "title": "Xoá sau 2 giờ",
-          "body": "File không bị giữ hay chia sẻ."
+          "body": "Không bao giờ chia sẻ. Chỉ giữ lâu hơn nếu bạn tự gửi file lỗi để giúp sửa."
         },
         "openSource": {
-          "title": "Mã nguồn mở",
-          "body": "Ai cũng kiểm tra được code."
+          "title": "Web mã nguồn mở",
+          "body": "Mã của website và server là công khai, ai cũng kiểm tra được file được xử lý ra sao."
         }
       }
     },
     "pairs": {
       "title": "Các phép hạ phổ biến",
+      "others": "Các phép hạ khác",
       "link": "Revit {from} về {to}"
     },
     "status": {
@@ -149,7 +187,7 @@
     },
     "unopenable": {
       "open": "File không mở được trong Revit?",
-      "intro": "Nếu Revit không mở được file đã hạ, hãy gửi cho chúng tôi để tìm và sửa lỗi.",
+      "intro": "Nếu Revit không mở được file đã hạ, hãy gửi cho tôi để tìm và sửa lỗi.",
       "consent": "Gửi file gốc, file đã hạ và nhật ký chuyển đổi. Các file chỉ dùng để sửa công cụ, được giữ tối đa 30 ngày, không chia sẻ, và bị xoá sau 30 ngày hoặc khi bạn yêu cầu (bạn sẽ nhận một mã để nêu khi yêu cầu).",
       "note": "Revit báo gì? (không bắt buộc)",
       "pick": "Trang này không còn giữ file gốc của bạn. Hãy chọn lại đúng file bạn đã hạ:",
@@ -211,9 +249,23 @@
           "q": "Có bị mất gì không?",
           "a": "Element mà Revit bản cũ không biết, như tính năng mới thêm ở bản sau, sẽ bị bỏ. Hạ xong bạn xem được danh sách đầy đủ các element bị bỏ kèm ElementId và tải về dạng CSV."
         },
+        "backsave": {
+          "q": "Có backsave file Revit được không?",
+          "a": "Trong Revit thì không: Revit không có lệnh backsave hay \"lưu về phiên bản trước\". Revit Downgrade làm việc backsave đó online, cho file từ Revit 2023 đến 2027, xuống tới Revit 2022."
+        },
         "safe": {
           "q": "File của tôi có an toàn không?",
-          "a": "File gốc bị xoá ngay khi hạ xong, file đã hạ bị xoá sau 2 giờ. File không được chia sẻ, và mã xử lý file là mã nguồn mở."
+          "a": "File gốc bị xoá ngay khi hạ xong, file đã hạ bị xoá sau 2 giờ. File không bao giờ bị chia sẻ. File chỉ được giữ lâu hơn nếu bạn tự gửi để giúp sửa một lần hạ bị lỗi. Mã của website và server xử lý file là mã nguồn mở; riêng bộ chuyển đổi là mã đóng."
+        }
+      },
+      "pairItems": {
+        "howTo": {
+          "q": "Làm sao mở file Revit {from} bằng Revit {to}?",
+          "a": "Thêm file ở trên: Revit {to} được chọn sẵn. Bấm Hạ phiên bản, rồi tải file đã hạ về mở bằng Revit {to}. Không cần cài gì, không cần tài khoản."
+        },
+        "saveOlder": {
+          "q": "Revit {from} có lưu file cho Revit {to} được không?",
+          "a": "Không. Revit {from} không có Save As phiên bản cũ: mỗi lần lưu đều ghi theo định dạng Revit {from}, mà Revit {to} không mở được. Chuyển đổi file là cách để đưa nó vào Revit {to}."
         }
       }
     }

@@ -52,7 +52,10 @@ export function createAppI18n(browserLanguage: string, storage: LocaleStorage) {
     },
   });
   const reflectLocale = (locale: string) => {
-    document.documentElement.lang = locale;
+    // There is no document while prerendering; the page template already says lang="en".
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = locale;
+    }
   };
   reflectLocale(i18n.global.locale.value);
   watch(

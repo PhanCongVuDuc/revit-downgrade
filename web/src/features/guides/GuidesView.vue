@@ -1,17 +1,29 @@
 <script setup lang="ts">
-import { watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { RouterLink } from 'vue-router';
 
-import { setPageMeta } from '@/shared/seo/pageMeta';
-
-import { GUIDES, guidePath } from './guides';
+import { GUIDES, guidePath } from '@/shared/catalog/guides';
+import { useLocalePath } from '@/shared/locale/localePath';
+import { SITE_NAME, usePageMeta } from '@/shared/seo/pageMeta';
+import { authorNode, breadcrumbNode, graph } from '@/shared/seo/structuredData';
 
 const { t } = useI18n();
+const lp = useLocalePath();
 
-watchEffect(() => {
-  setPageMeta({ title: t('guides.pageTitle'), description: t('guides.intro'), path: '/guides' });
-});
+usePageMeta(() => ({
+  title: t('guides.pageTitle'),
+  description: t('guides.intro'),
+  path: lp('/guides'),
+  jsonLd: [
+    graph(
+      authorNode(),
+      breadcrumbNode([
+        { name: SITE_NAME, path: lp('/') },
+        { name: t('guides.title'), path: lp('/guides') },
+      ]),
+    ),
+  ],
+}));
 </script>
 
 <template>
@@ -20,7 +32,7 @@ watchEffect(() => {
     <p class="intro">{{ t('guides.intro') }}</p>
     <ul>
       <li v-for="guide in GUIDES" :key="guide.slug">
-        <RouterLink :to="guidePath(guide)">{{ t(`guides.articles.${guide.key}.title`) }}</RouterLink>
+        <RouterLink :to="lp(guidePath(guide))">{{ t(`guides.articles.${guide.key}.title`) }}</RouterLink>
         <p>{{ t(`guides.articles.${guide.key}.description`) }}</p>
       </li>
     </ul>
@@ -50,6 +62,8 @@ ul {
 }
 
 li a {
+  display: inline-block;
+  padding: var(--space-2) 0;
   font-size: 1.0625rem;
   font-weight: 600;
 }

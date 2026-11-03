@@ -1,34 +1,47 @@
-import { createRouter, createWebHistory, type RouterHistory } from 'vue-router';
+import { createRouter, type RouteLocationNormalized, type RouterHistory } from 'vue-router';
 
-import AboutView from '@/features/about/AboutView.vue';
-import ConvertView from '@/features/convert/ConvertView.vue';
-import { isPair } from '@/features/convert/pairs';
-import { guideBySlug } from '@/features/guides/guides';
-import GuidesView from '@/features/guides/GuidesView.vue';
-import GuideView from '@/features/guides/GuideView.vue';
+import { guideBySlug } from '@/shared/catalog/guides';
+import { isPair } from '@/shared/catalog/pairs';
 
-export function createAppRouter(history: RouterHistory = createWebHistory()) {
+// Each view is its own chunk, so a page only downloads the code it shows.
+const ConvertView = () => import('@/features/convert/ConvertView.vue');
+const AboutView = () => import('@/features/about/AboutView.vue');
+const GuidesView = () => import('@/features/guides/GuidesView.vue');
+const GuideView = () => import('@/features/guides/GuideView.vue');
+const NotFoundView = () => import('@/features/not-found/NotFoundView.vue');
+
+/** Shows the "page not found" view at the address that was asked for. */
+function notFound(to: RouteLocationNormalized) {
+  return { name: 'notFound', params: { unknown: to.path.slice(1).split('/') }, query: to.query, hash: to.hash };
+}
+
+/** Every page exists in English at the root and in Vietnamese under /vi (see @/shared/locale/localePath). */
+const LANG = '/:lang(vi)?';
+
+export function createAppRouter(history: RouterHistory) {
   return createRouter({
     history,
     routes: [
-      { path: '/', name: 'convert', component: ConvertView },
-      { path: '/how-it-works', name: 'about', component: AboutView },
+      { path: LANG, name: 'convert', component: ConvertView },
+      { path: `${LANG}/how-it-works`, name: 'about', component: AboutView },
       // One page per downgrade (/revit-2026-to-2024), so each can be found by searching for it.
       {
-        path: '/revit-:from(\\d{4})-to-:to(\\d{4})',
+        path: `${LANG}/revit-:from(\\d{4})-to-:to(\\d{4})`,
         name: 'pair',
         component: ConvertView,
-        beforeEnter: (to) => isPair(Number(to.params.from), Number(to.params.to)) || '/',
+        beforeEnter: (to) => isPair(Number(to.params.from), Number(to.params.to)) || notFound(to),
       },
-      { path: '/guides', name: 'guides', component: GuidesView },
+      { path: `${LANG}/guides`, name: 'guides', component: GuidesView },
       {
-        path: '/guides/:slug',
+        path: `${LANG}/guides/:slug`,
         name: 'guide',
         component: GuideView,
-        beforeEnter: (to) => (guideBySlug(String(to.params.slug)) ? true : { name: 'guides' }),
+        beforeEnter: (to) => (guideBySlug(String(to.params.slug)) ? true : notFound(to)),
       },
+      // A conversion's address belongs to one visitor and stays in the language they chose.
       { path: '/job/:id', name: 'job', component: ConvertView },
-      { path: '/:unknown(.*)*', redirect: '/' },
+      { path: '/:unknown(.*)*', name: 'notFound', component: NotFoundView },
     ],
+    scrollBehavior: (to, _from, saved) => saved ?? (to.hash ? { el: to.hash } : { top: 0 }),
   });
 }

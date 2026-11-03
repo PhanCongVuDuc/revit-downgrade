@@ -8,6 +8,7 @@ pub mod model;
 pub mod reports;
 pub mod stats;
 pub mod upload;
+pub mod web;
 pub mod worker;
 
 use axum::Router;
@@ -16,7 +17,6 @@ use axum::http::{HeaderValue, header};
 use axum::middleware::{Next, from_fn};
 use axum::response::Response;
 use std::sync::Arc;
-use tower_http::services::{ServeDir, ServeFile};
 
 /// Shared state handed to every route.
 #[derive(Clone)]
@@ -37,8 +37,7 @@ pub fn app(state: AppState) -> Router {
     let web_dir = state.config.web_dir.clone();
     let mut router = Router::new().merge(api::routes()).merge(upload::routes());
     if let Some(dir) = web_dir {
-        let index = dir.join("index.html");
-        router = router.fallback_service(ServeDir::new(dir).fallback(ServeFile::new(index)));
+        router = router.fallback(move |req: Request| web::serve(dir.clone(), req));
     }
     router
         .with_state(state)
@@ -60,7 +59,8 @@ async fn log_request(req: Request, next: Next) -> Response {
 
 const CONTENT_SECURITY_POLICY: &str = "default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; connect-src 'self' https://cloudflareinsights.com; img-src 'self' data:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'";
 
-/// Browser hardening for every response: same-origin content (plus the Cloudflare Web Analytics beacon), no framing, no referrer.
+/// Browser hardening for every response: same-origin content (plus the Cloudflare Web Analytics beacon), no framing,
+/// HTTPS only, no content sniffing, no camera or microphone, and only the origin (never a job's address) as referrer.
 async fn security_headers(req: Request, next: Next) -> Response {
     let mut resp = next.run(req).await;
     let h = resp.headers_mut();
@@ -71,7 +71,19 @@ async fn security_headers(req: Request, next: Next) -> Response {
     h.insert(header::X_FRAME_OPTIONS, HeaderValue::from_static("DENY"));
     h.insert(
         header::REFERRER_POLICY,
-        HeaderValue::from_static("no-referrer"),
+        HeaderValue::from_static("strict-origin-when-cross-origin"),
+    );
+    h.insert(
+        header::STRICT_TRANSPORT_SECURITY,
+        HeaderValue::from_static("max-age=31536000"),
+    );
+    h.insert(
+        header::X_CONTENT_TYPE_OPTIONS,
+        HeaderValue::from_static("nosniff"),
+    );
+    h.insert(
+        "permissions-policy",
+        HeaderValue::from_static("camera=(), microphone=(), geolocation=(), payment=(), usb=()"),
     );
     resp
 }

@@ -5,15 +5,22 @@
   },
   "nav": {
     "guides": "Guides",
-    "about": "How your files are handled",
+    "about": "How it works",
     "source": "Source code",
     "home": "Revit Downgrade home"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "pageTitle": "Page not found {'|'} Revit Downgrade",
+    "body": "There is no page at this address. It may have moved, or the link may be wrong.",
+    "home": "Downgrade a Revit file",
+    "guides": "Read the guides"
   },
   "footer": {
     "author": "Author",
     "authorAbout": "an engineer from Vietnam",
     "thanks": "Thanks to {name} for the help and support.",
     "trademark": "Revit is a registered trademark of Autodesk, Inc. Revit Downgrade is not affiliated with or endorsed by Autodesk.",
-    "openSource": "Revit Downgrade is open source — you can check exactly how your files are handled: {repo}"
+    "openSource": "The Revit Downgrade website and server are open source, so you can check exactly how your files are handled: {repo}. The conversion engine itself is closed source."
   }
 }

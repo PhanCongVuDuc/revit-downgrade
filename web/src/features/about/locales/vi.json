@@ -1,7 +1,7 @@
 {
   "about": {
-    "title": "Cách xử lý file của bạn",
-    "pageTitle": "Cách xử lý file của bạn {'|'} Revit Downgrade",
+    "title": "Cách hoạt động: file của bạn được xử lý ra sao",
+    "pageTitle": "Cách hoạt động và cách xử lý file của bạn {'|'} Revit Downgrade",
     "intro": "Revit Downgrade chuyển file Revit về phiên bản Revit cũ hơn. Trang này nói file của bạn được xử lý thế nào và khi nào bị xoá.",
     "sent": {
       "title": "Khi nào file được gửi",
@@ -66,7 +66,11 @@
       "body": "Muốn xoá báo cáo sớm, hãy gửi email tới {email} hoặc mở issue tại {issues} kèm mã báo cáo. Riêng mã này không cho biết gì về bạn hay file của bạn.",
       "issues": "GitHub issues"
     },
-    "openSource": "Revit Downgrade là mã nguồn mở — bạn có thể tự kiểm tra file của mình được xử lý ra sao: {repo}",
-    "author": "Tác giả: {name} — {linkedin}"
+    "openSource": "Website và server của Revit Downgrade là mã nguồn mở, nên bạn có thể tự kiểm tra file của mình được xử lý ra sao: {repo}. Riêng bộ chuyển đổi là mã đóng.",
+    "author": "Tác giả: {name} — {linkedin}",
+    "who": {
+      "title": "Ai làm Revit Downgrade",
+      "body": "Revit Downgrade do một người làm và vận hành, {name}, kỹ sư đến từ Việt Nam. Mỗi bậc phiên bản đều được kiểm thử bằng cách hạ các file project và family thật rồi mở kết quả bằng Revit bản cũ. Revit Downgrade không liên kết với và không được Autodesk bảo trợ."
+    }
   }
 }

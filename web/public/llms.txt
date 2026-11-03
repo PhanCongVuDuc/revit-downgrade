@@ -1,0 +1,23 @@
+# Revit Downgrade
+
+> Free online tool that converts Autodesk Revit files to an older Revit version, so a newer model opens in an older Revit. It converts projects (.rvt), project templates (.rte), families (.rfa) and family templates (.rft) saved in Revit 2023, 2024, 2025, 2026 or 2027, down to any older version from Revit 2022. Nothing to install and no account. Files up to 1 GB; converted files are deleted after 2 hours.
+
+Revit itself cannot save to an older version: a Revit release only opens files from its own version and older ones. Revit Downgrade rewrites the file in the older format. Elements the older version does not know are removed, and every removed element is listed on the result page with its class, the reason and its ElementId (also as CSV).
+
+## Use it
+
+- [Downgrade a Revit file](https://revitdowngrade.com/): add the file, pick the Revit version, download the result
+- [Downgrade Revit 2026 to Revit 2024](https://revitdowngrade.com/revit-2026-to-2024): one page per version pair, from /revit-2027-to-2026 to /revit-2023-to-2022
+
+## Guides
+
+- [Can you save a Revit file as an older version?](https://revitdowngrade.com/guides/revit-save-as-older-version)
+- [How to open a newer Revit file in an older version of Revit](https://revitdowngrade.com/guides/open-newer-revit-file-in-older-revit)
+- [Revit version compatibility: which Revit opens which file](https://revitdowngrade.com/guides/revit-version-compatibility)
+- [What changes when you downgrade a Revit file](https://revitdowngrade.com/guides/what-changes-when-downgrading-revit)
+
+## About
+
+- [How it works and how your files are handled](https://revitdowngrade.com/how-it-works)
+- [Source code of the website and server](https://github.com/PhanCongVuDuc/revit-downgrade) (MIT); the conversion engine is closed source
+- [Vietnamese version](https://revitdowngrade.com/vi): every page also exists in Vietnamese under /vi

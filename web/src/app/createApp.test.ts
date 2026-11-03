@@ -19,7 +19,7 @@ describe('createRevitDowngradeApp', () => {
       },
     });
     const root = document.createElement('div');
-    const app = createRevitDowngradeApp();
+    const { app } = createRevitDowngradeApp();
     app.mount(root);
     expect(root.querySelector('header')).not.toBeNull();
     expect(document.documentElement.lang).toBe('en');

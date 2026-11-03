@@ -12,9 +12,11 @@ import * as api from '@/api';
 import { ApiError, type DroppedElement, type JobErrorKind, type JobStatus, type ServerInfo } from '@/api';
 import App from '@/App.vue';
 import { createAppI18n } from '@/app/i18n';
+import { installLocaleRouting } from '@/app/localeRouting';
 import { createAppRouter } from '@/app/router';
 import en from '@/features/convert/locales/en.json';
 import viConvert from '@/features/convert/locales/vi.json';
+import viShared from '@/shared/locales/vi.json';
 import { basicFileInfo, fileOf, makeOle } from '@/shared/revit-file/makeOle.testutil';
 
 import { POLL_INTERVAL_MS } from '@/features/convert/stores/convertStore';
@@ -93,9 +95,10 @@ async function settle() {
 
 async function open(path = '/', locale = 'en-US') {
   const router = createAppRouter(createMemoryHistory());
+  const i18n = createAppI18n(locale, { getItem: () => null, setItem: () => undefined });
+  installLocaleRouting(router, i18n);
   await router.push(path);
   await router.isReady();
-  const i18n = createAppI18n(locale, { getItem: () => null, setItem: () => undefined });
   render(App, { global: { plugins: [createPinia(), router, i18n] } });
   await settle();
   return { router, i18n };
@@ -351,20 +354,25 @@ describe('shell', () => {
   });
 
   it('links to the file handling page and the source code, and switches language', async () => {
-    const { i18n } = await open();
-    expect(screen.getByRole('link', { name: 'How your files are handled' })).toHaveAttribute('href', '/how-it-works');
+    const { i18n, router } = await open();
+    expect(screen.getByRole('link', { name: 'How it works' })).toHaveAttribute('href', '/how-it-works');
     const source = screen.getByRole('link', { name: 'Source code' });
     expect(source).toHaveAttribute('href', 'https://github.com/PhanCongVuDuc/revit-downgrade');
     expect(source).toHaveAttribute('rel', 'noopener');
     expect(screen.getByRole('button', { name: 'EN' })).toHaveAttribute('aria-pressed', 'true');
     await user().click(screen.getByRole('button', { name: 'VI' }));
     expect(i18n.global.locale.value).toBe('vi');
-    expect(screen.getByRole('button', { name: viConvert.convert.add.button })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: viConvert.convert.add.button })).toBeInTheDocument();
+    await vi.waitFor(() => {
+      expect(router.currentRoute.value.path).toBe('/vi');
+    });
+    expect(screen.getByRole('link', { name: viShared.nav.about })).toHaveAttribute('href', '/vi/how-it-works');
   });
 
   it('says the tool is open source, with a link to the code', async () => {
     await open();
-    expect(screen.getByText(/Revit Downgrade is open source/)).toBeInTheDocument();
+    expect(screen.getByText(/The Revit Downgrade website and server are open source/)).toBeInTheDocument();
+    expect(screen.getByText(/The conversion engine itself is closed source/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'github.com/PhanCongVuDuc/revit-downgrade' })).toHaveAttribute(
       'href',
       'https://github.com/PhanCongVuDuc/revit-downgrade',
@@ -405,7 +413,7 @@ describe('shell', () => {
 
   it('about_page_lists_the_deletion_times', async () => {
     await open('/how-it-works');
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('How your files are handled');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('How it works: how your files are handled');
     expect(screen.getAllByRole('row')).toHaveLength(7);
     expect(screen.getByRole('link', { name: /cleanup\.rs/ })).toHaveAttribute(
       'href',

@@ -69,7 +69,6 @@ function onDrop(event: DragEvent) {
     </button>
     <p class="drop-hint">{{ t('convert.add.drop') }}</p>
     <p class="limits">{{ t('convert.add.limits') }}</p>
-    <p class="support">{{ t('convert.add.support') }}</p>
     <input
       ref="input"
       type="file"
@@ -129,14 +128,10 @@ function onDrop(event: DragEvent) {
   font-size: 0.875rem;
 }
 
-.limits {
-  font-size: 0.8125rem;
-}
-
-.support {
-  margin: var(--space-2) auto 0;
-  max-width: 22rem;
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
+/* Phones and tablets cannot drag a file onto the page; there the button is the only way in. */
+@media (pointer: coarse) {
+  .drop-hint {
+    display: none;
+  }
 }
 </style>

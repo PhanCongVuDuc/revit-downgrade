@@ -1,6 +1,6 @@
 {
   "convert": {
-    "title": "Downgrade a Revit file",
+    "title": "Downgrade a Revit file to an older version",
     "lead": "Open a newer model in an older Revit. Free. Your file is deleted after 2 hours.",
     "versions": "Revit 2027 · 2026 · 2025 · 2024 · 2023 → down to Revit 2022",
     "stats": {
@@ -10,14 +10,51 @@
       "failed": "files failed",
       "contributed": "failed files sent to help fix them",
       "since": "Counted since {date}",
-      "help": "Downgrading Revit files is hard and takes a lot of real data to get right. Every failed file you send helps us fix bugs and keep improving the tool."
+      "help": "Downgrading Revit files is hard and takes a lot of real data to get right. Every failed file you send helps me fix bugs and keep improving the tool."
     },
     "pageTitle": "Downgrade Revit Files Online (2027 → 2022), Free {'|'} Revit Downgrade",
-    "description": "Free online Revit downgrade: save a Revit 2027, 2026, 2025, 2024 or 2023 file (.rvt, .rfa, .rte, .rft) to an older version, down to Revit 2022. Nothing to install. Files are deleted after 2 hours.",
+    "description": "Free online Revit downgrade: open a Revit 2027 to 2023 file (.rvt, .rfa, .rte, .rft) in an older Revit, down to 2022. Nothing to install.",
     "pairPage": {
       "title": "Downgrade Revit {from} to Revit {to}",
       "pageTitle": "Downgrade Revit {from} to {to} Online, Free {'|'} Revit Downgrade",
-      "description": "Convert a Revit {from} file (.rvt, .rfa, .rte, .rft) so it opens in Revit {to}. Free, nothing to install, files are deleted after 2 hours."
+      "description": "Convert a Revit {from} file (.rvt, .rfa, .rte, .rft) so it opens in Revit {to}. Free, nothing to install, files are deleted after 2 hours.",
+      "details": {
+        "title": "About downgrading Revit {from} to Revit {to}",
+        "why": "Revit {to} cannot open a file saved in Revit {from}: a Revit release only opens files from its own version and older ones. Revit Downgrade rewrites the file in the Revit {to} format, so it opens in Revit {to} as a normal, editable Revit file, with no IFC or other export in between.",
+        "steps": "This is a one-version step, {route}. Anything Revit {to} does not know is removed, and every removed element is listed on the result page. | The file goes down {n} versions, one at a time: {route}. Each step removes what the version below does not know, and every removed element is listed on the result page.",
+        "time": "Small files take about a minute; large models take a few minutes. | Small files take a minute or two; large models take a few minutes for each of the {n} versions.",
+        "opensIn": "The converted file opens in Revit {to} and in any newer Revit, which upgrades it as usual. Save it once in Revit {to} and it is an ordinary Revit {to} file from then on.",
+        "files": "It works the same for projects (.rvt), project templates (.rte), families (.rfa) and family templates (.rft) saved in Revit {from}, up to 1 GB."
+      }
+    },
+    "changes": {
+      "title": "What Revit {to} does not support",
+      "intro": "Each Revit release adds new kinds of elements. When a file goes down, elements the older version has no place for are removed, and every one of them is listed on the result page with its ElementId, so you can find it in the original model.",
+      "step": "Revit {from} → Revit {to}",
+      "removedLabel": "Not in Revit {to}:",
+      "otherLabel": "Also changes:",
+      "whatsNew": "What's new in Revit {year} (Autodesk Help)",
+      "2027": {
+        "removed": "point, line and area boundary conditions in the new Revit 2027 categories, rebar distribution paths and rebar concrete edges.",
+        "other": "the \"Server Room\" space type becomes no space type, and stair riser numbers get their size and color back the Revit 2026 way."
+      },
+      "2026": {
+        "removed": "rebar crank types and MEP system zone color fills.",
+        "other": "toposolid sub-divisions are kept as toposolids; a toposolid shaped from a mesh keeps its solid but loses the mesh shape; cable types and conductor sizes become Revit 2025 wire types and sizes."
+      },
+      "2025": {
+        "removed": "sheet collections, pipe and duct analytical segments, rebar splice types and splice lines.",
+        "other": "\"Apparent power\" labels go back to the older \"load\" wording."
+      },
+      "2024": {
+        "removed": "electrical connectors, electrical load cases, rebar bending details, and wall and floor layer elements."
+      },
+      "2023": {
+        "removed": "plumbing equipment, mechanical control devices, MEP ancillary framing, fabrication ductwork stiffeners, electrical load sets, analytical feeders and transformers, analytical panels and openings, and tags of categories that can only be tagged from Revit 2023 (such as column, model group and link tags)."
+      }
+    },
+    "guideLinks": {
+      "title": "Guides"
     },
     "guide": {
       "stepsTitle": "How to downgrade a Revit file",
@@ -47,16 +84,17 @@
         },
         "deleted": {
           "title": "Deleted after 2 hours",
-          "body": "Your files are never kept or shared."
+          "body": "Never shared. Kept longer only if you choose to send a failed file to help fix it."
         },
         "openSource": {
-          "title": "Open source",
-          "body": "Anyone can check the code."
+          "title": "Open source web app",
+          "body": "The website and server code is public, so anyone can check how files are handled."
         }
       }
     },
     "pairs": {
       "title": "Popular conversions",
+      "others": "Other conversions",
       "link": "Revit {from} to {to}"
     },
     "status": {
@@ -149,7 +187,7 @@
     },
     "unopenable": {
       "open": "File doesn't open in Revit?",
-      "intro": "If Revit refuses the converted file, send it to us so we can find and fix the problem.",
+      "intro": "If Revit refuses the converted file, send it to me so I can find and fix the problem.",
       "consent": "Send the original file, the converted file and the conversion log. They are kept for up to 30 days to fix the tool, never shared, and deleted after 30 days or when you ask (you will get a code to quote).",
       "note": "What does Revit say? (optional)",
       "pick": "This page no longer holds your original file. Choose the same file you converted:",
@@ -177,7 +215,7 @@
       "unsupported_year": "Revit {year} files cannot be downgraded yet. Nothing was sent.",
       "unsupported_pair": "This conversion is not supported yet.",
       "server_restarted": "The server was restarted and lost this file. Please choose it again.",
-      "expired": "This conversion has expired and its file was deleted, so it can no longer be reported here. To reach us, use the contact details at the bottom of the page.",
+      "expired": "This conversion has expired and its file was deleted, so it can no longer be reported here. To reach me, use the contact details at the bottom of the page.",
       "cancelled": "The conversion was cancelled.",
       "hourly_limit": "Too many conversions from your network. Try again in {minutes} min.",
       "active_job": "You already have a conversion in progress. Wait for it to finish.",
@@ -211,9 +249,23 @@
           "q": "Will I lose anything?",
           "a": "Elements that the older Revit does not know, such as features added in a newer version, are removed. After the conversion you see the full list of removed elements with their ElementIds and can download it as CSV."
         },
+        "backsave": {
+          "q": "Can I backsave a Revit file?",
+          "a": "Not in Revit itself: Revit has no backsave or \"save to previous version\" command. Revit Downgrade does the backsave online instead, for files from Revit 2023 to 2027, down to Revit 2022."
+        },
         "safe": {
           "q": "Is my file safe?",
-          "a": "Your original file is deleted as soon as the conversion finishes, and the converted file after 2 hours. Files are never shared, and the code that handles them is open source."
+          "a": "Your original file is deleted as soon as the conversion finishes, and the converted file after 2 hours. Files are never shared. A file is kept longer only if you choose to send it in to help fix a failed conversion. The website and server code that handles files is open source; the conversion engine itself is closed source."
+        }
+      },
+      "pairItems": {
+        "howTo": {
+          "q": "How do I open a Revit {from} file in Revit {to}?",
+          "a": "Add the file above: Revit {to} is picked for you. Press Downgrade, then download the converted file and open it in Revit {to}. Nothing to install, no account."
+        },
+        "saveOlder": {
+          "q": "Can Revit {from} save a file for Revit {to}?",
+          "a": "No. Revit {from} has no Save As older version: every save writes the Revit {from} format, which Revit {to} cannot open. Converting the file is the way to get it into Revit {to}."
         }
       }
     }

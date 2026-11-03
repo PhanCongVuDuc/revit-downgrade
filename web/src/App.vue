@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { RouterLink, RouterView } from 'vue-router';
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
 
 import { LOCALES } from '@/app/i18n';
 import {
@@ -13,20 +13,33 @@ import {
   THANKS_NAME,
   THANKS_URL,
 } from '@/shared/contact/contact';
+import { localizedPath, useLocalePath } from '@/shared/locale/localePath';
 
 const { t, locale } = useI18n();
+const lp = useLocalePath();
+const route = useRoute();
+const router = useRouter();
+
+/** A page moves to its address in the other language; a job's page just changes language. */
+function switchTo(code: string) {
+  if (route.name === 'job' || route.name === 'notFound') {
+    locale.value = code;
+    return;
+  }
+  void router.push({ path: localizedPath(route.path, code), query: route.query, hash: route.hash });
+}
 </script>
 
 <template>
   <div class="shell">
     <header class="app-header">
-      <RouterLink class="wordmark" :to="{ name: 'convert' }" :aria-label="t('nav.home')">
+      <RouterLink class="wordmark" :to="lp('/')" :aria-label="t('nav.home')">
         Revit <span class="light">Downgrade</span>
       </RouterLink>
       <nav class="links">
-        <RouterLink :to="{ name: 'guides' }">{{ t('nav.guides') }}</RouterLink>
-        <RouterLink :to="{ name: 'about' }">{{ t('nav.about') }}</RouterLink>
-        <a :href="REPO_URL" rel="noopener">{{ t('nav.source') }}</a>
+        <RouterLink :to="lp('/guides')">{{ t('nav.guides') }}</RouterLink>
+        <RouterLink :to="lp('/how-it-works')">{{ t('nav.about') }}</RouterLink>
+        <a class="source" :href="REPO_URL" rel="noopener">{{ t('nav.source') }}</a>
         <span class="languages" role="group" :aria-label="t('app.language')">
           <button
             v-for="code in LOCALES"
@@ -34,7 +47,7 @@ const { t, locale } = useI18n();
             type="button"
             :aria-pressed="locale === code"
             :class="{ 'is-on': locale === code }"
-            @click="locale = code"
+            @click="switchTo(code)"
           >
             {{ code.toUpperCase() }}
           </button>
@@ -103,7 +116,17 @@ const { t, locale } = useI18n();
 }
 
 .links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
   color: var(--color-text-muted);
+}
+
+/* On a phone the source link stays in the footer, so the header fits on two lines. */
+@media (width < 26rem) {
+  .links .source {
+    display: none;
+  }
 }
 
 .languages {
@@ -113,12 +136,18 @@ const { t, locale } = useI18n();
 
 .languages button {
   font: inherit;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
   padding: var(--space-1) var(--space-2);
   background: transparent;
   color: var(--color-text-muted);
   border: 0;
   cursor: pointer;
+}
+
+.languages button + button {
+  border-left: 1px solid var(--color-border);
 }
 
 .languages button:first-child {
@@ -145,12 +174,13 @@ main {
 .app-footer {
   text-align: center;
   color: var(--color-text-muted);
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   padding: var(--space-3) var(--space-4) var(--space-4);
 }
 
 .app-footer p {
-  margin: 0 0 var(--space-1);
+  margin: 0 0 var(--space-2);
+  line-height: 1.8;
 }
 
 .app-footer a {

@@ -63,6 +63,6 @@ describe('retention texts', () => {
   it('keep the converted file for 2 hours on the home page', () => {
     expect(convertEn.convert.lead).toContain('2 hours');
     expect(convertVi.convert.lead).toContain('2 giờ');
-    expect(indexHtml).toContain('Files are deleted after 2 hours.');
+    expect(convertEn.convert.pairPage.description).toContain('files are deleted after 2 hours');
   });
 });

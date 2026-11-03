@@ -1,7 +1,7 @@
 {
   "about": {
-    "title": "How your files are handled",
-    "pageTitle": "How your files are handled {'|'} Revit Downgrade",
+    "title": "How it works: how your files are handled",
+    "pageTitle": "How It Works and How Your Files Are Handled {'|'} Revit Downgrade",
     "intro": "Revit Downgrade converts a Revit file to an older Revit version. This page says what happens to your file and when it is deleted.",
     "sent": {
       "title": "When your file is sent",
@@ -66,7 +66,11 @@
       "body": "To have a report deleted early, email {email} or open an issue at {issues} with your report code. The code alone identifies nothing about you or your file.",
       "issues": "GitHub issues"
     },
-    "openSource": "Revit Downgrade is open source — you can check exactly how your files are handled: {repo}",
-    "author": "Made by {name} — {linkedin}"
+    "openSource": "The Revit Downgrade website and server are open source, so you can check exactly how your files are handled: {repo}. The conversion engine itself is closed source.",
+    "author": "Made by {name} — {linkedin}",
+    "who": {
+      "title": "Who makes Revit Downgrade",
+      "body": "Revit Downgrade is made and run by one person, {name}, an engineer from Vietnam. Each version step is tested by downgrading real project and family files and opening the results in the older Revit. Revit Downgrade is not affiliated with or endorsed by Autodesk."
+    }
   }
 }

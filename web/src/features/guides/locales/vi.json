@@ -1,11 +1,15 @@
 {
   "guides": {
-    "title": "Hướng dẫn",
+    "title": "Hướng dẫn hạ phiên bản Revit",
     "pageTitle": "Hướng dẫn hạ phiên bản Revit {'|'} Revit Downgrade",
     "intro": "Giải đáp ngắn về phiên bản Revit: vì sao Revit không lưu về bản cũ được, Revit nào mở được file nào, và cách hạ phiên bản file.",
     "cta": "Hạ phiên bản file Revit",
     "others": "Hướng dẫn khác",
     "all": "Tất cả hướng dẫn",
+    "published": "Đăng ngày {date}",
+    "updated": "Cập nhật ngày {date}",
+    "by": "Tác giả: {name}",
+    "pairsTitle": "Hạ phiên bản file ngay",
     "articles": {
       "saveAsOlder": {
         "title": "Có lưu file Revit về phiên bản cũ được không?",
@@ -14,42 +18,62 @@
           {
             "heading": "Trả lời ngắn",
             "paragraphs": [
-              "Không. Revit chỉ đi một chiều. Mở file của bản cũ thì Revit nâng file lên, và mỗi lần lưu đều lưu theo bản đang chạy. Hộp thoại Save As không có tuỳ chọn lưu về bản cũ hơn."
+              "Không. Revit chỉ đi một chiều. Mở file của bản cũ thì Revit nâng file lên, và mỗi lần lưu đều lưu theo bản đang chạy. Hộp thoại Save As không có tuỳ chọn lưu về bản cũ hơn, và Revit cũng không có lệnh xuất ra phiên bản Revit trước."
+            ]
+          },
+          {
+            "heading": "Vì sao Revit làm vậy",
+            "paragraphs": [
+              "Mỗi bản Revit thay đổi cách lưu model: thêm loại element mới, thiết lập mới và dữ liệu mới cho element sẵn có. Revit bản cũ được làm ra trước khi có những thay đổi đó, nên không có cách đọc chúng. Revit nâng file khi mở và không có đường quay lại."
             ]
           },
           {
             "heading": "Vì sao đây là vấn đề",
             "paragraphs": [
-              "Các bên hiếm khi nâng cấp Revit cùng lúc. Đơn vị tư vấn dùng Revit 2026 gửi model cho chủ đầu tư còn dùng Revit 2024, và bên nhận không mở được. Family tải từ nhà sản xuất cũng vậy, thường được lưu bằng bản mới nhất."
+              "Các bên hiếm khi nâng cấp Revit cùng lúc. Đơn vị tư vấn dùng Revit 2026 gửi model cho chủ đầu tư còn dùng Revit 2024, và bên nhận không mở được. Family tải từ nhà sản xuất cũng vậy, thường được lưu bằng bản mới nhất, và ngay trong một công ty khi một văn phòng lên bản mới trước văn phòng khác."
             ]
           },
           {
             "heading": "Có thể làm gì",
-            "paragraphs": [
+            "list": [
               "Hỏi bên gửi còn bản lưu từ trước khi nâng cấp không. Model đã lưu bằng bản mới thì Revit cũ không mở được nữa, kể cả trên máy của bên gửi.",
               "Trao đổi qua IFC. Revit bản mới xuất IFC, Revit bản cũ link hoặc import vào, nhưng kết quả không còn là model gốc: tường, family và tham số chỉ còn là hình khối, sửa được rất ít.",
+              "Xuất DWG để tham khảo. Bạn nhận được đường nét và hình khối để xem hoặc vẽ lại, không phải element Revit.",
               "Chuyển đổi file. Revit Downgrade ghi lại file Revit 2023 đến 2027 theo định dạng của bản cũ hơn, xuống tới Revit 2022, nên mở được như file gốc. Element mà bản cũ không biết sẽ bị bỏ và được liệt kê cho bạn."
             ]
+          },
+          {
+            "heading": "So sánh các cách",
+            "table": {
+              "head": ["Cách", "Revit bản cũ nhận được gì", "Element Revit sửa được"],
+              "rows": [
+                ["Bản lưu trước khi nâng cấp", "File gốc", "Có, nhưng thiếu các thay đổi sau đó"],
+                ["IFC", "Model IFC được link hoặc import", "Hạn chế"],
+                ["Xuất DWG", "Đường nét và hình khối CAD", "Không"],
+                ["Revit Downgrade", "File gốc của bản cũ", "Có; element bản cũ không biết sẽ bị bỏ và được liệt kê"]
+              ]
+            }
           }
         ]
       },
       "openInOlder": {
         "title": "Cách mở file Revit bản mới bằng Revit bản cũ",
-        "description": "Từng bước hạ file Revit 2027, 2026, 2025 hoặc 2024 để mở bằng Revit bản cũ, miễn phí.",
+        "description": "Từng bước hạ file Revit 2027, 2026, 2025, 2024 hoặc 2023 để mở bằng Revit bản cũ, xuống tới Revit 2022, miễn phí.",
         "sections": [
           {
             "heading": "Trước khi bắt đầu",
             "paragraphs": [
-              "Biết file được lưu bằng bản nào và bạn sẽ mở bằng bản nào. Revit Downgrade đọc phiên bản ngay trên trình duyệt khi bạn thêm file, nên không cần mở file bằng Revit trước."
+              "Biết file được lưu bằng bản nào và bạn sẽ mở bằng bản nào. Revit Downgrade đọc phiên bản ngay trên trình duyệt khi bạn thêm file, nên không cần mở file bằng Revit trước.",
+              "Nếu nhiều người cùng mở file, hãy hạ một lần về bản cũ nhất mà mọi người dùng. File hạ về Revit 2023 vẫn mở được bằng Revit 2024 trở lên, các bản này chỉ nâng file lên như thường lệ."
             ]
           },
           {
             "heading": "Các bước",
-            "paragraphs": [
-              "1. Vào revitdowngrade.com và thêm file .rvt, .rfa, .rte hoặc .rft.",
-              "2. Bấm vào phiên bản Revit bạn sẽ dùng để mở, rồi bấm Hạ phiên bản.",
-              "3. Chờ chuyển đổi. File nhỏ mất khoảng một phút, model lớn mất vài phút cho mỗi bậc phiên bản.",
-              "4. Tải file đã hạ và mở bằng Revit bản cũ."
+            "ordered": [
+              "Vào revitdowngrade.com và thêm file .rvt, .rfa, .rte hoặc .rft.",
+              "Bấm vào phiên bản Revit bạn sẽ dùng để mở, rồi bấm Hạ phiên bản.",
+              "Chờ chuyển đổi. File nhỏ mất khoảng một phút, model lớn mất vài phút cho mỗi bậc phiên bản.",
+              "Tải file đã hạ và mở bằng Revit bản cũ."
             ]
           },
           {
@@ -59,9 +83,15 @@
             ]
           },
           {
+            "heading": "Family và model link",
+            "paragraphs": [
+              "Revit bản cũ cũng không load được family hay link model Revit lưu bằng bản mới hơn. Hãy hạ từng family (.rfa) và từng model link về cùng phiên bản với project, rồi load hoặc reload lại trong Revit bản cũ."
+            ]
+          },
+          {
             "heading": "Nếu có gì sai",
             "paragraphs": [
-              "Nếu chuyển đổi thất bại, trang kết quả cho phép bạn gửi file để chúng tôi tìm và sửa lỗi. Các trường hợp khác, thông tin liên hệ có ở cuối mỗi trang."
+              "Nếu chuyển đổi thất bại, hoặc file đã hạ không mở được, trang kết quả cho phép bạn gửi file để tôi tìm và sửa lỗi. Các trường hợp khác, thông tin liên hệ có ở cuối mỗi trang."
             ]
           }
         ]
@@ -78,13 +108,22 @@
           },
           {
             "heading": "Tra nhanh",
+            "table": {
+              "head": ["Phiên bản Revit", "Mở được file từ", "Không mở được file từ"],
+              "rows": [
+                ["Revit 2027", "Revit 2027 trở về trước", "—"],
+                ["Revit 2026", "Revit 2026 trở về trước", "Revit 2027"],
+                ["Revit 2025", "Revit 2025 trở về trước", "Revit 2026 và 2027"],
+                ["Revit 2024", "Revit 2024 trở về trước", "Revit 2025 đến 2027"],
+                ["Revit 2023", "Revit 2023 trở về trước", "Revit 2024 đến 2027"],
+                ["Revit 2022", "Revit 2022 trở về trước", "Revit 2023 đến 2027"]
+              ]
+            }
+          },
+          {
+            "heading": "Family và link cũng theo quy tắc này",
             "paragraphs": [
-              "Revit 2027 mở được file từ Revit 2027 trở về trước.",
-              "Revit 2026 mở được file từ Revit 2026 trở về trước, không mở được 2027.",
-              "Revit 2025 mở được file từ Revit 2025 trở về trước, không mở được 2026, 2027.",
-              "Revit 2024 mở được file từ Revit 2024 trở về trước, không mở được 2025 đến 2027.",
-              "Revit 2023 mở được file từ Revit 2023 trở về trước, không mở được 2024 đến 2027.",
-              "Revit 2022 mở được file từ Revit 2022 trở về trước, không mở được 2023 đến 2027."
+              "Project mở bằng Revit 2024 không load được family hay link model Revit lưu bằng Revit 2025 trở lên. Family và link phải cùng bản với project hoặc cũ hơn."
             ]
           },
           {
@@ -108,24 +147,34 @@
           {
             "heading": "Những gì được giữ",
             "paragraphs": [
-              "Phần lớn model. Element có ở cả hai phiên bản được ghi theo định dạng bản cũ và mở ra như element bình thường."
+              "Phần lớn model. Element có ở cả hai phiên bản được ghi theo định dạng bản cũ và mở ra như element bình thường, sửa được."
             ]
           },
           {
             "heading": "Những gì có thể bị bỏ",
             "paragraphs": [
-              "Mỗi bản Revit thêm loại element và thiết lập mới. Revit bản cũ không có chỗ cho chúng nên chúng bị bỏ. Kiểu và thiết lập chỉ thuộc về element bị bỏ cũng bị bỏ theo."
+              "Mỗi bản Revit thêm loại element và thiết lập mới. Revit bản cũ không có chỗ cho chúng nên chúng bị bỏ. Kiểu và thiết lập chỉ thuộc về element bị bỏ cũng bị bỏ theo. File hạ càng nhiều bậc thì càng nhiều phần thêm mới của các bản có thể bị bỏ."
             ]
           },
           {
             "heading": "Xem chính xác những gì bị bỏ",
             "paragraphs": [
-              "Trang kết quả liệt kê mọi element bị bỏ kèm class và lý do, và bạn tải được danh sách dạng CSV. Dùng ElementId để tìm các element đó trong model gốc và quyết định có cần vẽ lại gì không."
+              "Trang kết quả liệt kê mọi element bị bỏ, và bạn tải được danh sách dạng CSV. Với mỗi loại element, danh sách cho biết:"
+            ],
+            "list": [
+              "class của element, cho biết đó là loại element gì;",
+              "lý do bị bỏ;",
+              "số lượng bị bỏ và ElementId của chúng."
             ]
           },
           {
-            "heading": "Trước khi gửi file đi",
-            "paragraphs": ["Mở file đã hạ bằng Revit bản cũ, xem các cảnh báo và kiểm tra các view, sheet chính."]
+            "heading": "Kiểm tra file đã hạ",
+            "list": [
+              "Mở file bằng Revit bản cũ và đọc các cảnh báo.",
+              "Dùng ElementId trong danh sách để tìm các element bị bỏ trong model gốc và quyết định có cần vẽ lại gì không.",
+              "Kiểm tra các view và sheet chính trước khi gửi file đi.",
+              "Lưu file một lần bằng Revit bản cũ."
+            ]
           }
         ]
       }
