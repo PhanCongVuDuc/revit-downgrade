@@ -12,7 +12,9 @@ test('each_page_is_served_with_its_own_head_and_content', async ({ request }) =>
   expect(html).toContain('Revit 2026 → Revit 2025');
   expect(html).toContain('Revit 2025 → Revit 2024');
   expect(html).not.toContain('Revit 2024 → Revit 2023');
-  expect(html).toContain('href="https://help.autodesk.com/view/RVT/2026/ENU/"');
+  expect(html).toContain(
+    'href="https://help.autodesk.com/view/RVT/2026/ENU/?guid=GUID-C81929D7-02CB-4BF7-A637-9B98EC9EB38B"',
+  );
   expect(html).toContain(
     '<link rel="alternate" hreflang="vi" href="https://revitdowngrade.com/vi/revit-2026-to-2024" />',
   );
@@ -66,6 +68,18 @@ test('page_still_works_after_the_app_takes_over', async ({ page }) => {
   await expect(page).toHaveTitle('Downgrade Revit 2026 to 2025 Online, Free | Revit Downgrade');
 });
 
+test('guides_are_shared_as_articles_and_link_to_their_conversions', async ({ request }) => {
+  const html = await (await request.get('/guides/what-changes-when-downgrading-revit')).text();
+  expect(html).toContain('<meta property="og:type" content="article" />');
+  expect(html).toContain('<meta property="article:published_time" content="2026-10-28" />');
+  expect(html).toContain('"@type":"Article"');
+  expect(html).toContain('href="/revit-2026-to-2025"');
+  expect(html).toContain('href="/revit-2026-to-2024"');
+  const home = await (await request.get('/')).text();
+  expect(home).toContain('<meta property="og:type" content="website" />');
+  expect(home).toContain('href="/vi"');
+});
+
 test('vietnamese_pages_have_their_own_address', async ({ request, page }) => {
   const resp = await request.get('/vi/revit-2026-to-2024');
   expect(resp.status()).toBe(200);
@@ -78,9 +92,9 @@ test('vietnamese_pages_have_their_own_address', async ({ request, page }) => {
   expect(await missing.text()).toContain('Không tìm thấy trang');
 
   await page.goto('/guides');
-  await page.getByRole('button', { name: 'VI' }).click();
+  await page.getByRole('link', { name: 'VI', exact: true }).click();
   await expect(page).toHaveURL(/\/vi\/guides$/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Hướng dẫn hạ phiên bản Revit');
-  await page.getByRole('button', { name: 'EN' }).click();
+  await page.getByRole('link', { name: 'EN', exact: true }).click();
   await expect(page).toHaveURL(/\/guides$/);
 });

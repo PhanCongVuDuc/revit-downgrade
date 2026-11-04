@@ -17,8 +17,16 @@ use tower_http::services::ServeDir;
 const IMMUTABLE: &str = "public, max-age=31536000, immutable";
 /// Pages and the app shell: always checked with the server, so a release shows at once.
 const REVALIDATE: &str = "no-cache";
-/// Other files (robots.txt, sitemap.xml, icons): cached for an hour.
+/// Pictures (icons, the link-preview image): they rarely change, so they are cached for a week.
+const IMAGE: &str = "public, max-age=604800";
+/// Other files (robots.txt, sitemap.xml, llms.txt): cached for an hour.
 const SHORT: &str = "public, max-age=3600";
+
+fn is_image(path: &str) -> bool {
+    [".png", ".ico", ".svg", ".jpg", ".webp"]
+        .iter()
+        .any(|ext| path.ends_with(ext))
+}
 
 pub async fn serve(dir: PathBuf, req: Request) -> Response {
     if req.method() != Method::GET && req.method() != Method::HEAD {
@@ -65,6 +73,8 @@ pub async fn serve(dir: PathBuf, req: Request) -> Response {
     if path != "/" {
         let cache = if path.starts_with("/assets/") {
             IMMUTABLE
+        } else if is_image(&path) {
+            IMAGE
         } else {
             SHORT
         };

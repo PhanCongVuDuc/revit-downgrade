@@ -502,6 +502,7 @@ fn prerendered_web() -> tempfile::TempDir {
     std::fs::create_dir_all(web.path().join("assets")).unwrap();
     std::fs::write(web.path().join("index.html"), "<html>shell</html>").unwrap();
     std::fs::write(web.path().join("robots.txt"), "User-agent: *").unwrap();
+    std::fs::write(web.path().join("og-image.png"), "png").unwrap();
     std::fs::write(web.path().join("assets").join("index-abc.js"), "console.log(1)").unwrap();
     std::fs::write(pages.join("index.html"), "<html>home</html>").unwrap();
     std::fs::write(pages.join("revit-2026-to-2024.html"), "<html>pair</html>").unwrap();
@@ -598,7 +599,7 @@ async fn a_job_address_gets_the_shell_kept_out_of_search() {
 }
 
 #[tokio::test]
-async fn hashed_assets_are_cached_for_a_year_other_files_for_an_hour() {
+async fn hashed_assets_are_cached_for_a_year_images_for_a_week_other_files_for_an_hour() {
     let web = prerendered_web();
     let path = web.path().to_path_buf();
     let f = setup_with(move |c| c.web_dir = Some(path));
@@ -609,6 +610,9 @@ async fn hashed_assets_are_cached_for_a_year_other_files_for_an_hour() {
         "public, max-age=31536000, immutable"
     );
     assert_eq!(body_bytes(resp).await, b"console.log(1)");
+    let resp = send(&f, get("/og-image.png")).await;
+    assert_eq!(resp.status(), StatusCode::OK);
+    assert_eq!(resp.headers()["cache-control"], "public, max-age=604800");
     let resp = send(&f, get("/robots.txt")).await;
     assert_eq!(resp.status(), StatusCode::OK);
     assert_eq!(resp.headers()["cache-control"], "public, max-age=3600");

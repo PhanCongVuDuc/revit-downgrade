@@ -11,7 +11,8 @@ export const VERSION_STEPS: { year: number; other: boolean }[] = [
   { year: 2023, other: false },
 ];
 
-/** Autodesk's help for a Revit release, where its "What's New" pages list everything that release added. */
+/** The "What's New in Revit <year>" page of Autodesk's help, which lists everything that release added. */
 export function revitHelpUrl(year: number): string {
-  return `https://help.autodesk.com/view/RVT/${String(year)}/ENU/`;
+  // The page has the same id in every release's help.
+  return `https://help.autodesk.com/view/RVT/${String(year)}/ENU/?guid=GUID-C81929D7-02CB-4BF7-A637-9B98EC9EB38B`;
 }

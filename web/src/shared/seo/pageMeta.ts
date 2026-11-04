@@ -17,7 +17,15 @@ export interface PageMeta {
   jsonLd?: object[];
   /** Pages that should not appear in search results (a job's address, a missing page). */
   noindex?: boolean;
+  /** An article's dates (ISO yyyy-mm-dd): the page is shared as an article rather than a website. */
+  article?: { published: string; modified: string };
 }
+
+/** Description of the shared link-preview picture, in each language. */
+export const IMAGE_ALT: Record<'en' | 'vi', string> = {
+  en: 'Revit Downgrade: open a newer Revit file in an older Revit',
+  vi: 'Revit Downgrade: mở file Revit mới hơn bằng Revit cũ hơn',
+};
 
 /** Handed to the app by the prerender step, which reads the meta of the page it rendered from it. */
 export interface PrerenderContext {
@@ -71,6 +79,17 @@ function setCanonical(url: string) {
   link.setAttribute('href', url);
 }
 
+function setArticle(article: PageMeta['article']) {
+  setMeta('property', 'og:type', article ? 'article' : 'website');
+  for (const key of ['article:published_time', 'article:modified_time']) {
+    document.head.querySelector(`meta[property="${key}"]`)?.remove();
+  }
+  if (article) {
+    setMeta('property', 'article:published_time', article.published);
+    setMeta('property', 'article:modified_time', article.modified);
+  }
+}
+
 function setJsonLd(items: object[] | undefined) {
   for (const old of document.head.querySelectorAll('script[type="application/ld+json"]')) {
     old.remove();
@@ -89,7 +108,10 @@ export function applyPageMeta(meta: PageMeta) {
   setMeta('name', 'description', meta.description);
   setMeta('property', 'og:title', meta.title);
   setMeta('property', 'og:description', meta.description);
-  setMeta('property', 'og:locale', pathLocale(meta.path) === 'vi' ? 'vi_VN' : 'en_US');
+  const vi = pathLocale(meta.path) === 'vi';
+  setMeta('property', 'og:locale', vi ? 'vi_VN' : 'en_US');
+  setMeta('property', 'og:image:alt', IMAGE_ALT[vi ? 'vi' : 'en']);
+  setArticle(meta.article);
   // A page kept out of search has no address of its own to point to.
   if (meta.noindex) {
     setMeta('name', 'robots', 'noindex');

@@ -25,6 +25,28 @@
         "time": "File nhỏ mất khoảng một phút; model lớn mất vài phút. | File nhỏ mất một đến hai phút; model lớn mất vài phút cho mỗi bản trong {n} phiên bản.",
         "opensIn": "File đã hạ mở được bằng Revit {to} và mọi bản Revit mới hơn, bản mới sẽ tự nâng file như thường lệ. Lưu file một lần trong Revit {to}, từ đó nó là file Revit {to} bình thường.",
         "files": "Cách làm như nhau cho project (.rvt), project template (.rte), family (.rfa) và family template (.rft) lưu bằng Revit {from}, tối đa 1 GB."
+      },
+      "alternatives": {
+        "title": "Các cách khác để đưa model Revit {from} vào Revit {to}",
+        "intro": "Chuyển đổi không phải cách duy nhất. Mỗi cách đem lại gì cho người dùng Revit {to}:",
+        "items": [
+          {
+            "label": "Bản copy từ trước khi nâng",
+            "text": "Nếu người gửi còn file lưu bằng Revit {to} hoặc cũ hơn thì mở được ngay, nhưng không có những thay đổi làm sau đó."
+          },
+          {
+            "label": "IFC",
+            "text": "Revit {from} xuất IFC, Revit {to} link hoặc import vào. Hình khối và nhiều dữ liệu sang được, nhưng tường, family và parameter không còn là element Revit gốc, sửa được."
+          },
+          {
+            "label": "Cài Revit {from}",
+            "text": "Mở file được ngay, nhưng cần license Revit {from}, và những gì lưu ở đó người còn dùng Revit {to} lại không mở được."
+          },
+          {
+            "label": "Chuyển đổi file",
+            "text": "Một file Revit {to} gốc để làm tiếp. Element mà Revit {to} không có chỗ chứa bị bỏ và được liệt kê kèm ElementId."
+          }
+        ]
       }
     },
     "changes": {
@@ -36,7 +58,7 @@
       "whatsNew": "Revit {year} có gì mới (Autodesk Help)",
       "2027": {
         "removed": "boundary condition dạng điểm, đường, mặt thuộc các category mới của Revit 2027, rebar distribution path và rebar concrete edge.",
-        "other": "loại không gian \"Server Room\" thành không có loại; cỡ và màu số bậc thang trở về cách của Revit 2026."
+        "other": "loại không gian \"Server Room\" thành không có loại; số bậc thang trở về thiết lập cỡ và màu của Revit 2026."
       },
       "2026": {
         "removed": "rebar crank type và màu tô của MEP system zone.",
@@ -255,7 +277,16 @@
         },
         "safe": {
           "q": "File của tôi có an toàn không?",
-          "a": "File gốc bị xoá ngay khi hạ xong, file đã hạ bị xoá sau 2 giờ. File không bao giờ bị chia sẻ. File chỉ được giữ lâu hơn nếu bạn tự gửi để giúp sửa một lần hạ bị lỗi. Mã của website và server xử lý file là mã nguồn mở; riêng bộ chuyển đổi là mã đóng."
+          "a": "File gốc bị xoá ngay khi hạ xong, file đã hạ bị xoá sau 2 giờ. File không bao giờ bị chia sẻ. File chỉ được giữ lâu hơn nếu bạn tự gửi để giúp sửa một lần hạ bị lỗi. Mã của website và server xử lý file là mã nguồn mở; riêng bộ chuyển đổi là mã đóng.",
+          "more": "File được xử lý thế nào"
+        },
+        "workshared": {
+          "q": "Có hạ được model workshared (central) không?",
+          "a": "Tải lên một bản copy của file central, không phải file local. Hạ xong, mở file bằng Revit bản cũ và kiểm tra các workset trước khi lưu thành central mới. Nếu worksharing không như mong đợi, hãy gửi file ở trang kết quả để tôi xem. Model trên cloud (Autodesk Docs) phải lưu thành file .rvt trên máy trước."
+        },
+        "links": {
+          "q": "Còn model link và family thì sao?",
+          "a": "Revit bản cũ không load được family hay link được model Revit lưu bằng bản mới hơn, nên từng cái cũng phải hạ, về cùng phiên bản với project. Hạ lần lượt từng file, rồi load hoặc reload chúng trong Revit bản cũ."
         }
       },
       "pairItems": {
@@ -268,6 +299,10 @@
           "a": "Không. Revit {from} không có Save As phiên bản cũ: mỗi lần lưu đều ghi theo định dạng Revit {from}, mà Revit {to} không mở được. Chuyển đổi file là cách để đưa nó vào Revit {to}."
         }
       }
+    },
+    "schema": {
+      "operatingSystem": "Mọi hệ điều hành (chạy trong trình duyệt)",
+      "browserRequirements": "Cần bật JavaScript."
     }
   }
 }

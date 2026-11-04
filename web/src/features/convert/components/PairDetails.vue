@@ -6,13 +6,23 @@ import { pairVersions, type Pair } from '@/shared/catalog/pairs';
 import { revitHelpUrl, VERSION_STEPS } from '@/shared/catalog/versionChanges';
 
 const props = defineProps<{ pair: Pair }>();
-const { t } = useI18n();
+const i18n = useI18n();
+const { t } = i18n;
 
 /** How many versions the file goes down, and the versions it passes through on the way. */
 const steps = computed(() => props.pair.from - props.pair.to);
 const route = computed(() => pairVersions(props.pair).join(' → '));
 /** The version steps this downgrade goes through, newest first. */
 const changes = computed(() => VERSION_STEPS.filter((s) => s.year <= props.pair.from && s.year > props.pair.to));
+/** Other ways people try to get the model across, as the locale files list them. */
+const alternatives = computed(() => {
+  const messages: unknown = i18n.tm('convert.pairPage.alternatives.items');
+  const raw = messages as { label: string; text: string }[];
+  return raw.map((item) => ({
+    label: i18n.rt(item.label, { ...props.pair }),
+    text: i18n.rt(item.text, { ...props.pair }),
+  }));
+});
 </script>
 
 <template>
@@ -44,6 +54,16 @@ const changes = computed(() => VERSION_STEPS.filter((s) => s.year <= props.pair.
       </p>
     </div>
   </section>
+  <section class="pair-details" aria-labelledby="pair-alternatives-title">
+    <h2 id="pair-alternatives-title">{{ t('convert.pairPage.alternatives.title', { ...pair }) }}</h2>
+    <p>{{ t('convert.pairPage.alternatives.intro', { ...pair }) }}</p>
+    <dl class="alternatives">
+      <template v-for="item in alternatives" :key="item.label">
+        <dt>{{ item.label }}</dt>
+        <dd>{{ item.text }}</dd>
+      </template>
+    </dl>
+  </section>
 </template>
 
 <style scoped>
@@ -64,6 +84,15 @@ h3 {
 
 .step p {
   margin: var(--space-1) 0;
+}
+
+.alternatives dt {
+  font-weight: 600;
+  margin-top: var(--space-3);
+}
+
+.alternatives dd {
+  margin: var(--space-1) 0 0;
 }
 
 .more a {

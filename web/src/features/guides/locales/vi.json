@@ -127,10 +127,11 @@
             ]
           },
           {
-            "heading": "Chiều ngược lại",
+            "heading": "Làm sao mở file bản mới bằng Revit bản cũ?",
             "paragraphs": [
               "Muốn mở file bản mới bằng Revit bản cũ thì phải chuyển đổi file trước. Revit Downgrade chuyển file từ Revit 2023 đến 2027 về bất kỳ bản cũ hơn nào, xuống tới Revit 2022."
-            ]
+            ],
+            "pairs": ["2026-2024", "2025-2024", "2026-2025", "2025-2023", "2024-2023", "2023-2022"]
           },
           {
             "heading": "Nâng phiên bản tốn thời gian",
@@ -142,22 +143,68 @@
       },
       "whatChanges": {
         "title": "Hạ phiên bản file Revit thì thay đổi những gì",
-        "description": "Hạ phiên bản giữ lại phần lớn model, nhưng element mà Revit bản cũ không biết sẽ bị bỏ. Cách xem những gì đã bị bỏ.",
+        "description": "Hạ phiên bản giữ lại phần lớn model, nhưng element mà Revit bản cũ không biết sẽ bị bỏ. Mỗi bậc hạ bỏ những gì, và cách kiểm tra.",
         "sections": [
           {
-            "heading": "Những gì được giữ",
+            "heading": "Hạ phiên bản file Revit thì giữ lại những gì?",
             "paragraphs": [
-              "Phần lớn model. Element có ở cả hai phiên bản được ghi theo định dạng bản cũ và mở ra như element bình thường, sửa được."
+              "Phần lớn model. Mọi thứ có ở cả hai phiên bản, như tường, sàn, mái, family, view, sheet, schedule và parameter, được ghi theo định dạng bản cũ và mở ra như element Revit bình thường, sửa được. Bạn vẫn làm tiếp trên chính model đó, không phải trên một bản xuất ra.",
+              "File đã hạ là một file mới. File gốc vẫn nguyên như cũ, nên không có gì mất hẳn: khi mọi người đã chuyển lên Revit bản mới, bạn làm tiếp từ file gốc."
             ]
           },
           {
-            "heading": "Những gì có thể bị bỏ",
+            "heading": "Vì sao một số element bị bỏ?",
             "paragraphs": [
-              "Mỗi bản Revit thêm loại element và thiết lập mới. Revit bản cũ không có chỗ cho chúng nên chúng bị bỏ. Kiểu và thiết lập chỉ thuộc về element bị bỏ cũng bị bỏ theo. File hạ càng nhiều bậc thì càng nhiều phần thêm mới của các bản có thể bị bỏ."
+              "Mỗi bản Revit thêm loại element và thiết lập mới. Revit bản cũ ra đời trước khi chúng có và không có chỗ để lưu, nên không ghi được chúng theo định dạng bản cũ và chúng bị bỏ. Kiểu và thiết lập chỉ thuộc về element bị bỏ cũng bị bỏ theo.",
+              "File hạ càng sâu thì đi qua càng nhiều bản, và phần thêm mới của từng bản đều có thể bị bỏ trên đường. File hạ một phiên bản chỉ mất những gì bản đó thêm vào."
             ]
           },
           {
-            "heading": "Xem chính xác những gì bị bỏ",
+            "heading": "Mỗi phiên bản Revit không hỗ trợ những gì?",
+            "paragraphs": [
+              "Bảng dưới liệt kê, với mỗi bậc hạ, những loại element mà bản cũ không có chỗ chứa, và những gì khác thay đổi trên đường. Chỉ element có thật trong model mới bị ảnh hưởng: model không có thép thì không mất gì ở các mục về thép."
+            ],
+            "table": {
+              "head": ["Bậc hạ", "Bị bỏ: bản cũ không có chỗ chứa", "Thay đổi khác"],
+              "rows": [
+                [
+                  "Revit 2027 → 2026",
+                  "Boundary condition dạng điểm, đường, mặt thuộc các category mới của Revit 2027, rebar distribution path và rebar concrete edge.",
+                  "Loại không gian \"Server Room\" thành không có loại; số bậc thang trở về thiết lập cỡ và màu của Revit 2026."
+                ],
+                [
+                  "Revit 2026 → 2025",
+                  "Rebar crank type và màu tô của MEP system zone.",
+                  "Subdivision của toposolid vẫn giữ dưới dạng toposolid; toposolid tạo hình từ lưới mặt giữ khối nhưng mất hình lưới; loại cáp và cỡ dây dẫn đổi về loại dây và cỡ dây của Revit 2025."
+                ],
+                [
+                  "Revit 2025 → 2024",
+                  "Sheet collection, đoạn phân tích của ống và ống gió, loại mối nối thép và đường mối nối.",
+                  "Nhãn \"Apparent power\" trở về cách gọi \"load\" cũ."
+                ],
+                [
+                  "Revit 2024 → 2023",
+                  "Electrical connector, electrical load case, rebar bending detail, và element lớp tường, lớp sàn.",
+                  "—"
+                ],
+                [
+                  "Revit 2023 → 2022",
+                  "Plumbing equipment, mechanical control device, MEP ancillary framing, gân tăng cứng ống gió fabrication, electrical load set, feeder và máy biến áp phân tích, analytical panel và opening, và tag của các category chỉ gắn tag được từ Revit 2023 (như tag cột, model group, link).",
+                  "—"
+                ]
+              ],
+              "rowLinks": ["2027-2026", "2026-2025", "2025-2024", "2024-2023", "2023-2022"]
+            }
+          },
+          {
+            "heading": "File hạ nhiều phiên bản thì sao?",
+            "paragraphs": [
+              "File đi qua từng bậc trên đường, mỗi lần một bậc. File Revit 2026 hạ về Revit 2024 đi qua 2026 → 2025 rồi 2025 → 2024, nên có thể mất những gì một trong hai bản đó thêm vào. Trang kết quả liệt kê chung element bị bỏ của mọi bậc."
+            ],
+            "pairs": ["2026-2024", "2025-2023", "2027-2025"]
+          },
+          {
+            "heading": "Làm sao xem chính xác những gì bị bỏ?",
             "paragraphs": [
               "Trang kết quả liệt kê mọi element bị bỏ, và bạn tải được danh sách dạng CSV. Với mỗi loại element, danh sách cho biết:"
             ],
@@ -168,16 +215,23 @@
             ]
           },
           {
-            "heading": "Kiểm tra file đã hạ",
+            "heading": "Hạ xong nên kiểm tra gì?",
             "list": [
               "Mở file bằng Revit bản cũ và đọc các cảnh báo.",
               "Dùng ElementId trong danh sách để tìm các element bị bỏ trong model gốc và quyết định có cần vẽ lại gì không.",
               "Kiểm tra các view và sheet chính trước khi gửi file đi.",
               "Lưu file một lần bằng Revit bản cũ."
             ]
+          },
+          {
+            "heading": "Có lấy lại được element đã bị bỏ không?",
+            "paragraphs": [
+              "Trong bản cũ thì không: bản cũ không có chỗ cho chúng. Nếu một element bị bỏ là quan trọng, hãy vẽ lại bằng công cụ của bản cũ, dựa theo model gốc. Mở lại file đã hạ bằng Revit bản mới cũng không đem element bị bỏ trở lại, thêm một lý do để giữ file gốc."
+            ]
           }
         ]
       }
-    }
+    },
+    "downgradeLink": "Hạ Revit {from} về Revit {to}"
   }
 }

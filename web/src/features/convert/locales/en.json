@@ -25,6 +25,28 @@
         "time": "Small files take about a minute; large models take a few minutes. | Small files take a minute or two; large models take a few minutes for each of the {n} versions.",
         "opensIn": "The converted file opens in Revit {to} and in any newer Revit, which upgrades it as usual. Save it once in Revit {to} and it is an ordinary Revit {to} file from then on.",
         "files": "It works the same for projects (.rvt), project templates (.rte), families (.rfa) and family templates (.rft) saved in Revit {from}, up to 1 GB."
+      },
+      "alternatives": {
+        "title": "Other ways to get a Revit {from} model into Revit {to}",
+        "intro": "Converting is not the only option. What each one gives the person on Revit {to}:",
+        "items": [
+          {
+            "label": "A copy from before the upgrade",
+            "text": "If the sender still has the file saved in Revit {to} or older, it opens as it is, but without the changes made since."
+          },
+          {
+            "label": "IFC",
+            "text": "Revit {from} exports IFC and Revit {to} links or imports it. Geometry and much of the data arrive, but walls, families and parameters are no longer native, editable Revit elements."
+          },
+          {
+            "label": "Installing Revit {from}",
+            "text": "Opens the file as it is, but needs a Revit {from} license, and anything saved there can no longer be opened by people who stay on Revit {to}."
+          },
+          {
+            "label": "Converting the file",
+            "text": "A native Revit {to} file you keep working on. Elements Revit {to} has no place for are removed and listed with their ElementIds."
+          }
+        ]
       }
     },
     "changes": {
@@ -36,7 +58,7 @@
       "whatsNew": "What's new in Revit {year} (Autodesk Help)",
       "2027": {
         "removed": "point, line and area boundary conditions in the new Revit 2027 categories, rebar distribution paths and rebar concrete edges.",
-        "other": "the \"Server Room\" space type becomes no space type, and stair riser numbers get their size and color back the Revit 2026 way."
+        "other": "the \"Server Room\" space type becomes no space type, and stair riser numbers go back to the size and color settings of Revit 2026."
       },
       "2026": {
         "removed": "rebar crank types and MEP system zone color fills.",
@@ -255,7 +277,16 @@
         },
         "safe": {
           "q": "Is my file safe?",
-          "a": "Your original file is deleted as soon as the conversion finishes, and the converted file after 2 hours. Files are never shared. A file is kept longer only if you choose to send it in to help fix a failed conversion. The website and server code that handles files is open source; the conversion engine itself is closed source."
+          "a": "Your original file is deleted as soon as the conversion finishes, and the converted file after 2 hours. Files are never shared. A file is kept longer only if you choose to send it in to help fix a failed conversion. The website and server code that handles files is open source; the conversion engine itself is closed source.",
+          "more": "How files are handled"
+        },
+        "workshared": {
+          "q": "Can I downgrade a workshared (central) model?",
+          "a": "Upload a copy of the central model file, not a local copy. After the conversion, open it in the older Revit and check its worksets before you save it as the new central model. If worksharing does not come through as expected, send the file from the result page so I can look into it. A cloud model in Autodesk Docs has to be saved as a local .rvt file first."
+        },
+        "links": {
+          "q": "What about linked models and families?",
+          "a": "An older Revit cannot load a family or link a Revit model saved in a newer version, so each of them has to be converted too, to the same version as the project. Convert them one by one, then load or reload them in the older Revit."
         }
       },
       "pairItems": {
@@ -268,6 +299,10 @@
           "a": "No. Revit {from} has no Save As older version: every save writes the Revit {from} format, which Revit {to} cannot open. Converting the file is the way to get it into Revit {to}."
         }
       }
+    },
+    "schema": {
+      "operatingSystem": "Any (runs in a web browser)",
+      "browserRequirements": "Requires JavaScript."
     }
   }
 }

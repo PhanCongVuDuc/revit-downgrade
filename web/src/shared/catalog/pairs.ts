@@ -26,5 +26,19 @@ export function pairVersions({ from, to }: Pair): number[] {
   return Array.from({ length: from - to + 1 }, (_, i) => from - i);
 }
 
+/** One step down from each version, and the two-version steps people search for most: the guides link to these. */
+export const GUIDE_PAIRS: Pair[] = [
+  ...PAIRS.filter((p) => p.from - p.to === 1),
+  { from: 2027, to: 2025 },
+  { from: 2026, to: 2024 },
+  { from: 2025, to: 2023 },
+];
+
+/** A pair written as the locale files write it, `2026-2024`; undefined when it is not a page of the site. */
+export function pairFromKey(key: string): Pair | undefined {
+  const [from, to] = key.split('-').map(Number);
+  return from !== undefined && to !== undefined && isPair(from, to) ? { from, to } : undefined;
+}
+
 /** Date the pair pages and the home page last changed in substance (ISO yyyy-mm-dd), for the sitemap. */
-export const CONVERT_PAGES_UPDATED = '2026-11-03';
+export const CONVERT_PAGES_UPDATED = '2026-11-04';

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router';
+import { RouterLink, RouterView, useRoute } from 'vue-router';
 
 import { LOCALES } from '@/app/i18n';
 import {
@@ -18,15 +18,10 @@ import { localizedPath, useLocalePath } from '@/shared/locale/localePath';
 const { t, locale } = useI18n();
 const lp = useLocalePath();
 const route = useRoute();
-const router = useRouter();
 
-/** A page moves to its address in the other language; a job's page just changes language. */
-function switchTo(code: string) {
-  if (route.name === 'job' || route.name === 'notFound') {
-    locale.value = code;
-    return;
-  }
-  void router.push({ path: localizedPath(route.path, code), query: route.query, hash: route.hash });
+/** A page links to its address in the other language, so crawlers can follow it too. */
+function otherLanguage(code: string) {
+  return { path: localizedPath(route.path, code), query: route.query, hash: route.hash };
 }
 </script>
 
@@ -41,16 +36,28 @@ function switchTo(code: string) {
         <RouterLink :to="lp('/how-it-works')">{{ t('nav.about') }}</RouterLink>
         <a class="source" :href="REPO_URL" rel="noopener">{{ t('nav.source') }}</a>
         <span class="languages" role="group" :aria-label="t('app.language')">
-          <button
-            v-for="code in LOCALES"
-            :key="code"
-            type="button"
-            :aria-pressed="locale === code"
-            :class="{ 'is-on': locale === code }"
-            @click="switchTo(code)"
-          >
-            {{ code.toUpperCase() }}
-          </button>
+          <template v-for="code in LOCALES" :key="code">
+            <!-- A job's page has one address for every language: there, the language just changes. -->
+            <button
+              v-if="route.name === 'job'"
+              type="button"
+              :aria-pressed="locale === code"
+              :class="{ 'is-on': locale === code }"
+              @click="locale = code"
+            >
+              {{ code.toUpperCase() }}
+            </button>
+            <RouterLink
+              v-else
+              :to="otherLanguage(code)"
+              :hreflang="code"
+              :lang="code"
+              :aria-current="locale === code ? 'true' : undefined"
+              :class="{ 'is-on': locale === code }"
+            >
+              {{ code.toUpperCase() }}
+            </RouterLink>
+          </template>
         </span>
       </nav>
     </header>
@@ -97,6 +104,9 @@ function switchTo(code: string) {
 }
 
 .wordmark {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
   color: var(--color-text);
   font-size: 1.375rem;
   font-weight: 700;
@@ -118,7 +128,9 @@ function switchTo(code: string) {
 .links a {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   min-height: 2.75rem;
+  min-width: 2.75rem;
   color: var(--color-text-muted);
 }
 
@@ -134,7 +146,13 @@ function switchTo(code: string) {
   border: 1px solid var(--color-border);
 }
 
-.languages button {
+.languages button,
+.languages a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  text-decoration: none;
   font: inherit;
   font-size: 0.875rem;
   min-width: 2.75rem;
@@ -146,19 +164,19 @@ function switchTo(code: string) {
   cursor: pointer;
 }
 
-.languages button + button {
+.languages > * + * {
   border-left: 1px solid var(--color-border);
 }
 
-.languages button:first-child {
+.languages > :first-child {
   border-radius: var(--radius) 0 0 var(--radius);
 }
 
-.languages button:last-child {
+.languages > :last-child {
   border-radius: 0 var(--radius) var(--radius) 0;
 }
 
-.languages button.is-on {
+.languages .is-on {
   background: var(--color-primary);
   color: var(--color-primary-text);
 }
@@ -183,7 +201,12 @@ main {
   line-height: 1.8;
 }
 
+/* Each link gets a full-size touch target; its line grows to fit. */
 .app-footer a {
+  display: inline-block;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  line-height: 2.75rem;
   color: inherit;
 }
 </style>

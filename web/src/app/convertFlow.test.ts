@@ -359,8 +359,10 @@ describe('shell', () => {
     const source = screen.getByRole('link', { name: 'Source code' });
     expect(source).toHaveAttribute('href', 'https://github.com/PhanCongVuDuc/revit-downgrade');
     expect(source).toHaveAttribute('rel', 'noopener');
-    expect(screen.getByRole('button', { name: 'EN' })).toHaveAttribute('aria-pressed', 'true');
-    await user().click(screen.getByRole('button', { name: 'VI' }));
+    expect(screen.getByRole('link', { name: 'EN' })).toHaveAttribute('aria-current', 'true');
+    // The other language is a link to the same page in that language, for visitors and crawlers alike.
+    expect(screen.getByRole('link', { name: 'VI' })).toHaveAttribute('href', '/vi');
+    await user().click(screen.getByRole('link', { name: 'VI' }));
     expect(i18n.global.locale.value).toBe('vi');
     expect(await screen.findByRole('button', { name: viConvert.convert.add.button })).toBeInTheDocument();
     await vi.waitFor(() => {

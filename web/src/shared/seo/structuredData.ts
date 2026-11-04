@@ -8,6 +8,9 @@ const AUTHOR_ID = `${SITE_URL}/#author`;
 const WEBSITE_ID = `${SITE_URL}/#website`;
 const APP_ID = `${SITE_URL}/#app`;
 
+/** The picture every page shares as its link preview. */
+export const SITE_IMAGE = `${SITE_URL}/og-image.png`;
+
 export function authorNode() {
   return {
     '@type': 'Person',
@@ -30,18 +33,38 @@ export function websiteNode(description: string, inLanguage = 'en') {
   };
 }
 
-/** The converter as a free web application. `path` is the page it is offered on. */
-export function webApplicationNode({ name, description, path }: { name: string; description: string; path: string }) {
+/**
+ * The converter as a free web application. `path` is the page it is offered on; `operatingSystem` and
+ * `browserRequirements` are in the page's language.
+ */
+export function webApplicationNode({
+  name,
+  description,
+  path,
+  inLanguage = 'en',
+  operatingSystem,
+  browserRequirements,
+}: {
+  name: string;
+  description: string;
+  path: string;
+  inLanguage?: string;
+  operatingSystem: string;
+  browserRequirements: string;
+}) {
   return {
     '@type': 'WebApplication',
     '@id': path === '/' ? APP_ID : `${pageUrl(path)}#app`,
     name,
     description,
     url: pageUrl(path),
+    inLanguage,
+    image: SITE_IMAGE,
     applicationCategory: 'DesignApplication',
-    operatingSystem: 'Any (runs in a web browser)',
-    browserRequirements: 'Requires JavaScript.',
+    operatingSystem,
+    browserRequirements,
     isAccessibleForFree: true,
+    isPartOf: { '@id': WEBSITE_ID },
     offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
     author: { '@id': AUTHOR_ID },
     sameAs: REPO_URL,
@@ -80,18 +103,47 @@ export function articleNode({
   modified: string;
   inLanguage?: string;
 }) {
+  const url = pageUrl(path);
   return {
     '@type': 'Article',
+    '@id': `${url}#article`,
     headline,
     description,
-    url: pageUrl(path),
-    mainEntityOfPage: pageUrl(path),
+    url,
+    image: SITE_IMAGE,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
     datePublished: published,
     dateModified: modified,
     inLanguage,
     author: { '@id': AUTHOR_ID },
     publisher: { '@id': AUTHOR_ID },
     isPartOf: { '@id': WEBSITE_ID },
+  };
+}
+
+/** A page that is neither the app nor an article: `CollectionPage` for a list of pages, `WebPage` otherwise. */
+export function webPageNode({
+  type,
+  name,
+  description,
+  path,
+  inLanguage = 'en',
+}: {
+  type: 'WebPage' | 'CollectionPage';
+  name: string;
+  description: string;
+  path: string;
+  inLanguage?: string;
+}) {
+  return {
+    '@type': type,
+    '@id': pageUrl(path),
+    name,
+    description,
+    url: pageUrl(path),
+    inLanguage,
+    isPartOf: { '@id': WEBSITE_ID },
+    author: { '@id': AUTHOR_ID },
   };
 }
 

@@ -131,10 +131,11 @@
             ]
           },
           {
-            "heading": "Going the other way",
+            "heading": "How do I open a newer file in an older Revit?",
             "paragraphs": [
               "To open a newer file in an older Revit, the file has to be converted first. Revit Downgrade converts files from Revit 2023 to 2027 down to any older version from Revit 2022."
-            ]
+            ],
+            "pairs": ["2026-2024", "2025-2024", "2026-2025", "2025-2023", "2024-2023", "2023-2022"]
           },
           {
             "heading": "Upgrading takes time",
@@ -146,22 +147,68 @@
       },
       "whatChanges": {
         "title": "What changes when you downgrade a Revit file",
-        "description": "Downgrading keeps most of your model, but elements an older Revit does not know are removed. How to see what was removed.",
+        "description": "Downgrading keeps most of your model, but elements an older Revit does not know are removed. What each version step removes, and how to check.",
         "sections": [
           {
-            "heading": "What is kept",
+            "heading": "What is kept when you downgrade a Revit file?",
             "paragraphs": [
-              "Most of the model. Elements that exist in both versions are written in the older format and open as normal, editable elements."
+              "Most of the model. Everything that exists in both versions, such as walls, floors, roofs, families, views, sheets, schedules and parameters, is written in the older format and opens as normal, editable Revit elements. You keep working on the same model, not on an exported copy of it.",
+              "The converted file is a new file. Your original stays exactly as it was, so nothing is lost for good: when everyone has moved to the newer Revit, you can carry on from the original."
             ]
           },
           {
-            "heading": "What can be removed",
+            "heading": "Why are some elements removed?",
             "paragraphs": [
-              "Each Revit release adds new kinds of elements and settings. An older Revit has no place for them, so they are removed. Styles and settings that belonged only to a removed element go with it. The further down a file goes, the more releases' additions can be removed."
+              "Each Revit release adds new kinds of elements and settings. An older Revit was built before they existed and has no place to store them, so they cannot be written in its format and are removed. Styles and settings that belonged only to a removed element go with it.",
+              "The further down a file goes, the more releases it crosses, and each release's additions can be removed on the way. A file that goes down one version only loses what that one release added."
             ]
           },
           {
-            "heading": "See exactly what was removed",
+            "heading": "What does each Revit version not support?",
+            "paragraphs": [
+              "The table lists, for each step down, the kinds of elements the older version has no place for, and what else changes on the way. Only elements your model actually contains are affected: a model without rebar loses nothing from the rebar entries."
+            ],
+            "table": {
+              "head": ["Step", "Removed: the older version has no place for them", "Also changes"],
+              "rows": [
+                [
+                  "Revit 2027 → 2026",
+                  "Point, line and area boundary conditions in the new Revit 2027 categories, rebar distribution paths and rebar concrete edges.",
+                  "The \"Server Room\" space type becomes no space type, and stair riser numbers go back to the size and color settings of Revit 2026."
+                ],
+                [
+                  "Revit 2026 → 2025",
+                  "Rebar crank types and MEP system zone color fills.",
+                  "Toposolid sub-divisions are kept as toposolids; a toposolid shaped from a mesh keeps its solid but loses the mesh shape; cable types and conductor sizes become Revit 2025 wire types and sizes."
+                ],
+                [
+                  "Revit 2025 → 2024",
+                  "Sheet collections, pipe and duct analytical segments, rebar splice types and splice lines.",
+                  "\"Apparent power\" labels go back to the older \"load\" wording."
+                ],
+                [
+                  "Revit 2024 → 2023",
+                  "Electrical connectors, electrical load cases, rebar bending details, and wall and floor layer elements.",
+                  "—"
+                ],
+                [
+                  "Revit 2023 → 2022",
+                  "Plumbing equipment, mechanical control devices, MEP ancillary framing, fabrication ductwork stiffeners, electrical load sets, analytical feeders and transformers, analytical panels and openings, and tags of categories that can only be tagged from Revit 2023 (such as column, model group and link tags).",
+                  "—"
+                ]
+              ],
+              "rowLinks": ["2027-2026", "2026-2025", "2025-2024", "2024-2023", "2023-2022"]
+            }
+          },
+          {
+            "heading": "What happens when a file goes down several versions?",
+            "paragraphs": [
+              "It passes every step on the way, one at a time. A Revit 2026 file converted to Revit 2024 goes through 2026 → 2025 and then 2025 → 2024, so it can lose what either of those releases added. The result page lists the removed elements of all steps together."
+            ],
+            "pairs": ["2026-2024", "2025-2023", "2027-2025"]
+          },
+          {
+            "heading": "How do I see exactly what was removed?",
             "paragraphs": [
               "The result page lists every removed element, and you can download the list as CSV. For each kind of element it shows:"
             ],
@@ -172,16 +219,23 @@
             ]
           },
           {
-            "heading": "Check the converted file",
+            "heading": "What should I check after downgrading?",
             "list": [
-              "Open it in the older Revit and read the warnings.",
+              "Open the file in the older Revit and read the warnings.",
               "Use the ElementIds from the list to find the removed elements in the original model and decide whether anything needs to be redrawn.",
               "Check the key views and sheets before you share the file.",
               "Save it once in the older Revit."
             ]
+          },
+          {
+            "heading": "Can I get the removed elements back?",
+            "paragraphs": [
+              "Not in the older version: it has no place for them. If a removed element matters, redraw it with the tools the older version has, using the original model as the reference. Opening the converted file in the newer Revit again does not bring removed elements back either, which is another reason to keep the original."
+            ]
           }
         ]
       }
-    }
+    },
+    "downgradeLink": "Downgrade Revit {from} to Revit {to}"
   }
 }

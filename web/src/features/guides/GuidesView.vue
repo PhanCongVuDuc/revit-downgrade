@@ -5,9 +5,9 @@ import { RouterLink } from 'vue-router';
 import { GUIDES, guidePath } from '@/shared/catalog/guides';
 import { useLocalePath } from '@/shared/locale/localePath';
 import { SITE_NAME, usePageMeta } from '@/shared/seo/pageMeta';
-import { authorNode, breadcrumbNode, graph } from '@/shared/seo/structuredData';
+import { authorNode, breadcrumbNode, graph, webPageNode, websiteNode } from '@/shared/seo/structuredData';
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const lp = useLocalePath();
 
 usePageMeta(() => ({
@@ -17,6 +17,14 @@ usePageMeta(() => ({
   jsonLd: [
     graph(
       authorNode(),
+      websiteNode(t('convert.description'), locale.value),
+      webPageNode({
+        type: 'CollectionPage',
+        name: t('guides.title'),
+        description: t('guides.intro'),
+        path: lp('/guides'),
+        inLanguage: locale.value,
+      }),
       breadcrumbNode([
         { name: SITE_NAME, path: lp('/') },
         { name: t('guides.title'), path: lp('/guides') },

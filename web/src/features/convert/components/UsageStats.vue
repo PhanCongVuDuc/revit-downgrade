@@ -8,12 +8,18 @@ const KEYS = ['people', 'succeeded', 'failed', 'contributed'] as const;
 
 const { t, locale } = useI18n();
 const stats = ref<UsageStatsData | null>(null);
+/** Until the numbers arrive, their space is kept so the page below does not move when they show. */
+const loading = ref(true);
 
 // Read once per page load; the numbers do not refresh while the page is open.
 onMounted(() => {
-  void loadUsageStats().then((loaded) => {
-    stats.value = loaded;
-  });
+  void loadUsageStats()
+    .then((loaded) => {
+      stats.value = loaded;
+    })
+    .finally(() => {
+      loading.value = false;
+    });
 });
 
 const items = computed(() => {
@@ -35,7 +41,8 @@ const since = computed(() =>
 </script>
 
 <template>
-  <section v-if="stats" class="usage" :aria-label="t('convert.stats.label')">
+  <div v-if="loading" class="usage pending" aria-hidden="true"></div>
+  <section v-else-if="stats" class="usage" :aria-label="t('convert.stats.label')">
     <dl>
       <div v-for="item in items" :key="item.key" class="item">
         <dt>{{ t(`convert.stats.${item.key}`) }}</dt>
@@ -52,6 +59,17 @@ const since = computed(() =>
   width: min(40rem, 100%);
   margin-top: var(--space-6);
   text-align: center;
+}
+
+/* About the height of the numbers once shown: one row of four, or two rows of two on a narrow screen. */
+.pending {
+  min-height: 10rem;
+}
+
+@media (width < 37rem) {
+  .pending {
+    min-height: 16rem;
+  }
 }
 
 dl {

@@ -7,7 +7,21 @@ Revit itself cannot save to an older version: a Revit release only opens files f
 ## Use it
 
 - [Downgrade a Revit file](https://revitdowngrade.com/): add the file, pick the Revit version, download the result
-- [Downgrade Revit 2026 to Revit 2024](https://revitdowngrade.com/revit-2026-to-2024): one page per version pair, from /revit-2027-to-2026 to /revit-2023-to-2022
+- [Downgrade Revit 2027 to Revit 2026](https://revitdowngrade.com/revit-2027-to-2026)
+- [Downgrade Revit 2027 to Revit 2025](https://revitdowngrade.com/revit-2027-to-2025)
+- [Downgrade Revit 2027 to Revit 2024](https://revitdowngrade.com/revit-2027-to-2024)
+- [Downgrade Revit 2027 to Revit 2023](https://revitdowngrade.com/revit-2027-to-2023)
+- [Downgrade Revit 2027 to Revit 2022](https://revitdowngrade.com/revit-2027-to-2022)
+- [Downgrade Revit 2026 to Revit 2025](https://revitdowngrade.com/revit-2026-to-2025)
+- [Downgrade Revit 2026 to Revit 2024](https://revitdowngrade.com/revit-2026-to-2024)
+- [Downgrade Revit 2026 to Revit 2023](https://revitdowngrade.com/revit-2026-to-2023)
+- [Downgrade Revit 2026 to Revit 2022](https://revitdowngrade.com/revit-2026-to-2022)
+- [Downgrade Revit 2025 to Revit 2024](https://revitdowngrade.com/revit-2025-to-2024)
+- [Downgrade Revit 2025 to Revit 2023](https://revitdowngrade.com/revit-2025-to-2023)
+- [Downgrade Revit 2025 to Revit 2022](https://revitdowngrade.com/revit-2025-to-2022)
+- [Downgrade Revit 2024 to Revit 2023](https://revitdowngrade.com/revit-2024-to-2023)
+- [Downgrade Revit 2024 to Revit 2022](https://revitdowngrade.com/revit-2024-to-2022)
+- [Downgrade Revit 2023 to Revit 2022](https://revitdowngrade.com/revit-2023-to-2022)
 
 ## Guides
 

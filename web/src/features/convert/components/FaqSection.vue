@@ -1,17 +1,23 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { RouterLink } from 'vue-router';
 
 import type { Pair } from '@/shared/catalog/pairs';
+import { useLocalePath } from '@/shared/locale/localePath';
 
 const props = defineProps<{ pair?: Pair | null }>();
 const { t } = useI18n();
+const lp = useLocalePath();
+
+/** Answers that go on in a page of their own: the question's key and that page's path. */
+const MORE: Partial<Record<string, string>> = { safe: '/how-it-works' };
 
 // Phrased the way people search for this, so the answers are also what search engines index. A pair's page asks
 // about its own two versions first.
 const questions = computed(() => {
   const pair = props.pair;
-  const general = ['supported', 'lost', 'backsave', 'safe'].map((key) => ({
+  const general = ['supported', 'lost', 'backsave', 'workshared', 'links', 'safe'].map((key) => ({
     key,
     q: t(`convert.faq.items.${key}.q`),
     a: t(`convert.faq.items.${key}.a`),
@@ -42,7 +48,12 @@ const questions = computed(() => {
     <h2 id="faq-title">{{ t('convert.faq.title') }}</h2>
     <details v-for="item in questions" :key="item.key">
       <summary>{{ item.q }}</summary>
-      <p>{{ item.a }}</p>
+      <p>
+        {{ item.a }}
+        <template v-if="MORE[item.key]">
+          <RouterLink :to="lp(MORE[item.key] ?? '/')">{{ t(`convert.faq.items.${item.key}.more`) }}</RouterLink>
+        </template>
+      </p>
     </details>
   </section>
 </template>

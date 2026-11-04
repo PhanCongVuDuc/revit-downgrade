@@ -12,11 +12,11 @@ import {
 } from '@/shared/contact/contact';
 import { useLocalePath } from '@/shared/locale/localePath';
 import { SITE_NAME, usePageMeta } from '@/shared/seo/pageMeta';
-import { authorNode, breadcrumbNode, graph } from '@/shared/seo/structuredData';
+import { authorNode, breadcrumbNode, graph, webPageNode, websiteNode } from '@/shared/seo/structuredData';
 
 const ROWS = ['unfinished', 'cancelled', 'original', 'failed', 'output', 'report'] as const;
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const lp = useLocalePath();
 
 usePageMeta(() => ({
@@ -26,6 +26,14 @@ usePageMeta(() => ({
   jsonLd: [
     graph(
       authorNode(),
+      websiteNode(t('convert.description'), locale.value),
+      webPageNode({
+        type: 'WebPage',
+        name: t('about.title'),
+        description: t('about.intro'),
+        path: lp('/how-it-works'),
+        inLanguage: locale.value,
+      }),
       breadcrumbNode([
         { name: SITE_NAME, path: lp('/') },
         { name: t('about.title'), path: lp('/how-it-works') },

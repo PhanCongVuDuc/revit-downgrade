@@ -38,6 +38,15 @@ const pair = computed<Pair | null>(() =>
 );
 const heading = computed(() => (pair.value ? t('convert.pairPage.title', { ...pair.value }) : t('convert.title')));
 
+/** The parts of the app's structured data written in the page's language. */
+function appText() {
+  return {
+    inLanguage: locale.value,
+    operatingSystem: t('convert.schema.operatingSystem'),
+    browserRequirements: t('convert.schema.browserRequirements'),
+  };
+}
+
 usePageMeta(() => {
   if (route.name === 'job') {
     // A job's address belongs to one visitor; it is never a page to find in search.
@@ -53,7 +62,8 @@ usePageMeta(() => {
       jsonLd: [
         graph(
           authorNode(),
-          webApplicationNode({ name: t('convert.pairPage.title', { ...pair.value }), description, path }),
+          websiteNode(t('convert.description'), locale.value),
+          webApplicationNode({ name: t('convert.pairPage.title', { ...pair.value }), description, path, ...appText() }),
           breadcrumbNode([
             { name: SITE_NAME, path: lp('/') },
             { name: t('convert.pairs.link', { ...pair.value }), path },
@@ -71,7 +81,7 @@ usePageMeta(() => {
       graph(
         authorNode(),
         websiteNode(description, locale.value),
-        webApplicationNode({ name: SITE_NAME, description, path: lp('/') }),
+        webApplicationNode({ name: SITE_NAME, description, path: lp('/'), ...appText() }),
       ),
     ],
   };

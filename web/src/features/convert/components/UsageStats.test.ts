@@ -49,8 +49,16 @@ describe('UsageStats', () => {
     await vi.waitFor(() => {
       expect(load).toHaveBeenCalledTimes(1);
     });
-    await Promise.resolve();
-    expect(container).toBeEmptyDOMElement();
+    await vi.waitFor(() => {
+      expect(container).toBeEmptyDOMElement();
+    });
+  });
+
+  it('keeps the space of the totals, hidden, until they arrive', () => {
+    load.mockReturnValueOnce(new Promise(() => {}));
+    const { container } = show('en');
+    expect(container).not.toBeEmptyDOMElement();
+    expect(screen.queryByRole('region')).not.toBeInTheDocument();
   });
 
   it('asks the server once and never again while the page is open', async () => {

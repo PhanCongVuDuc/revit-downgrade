@@ -4,19 +4,29 @@ import { useI18n } from 'vue-i18n';
 import { RouterLink, useRoute } from 'vue-router';
 
 import { GUIDES, guideBySlug, guidePath } from '@/shared/catalog/guides';
-import { PAIRS, pairPath } from '@/shared/catalog/pairs';
+import { GUIDE_PAIRS, pairFromKey, pairPath, type Pair } from '@/shared/catalog/pairs';
 import { AUTHOR_NAME, LINKEDIN_URL } from '@/shared/contact/contact';
 import { useLocalePath } from '@/shared/locale/localePath';
 import { SITE_NAME, usePageMeta } from '@/shared/seo/pageMeta';
-import { articleNode, authorNode, breadcrumbNode, graph } from '@/shared/seo/structuredData';
+import { articleNode, authorNode, breadcrumbNode, graph, websiteNode } from '@/shared/seo/structuredData';
 
-/** One section of an article as the locale files hold it: a heading, then paragraphs, a list, steps or a table. */
+/**
+ * One section of an article as the locale files hold it: a heading, then paragraphs, a list, steps or a table, and
+ * links to conversions. A table's `rowLinks` makes each row's first cell a link to that conversion; pairs are written
+ * `2026-2024`.
+ */
 interface RawSection {
   heading: string;
   paragraphs?: string[];
   list?: string[];
   ordered?: string[];
-  table?: { head: string[]; rows: string[][] };
+  table?: { head: string[]; rows: string[][]; rowLinks?: string[] };
+  pairs?: string[];
+}
+
+/** The pairs a list of keys names; a key that is no page of the site is left out. */
+function pairsOf(keys: string[] | undefined): Pair[] {
+  return (keys ?? []).map((key) => pairFromKey(key)).filter((p): p is Pair => p !== undefined);
 }
 
 const i18n = useI18n();
@@ -27,8 +37,7 @@ const lp = useLocalePath();
 // The router only opens this view for a known slug.
 const guide = computed(() => guideBySlug(String(route.params.slug)) ?? GUIDES[0]);
 const others = computed(() => GUIDES.filter((g) => g.slug !== guide.value.slug));
-// One step down from each version: the conversions most people come for.
-const pairs = PAIRS.filter((p) => p.from - p.to === 1);
+const pairs = GUIDE_PAIRS;
 
 const sections = computed(() => {
   const messages: unknown = i18n.tm(`guides.articles.${guide.value.key}.sections`);
@@ -39,7 +48,16 @@ const sections = computed(() => {
     paragraphs: (s.paragraphs ?? []).map(text),
     list: (s.list ?? []).map(text),
     ordered: (s.ordered ?? []).map(text),
-    table: s.table ? { head: s.table.head.map(text), rows: s.table.rows.map((row) => row.map(text)) } : null,
+    table: s.table
+      ? {
+          head: s.table.head.map(text),
+          rows: s.table.rows.map((row, i) => ({
+            cells: row.map(text),
+            pair: pairFromKey(s.table?.rowLinks?.[i] ?? ''),
+          })),
+        }
+      : null,
+    pairs: pairsOf(s.pairs?.map(text)),
   }));
 });
 
@@ -58,9 +76,11 @@ usePageMeta(() => {
     title: `${title} | ${SITE_NAME}`,
     description,
     path,
+    article: { published: g.published, modified: g.updated },
     jsonLd: [
       graph(
         authorNode(),
+        websiteNode(t('convert.description'), locale.value),
         articleNode({
           headline: title,
           description,
@@ -112,20 +132,28 @@ usePageMeta(() => {
         <li v-for="item in section.ordered" :key="item">{{ item }}</li>
       </ol>
       <div v-if="section.table" class="table-wrap">
-        <table>
+        <table :class="{ linked: section.table.rows.some((row) => row.pair) }">
           <thead>
             <tr>
               <th v-for="cell in section.table.head" :key="cell" scope="col">{{ cell }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in section.table.rows" :key="row[0]">
-              <th scope="row">{{ row[0] }}</th>
-              <td v-for="(cell, i) in row.slice(1)" :key="i">{{ cell }}</td>
+            <tr v-for="row in section.table.rows" :key="row.cells[0]">
+              <th scope="row">
+                <RouterLink v-if="row.pair" :to="lp(pairPath(row.pair))">{{ row.cells[0] }}</RouterLink>
+                <template v-else>{{ row.cells[0] }}</template>
+              </th>
+              <td v-for="(cell, i) in row.cells.slice(1)" :key="i">{{ cell }}</td>
             </tr>
           </tbody>
         </table>
       </div>
+      <ul v-if="section.pairs.length" class="section-pairs">
+        <li v-for="pair in section.pairs" :key="pairPath(pair)">
+          <RouterLink :to="lp(pairPath(pair))">{{ t('guides.downgradeLink', { ...pair }) }}</RouterLink>
+        </li>
+      </ul>
     </section>
     <RouterLink class="cta" :to="lp('/')">{{ t('guides.cta') }}</RouterLink>
     <nav class="pairs" :aria-label="t('guides.pairsTitle')">
@@ -158,9 +186,11 @@ usePageMeta(() => {
   font-size: 0.875rem;
 }
 
-.crumb a {
-  display: inline-block;
-  padding: var(--space-2) 0;
+.crumb a,
+.byline a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
 }
 
 h1 {
@@ -212,6 +242,18 @@ tbody th {
   font-weight: 600;
 }
 
+/* A table with long text keeps its first column on one line and scrolls sideways on a phone. */
+.linked th a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  white-space: nowrap;
+}
+
+.linked td {
+  min-width: 11rem;
+}
+
 .cta {
   display: inline-block;
   margin-top: var(--space-6);
@@ -236,7 +278,8 @@ tbody th {
 }
 
 .pairs a,
-.others a {
+.others a,
+.section-pairs a {
   display: inline-flex;
   align-items: center;
   min-height: 2.75rem;

@@ -16,6 +16,7 @@ interface PageMeta {
   path: string;
   jsonLd?: object[];
   noindex?: boolean;
+  article?: { published: string; modified: string };
 }
 
 interface RenderedPage {
@@ -30,6 +31,9 @@ interface PrerenderEntry {
 }
 
 const SITE_URL = 'https://revitdowngrade.com';
+
+/** The Vietnamese og:image:alt; IMAGE_ALT in src/shared/seo/pageMeta.ts holds the same text. */
+const IMAGE_ALT_VI = 'Revit Downgrade: mở file Revit mới hơn bằng Revit cũ hơn';
 
 function escapeHtml(text: string): string {
   return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
@@ -80,6 +84,18 @@ export function pageHtml(template: string, page: RenderedPage): string {
       /<meta property="og:locale" content="en_US" \/>/,
       '<meta property="og:locale" content="vi_VN" />',
     );
+    html = replaceOnce(
+      html,
+      /<meta property="og:image:alt" content="[^"]*" \/>/,
+      `<meta property="og:image:alt" content="${escapeHtml(IMAGE_ALT_VI)}" />`,
+    );
+  }
+  if (meta.article) {
+    html = replaceOnce(
+      html,
+      /<meta property="og:type" content="website" \/>/,
+      '<meta property="og:type" content="article" />',
+    );
   }
   html = replaceOnce(html, /<title>[^<]*<\/title>/, `<title>${title}</title>`);
   html = replaceOnce(
@@ -103,6 +119,12 @@ export function pageHtml(template: string, page: RenderedPage): string {
     ...(meta.noindex ? [] : alternates(meta.path)).map(
       (a) => `<link rel="alternate" hreflang="${a.hreflang}" href="${escapeHtml(a.href)}" />`,
     ),
+    ...(meta.article
+      ? [
+          `<meta property="article:published_time" content="${escapeHtml(meta.article.published)}" />`,
+          `<meta property="article:modified_time" content="${escapeHtml(meta.article.modified)}" />`,
+        ]
+      : []),
     ...(meta.jsonLd ?? []).map((item) => `<script type="application/ld+json">${scriptJson(item)}</script>`),
   ]
     .filter(Boolean)
