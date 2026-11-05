@@ -1,0 +1,241 @@
+{
+  "guides": {
+    "title": "Revit downgrade गाइड",
+    "pageTitle": "Revit downgrade गाइड {'|'} Revit Downgrade",
+    "intro": "Revit versions के बारे में छोटे जवाब: Revit पुराने version में save क्यों नहीं कर सकता, कौन सा Revit कौन सी file खोलता है, और file downgrade कैसे करें।",
+    "cta": "Revit file downgrade करें",
+    "others": "और गाइड",
+    "all": "सभी गाइड",
+    "published": "{date} को प्रकाशित",
+    "updated": "{date} को update किया गया",
+    "by": "{name} द्वारा",
+    "pairsTitle": "अभी file downgrade करें",
+    "articles": {
+      "saveAsOlder": {
+        "title": "क्या Revit file को पुराने version में save किया जा सकता है?",
+        "description": "Revit में Save As older version नहीं है। ऐसा क्यों है, और नई Revit file को फिर भी पुराने Revit में कैसे खोलें।",
+        "sections": [
+          {
+            "heading": "छोटा जवाब",
+            "paragraphs": [
+              "नहीं। Revit files को सिर्फ़ आगे ले जाता है। जब आप पुराने version की file खोलते हैं, तो Revit उसे upgrade कर देता है, और हर save उसी version में होता है जो आप चला रहे हैं। Save As dialog में पुराने release का कोई option नहीं है, और Revit में पिछले Revit version में export करने की सुविधा भी नहीं है।"
+            ]
+          },
+          {
+            "heading": "Revit ऐसे क्यों काम करता है",
+            "paragraphs": [
+              "Revit का हर release model को store करने का तरीका बदलता है: वह नए तरह के elements, नई settings और मौजूदा elements पर नया data जोड़ता है। पुराना Revit इन बदलावों से पहले बना था, इसलिए उसके पास इन्हें पढ़ने का कोई तरीका नहीं है। Revit files खोलते समय उन्हें upgrade करता है और वापसी का कोई रास्ता नहीं देता।"
+            ]
+          },
+          {
+            "heading": "यह क्यों मायने रखता है",
+            "paragraphs": [
+              "Teams शायद ही कभी एक साथ upgrade करती हैं। Revit 2026 पर काम करने वाला consultant ऐसे client को model भेजता है जो अभी Revit 2024 पर है, और client उसे खोल नहीं पाता। यही manufacturers से download की गई families के साथ होता है, जो अक्सर नए से नए release में save होती हैं, और एक ही company के अंदर भी, जब एक office दूसरे से पहले नए release पर चला जाता है।"
+            ]
+          },
+          {
+            "heading": "आप क्या कर सकते हैं",
+            "list": [
+              "पूछें कि क्या भेजने वाले ने upgrade से पहले की copy रखी है। Model एक बार नए version में save हो जाए, तो पुराना Revit उसे नहीं खोल सकता, भेजने वाले के computer पर भी नहीं।",
+              "IFC से exchange करें। नया Revit IFC export करता है और पुराना उसे link या import कर सकता है, लेकिन नतीजा अब native model नहीं रहता: walls, families और parameters geometry के रूप में आते हैं और editing सीमित रहती है।",
+              "Reference के लिए DWG में export करें। आपको देखने या ऊपर से trace करने के लिए lines और shapes मिलते हैं, Revit elements नहीं।",
+              "File convert करें। Revit Downgrade, Revit 2023 से 2027 तक की file को Revit 2022 तक किसी पुराने version के format में दोबारा लिखता है, ताकि वह native रूप से खुले। जिन elements को पुराना version नहीं जानता वे हटा दिए जाते हैं और आपके लिए list किए जाते हैं।"
+            ]
+          },
+          {
+            "heading": "विकल्पों की तुलना",
+            "table": {
+              "head": ["विकल्प", "पुराने Revit को क्या मिलता है", "Editable Revit elements"],
+              "rows": [
+                ["Upgrade से पहले save की गई copy", "Native file", "हाँ, लेकिन उसके बाद किए गए बदलावों के बिना"],
+                ["IFC", "Link या import किया गया IFC model", "सीमित"],
+                ["DWG export", "CAD lines और shapes", "नहीं"],
+                [
+                  "Revit Downgrade",
+                  "पुराने version की native file",
+                  "हाँ; जिन elements को पुराना version नहीं जानता वे हटा दिए जाते हैं और list किए जाते हैं"
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "openInOlder": {
+        "title": "नई Revit file को Revit के पुराने version में कैसे खोलें",
+        "description": "Step by step: Revit 2027, 2026, 2025, 2024 या 2023 की file को मुफ़्त में downgrade करें ताकि वह पुराने Revit में खुले, Revit 2022 तक।",
+        "sections": [
+          {
+            "heading": "शुरू करने से पहले",
+            "paragraphs": [
+              "पता करें कि file किस version में save हुई थी और आप उसे किस version में खोलेंगे। File जोड़ते ही Revit Downgrade आपके browser में उसका version पढ़ लेता है, इसलिए आपको उसे पहले Revit में खोलने की ज़रूरत नहीं है।",
+              "अगर कई लोग file खोलेंगे, तो उसे एक बार उस सबसे पुराने version में convert करें जो कोई इस्तेमाल करता है। Revit 2023 में convert की गई file Revit 2024 और उसके बाद के versions में भी खुलती है, जो उसे हमेशा की तरह upgrade कर देते हैं।"
+            ]
+          },
+          {
+            "heading": "Steps",
+            "ordered": [
+              "revitdowngrade.com खोलें और .rvt, .rfa, .rte या .rft file जोड़ें।",
+              "जिस Revit version में आप इसे खोलेंगे उस पर click करें और Downgrade दबाएँ।",
+              "Conversion का इंतज़ार करें। छोटी files में करीब एक मिनट लगता है, बड़े models में हर नीचे जाने वाले version के लिए कुछ मिनट।",
+              "Convert की गई file download करें और उसे पुराने Revit में खोलें।"
+            ]
+          },
+          {
+            "heading": "खोलने के बाद",
+            "paragraphs": [
+              "Result page पर दिखाई गई हटाए गए elements की list देख लें, फिर file को एक बार पुराने Revit में save करें। उसके बाद यह उस version की सामान्य file है।"
+            ]
+          },
+          {
+            "heading": "Families और linked models",
+            "paragraphs": [
+              "Project में पहले से load की गई families उसी के साथ downgrade हो जाती हैं। अलग files के साथ ऐसा नहीं होता: पुराना Revit नए release में save की गई family file (.rfa) load नहीं करता और ऐसा Revit model link नहीं करता, इसलिए हर file को project के version में downgrade करें, फिर पुराने Revit में load या reload करें।"
+            ]
+          },
+          {
+            "heading": "अगर कुछ गड़बड़ हो",
+            "paragraphs": [
+              "अगर conversion fail हो जाए, या convert की गई file न खुले, तो result page से आप file मुझे भेज सकते हैं ताकि मैं उसका कारण ठीक कर सकूँ। बाकी किसी भी बात के लिए contact details हर page के नीचे हैं।"
+            ]
+          }
+        ]
+      },
+      "compatibility": {
+        "title": "Revit version compatibility: कौन सा Revit कौन सी file खोलता है",
+        "description": "Revit अपने version और उससे पुराने versions की files खोलता है, नए की कभी नहीं। Revit 2022 से 2027 के लिए quick reference।",
+        "sections": [
+          {
+            "heading": "नियम",
+            "paragraphs": [
+              "Revit का कोई release उसी release या उससे पहले के किसी भी release में save की गई files खोलता है, और खोलते समय उन्हें upgrade करता है। बाद के release में save की गई file वह कभी नहीं खोलता। Projects (.rvt), families (.rfa) और templates (.rte, .rft) के लिए नियम एक ही है।"
+            ]
+          },
+          {
+            "heading": "Quick reference",
+            "table": {
+              "head": ["Revit version", "इनकी files खोलता है", "इनकी files नहीं खोल सकता"],
+              "rows": [
+                ["Revit 2027", "Revit 2027 और उससे पहले", "—"],
+                ["Revit 2026", "Revit 2026 और उससे पहले", "Revit 2027"],
+                ["Revit 2025", "Revit 2025 और उससे पहले", "Revit 2026 और 2027"],
+                ["Revit 2024", "Revit 2024 और उससे पहले", "Revit 2025 से 2027"],
+                ["Revit 2023", "Revit 2023 और उससे पहले", "Revit 2024 से 2027"],
+                ["Revit 2022", "Revit 2022 और उससे पहले", "Revit 2023 से 2027"]
+              ]
+            }
+          },
+          {
+            "heading": "Families और links पर भी यही नियम लागू होता है",
+            "paragraphs": [
+              "Revit 2024 में खुला project, Revit 2025 या उसके बाद save की गई family को load या Revit model को link नहीं कर सकता। Families और links, project के version के या उससे पुराने होने चाहिए।"
+            ]
+          },
+          {
+            "heading": "नई file को पुराने Revit में कैसे खोलूँ?",
+            "paragraphs": [
+              "नई file को पुराने Revit में खोलने के लिए पहले उसे convert करना होगा। Revit Downgrade, Revit 2023 से 2027 तक की files को Revit 2022 तक किसी भी पुराने version में convert करता है।"
+            ],
+            "pairs": ["2026-2024", "2025-2024", "2026-2025", "2025-2023", "2024-2023", "2023-2022"]
+          },
+          {
+            "heading": "Upgrade में समय लगता है",
+            "paragraphs": [
+              "बड़े model में पुरानी file को नए Revit में खोलने में कई मिनट लग सकते हैं, क्योंकि हर element upgrade होता है। Upgrade हुई file save कर लें ताकि यह सिर्फ़ एक बार हो।"
+            ]
+          }
+        ]
+      },
+      "whatChanges": {
+        "title": "Revit file downgrade करने पर क्या बदलता है",
+        "description": "Downgrade करने पर आपके model का ज़्यादातर हिस्सा बना रहता है, लेकिन जिन elements को पुराना Revit नहीं जानता वे हटा दिए जाते हैं। हर version step क्या हटाता है, और इसे कैसे जाँचें।",
+        "sections": [
+          {
+            "heading": "Revit file downgrade करने पर क्या बना रहता है?",
+            "paragraphs": [
+              "Model का ज़्यादातर हिस्सा। जो कुछ दोनों versions में मौजूद है, जैसे walls, floors, roofs, families, views, sheets, schedules और parameters, वह पुराने format में लिखा जाता है और सामान्य, editable Revit elements के रूप में खुलता है। आप उसी model पर काम जारी रखते हैं, उसकी export की हुई copy पर नहीं।",
+              "Convert की गई file एक नई file है। आपकी original file बिल्कुल वैसी ही रहती है, इसलिए कुछ भी हमेशा के लिए नहीं खोता: जब सब लोग नए Revit पर आ जाएँ, तो आप original से आगे काम कर सकते हैं।"
+            ]
+          },
+          {
+            "heading": "कुछ elements क्यों हटाए जाते हैं?",
+            "paragraphs": [
+              "Revit के हर release में नए तरह के elements और settings जुड़ते हैं। पुराना Revit उनके आने से पहले बना था और उसमें उन्हें store करने की जगह नहीं है, इसलिए उन्हें उसके format में नहीं लिखा जा सकता और वे हटा दिए जाते हैं। जो styles और settings सिर्फ़ किसी हटाए गए element के थे, वे भी उसके साथ हट जाते हैं।",
+              "File जितना नीचे जाती है, उतने ज़्यादा releases पार करती है, और रास्ते में हर release की जोड़ी हुई चीज़ें हट सकती हैं। एक version नीचे जाने वाली file सिर्फ़ वही खोती है जो उस एक release ने जोड़ा था।"
+            ]
+          },
+          {
+            "heading": "Revit का हर version क्या support नहीं करता?",
+            "paragraphs": [
+              "Table में हर step के लिए वे तरह के elements दिए गए हैं जिनके लिए पुराने version में जगह नहीं है, और रास्ते में और क्या बदलता है। असर सिर्फ़ उन्हीं elements पर होता है जो आपके model में सच में हैं: जिस model में rebar नहीं है, उसका rebar वाली entries से कुछ नहीं हटता।"
+            ],
+            "table": {
+              "head": ["Step", "हटाए गए: पुराने version में इनके लिए जगह नहीं है", "ये भी बदलता है"],
+              "rows": [
+                [
+                  "Revit 2027 → 2026",
+                  "नई Revit 2027 categories में point, line और area boundary conditions, rebar distribution paths और rebar concrete edges।",
+                  "\"Server Room\" space type हटकर कोई space type नहीं रहता, और stair riser numbers Revit 2026 की size और color settings पर लौट आते हैं।"
+                ],
+                [
+                  "Revit 2026 → 2025",
+                  "Rebar crank types और MEP system zone color fills।",
+                  "Toposolid sub-divisions toposolids के रूप में बने रहते हैं; mesh से बना toposolid अपना solid रखता है लेकिन mesh shape खो देता है; cable types और conductor sizes Revit 2025 के wire types और sizes बन जाते हैं।"
+                ],
+                [
+                  "Revit 2025 → 2024",
+                  "Sheet collections, pipe और duct analytical segments, rebar splice types और splice lines।",
+                  "\"Apparent power\" labels पुराने \"load\" शब्दों पर लौट आते हैं।"
+                ],
+                [
+                  "Revit 2024 → 2023",
+                  "Electrical connectors, electrical load cases, rebar bending details, और wall और floor layer elements।",
+                  "—"
+                ],
+                [
+                  "Revit 2023 → 2022",
+                  "Plumbing equipment, mechanical control devices, MEP ancillary framing, fabrication ductwork stiffeners, electrical load sets, analytical feeders और transformers, analytical panels और openings, और उन categories के tags जिन्हें सिर्फ़ Revit 2023 से tag किया जा सकता है (जैसे column, model group और link tags)।",
+                  "—"
+                ]
+              ],
+              "rowLinks": ["2027-2026", "2026-2025", "2025-2024", "2024-2023", "2023-2022"]
+            }
+          },
+          {
+            "heading": "जब file कई versions नीचे जाती है तो क्या होता है?",
+            "paragraphs": [
+              "वह रास्ते के हर step से एक-एक करके गुज़रती है। Revit 2024 में convert की गई Revit 2026 की file पहले 2026 → 2025 और फिर 2025 → 2024 से गुज़रती है, इसलिए वह इन दोनों में से किसी भी release की जोड़ी हुई चीज़ें खो सकती है। Result page पर सभी steps के हटाए गए elements एक साथ list होते हैं।"
+            ],
+            "pairs": ["2026-2024", "2025-2023", "2027-2025"]
+          },
+          {
+            "heading": "ठीक-ठीक क्या हटा, यह कैसे देखूँ?",
+            "paragraphs": [
+              "Result page पर हर हटाया गया element list होता है, और आप list को CSV के रूप में download कर सकते हैं। हर तरह के element के लिए उसमें दिखता है:"
+            ],
+            "list": [
+              "element की class, जो बताती है कि वह किस तरह का element था;",
+              "उसे हटाने का कारण;",
+              "कितने हटाए गए, और उनकी ElementIds।"
+            ]
+          },
+          {
+            "heading": "Downgrade के बाद मुझे क्या जाँचना चाहिए?",
+            "list": [
+              "File को पुराने Revit में खोलें और warnings पढ़ें।",
+              "List की ElementIds से original model में हटाए गए elements ढूँढें और तय करें कि कुछ दोबारा बनाना है या नहीं।",
+              "File share करने से पहले मुख्य views और sheets जाँच लें।",
+              "इसे एक बार पुराने Revit में save करें।"
+            ]
+          },
+          {
+            "heading": "क्या हटाए गए elements वापस मिल सकते हैं?",
+            "paragraphs": [
+              "पुराने version में नहीं: उसमें उनके लिए जगह नहीं है। अगर कोई हटाया गया element ज़रूरी है, तो original model को reference बनाकर पुराने version के tools से उसे दोबारा बनाएँ। Convert की गई file को फिर से नए Revit में खोलने से भी हटाए गए elements वापस नहीं आते, original file रखने का यह एक और कारण है।"
+            ]
+          }
+        ]
+      }
+    },
+    "downgradeLink": "Revit {from} को Revit {to} में downgrade करें"
+  }
+}

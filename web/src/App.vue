@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
-import { RouterLink, RouterView, useRoute } from 'vue-router';
+import { RouterLink, RouterView } from 'vue-router';
 
-import { LOCALES } from '@/app/i18n';
+import LanguageMenu from '@/app/LanguageMenu.vue';
 import {
   AUTHOR_NAME,
   CONTACT_EMAIL,
@@ -13,16 +13,10 @@ import {
   THANKS_NAME,
   THANKS_URL,
 } from '@/shared/contact/contact';
-import { localizedPath, useLocalePath } from '@/shared/locale/localePath';
+import { useLocalePath } from '@/shared/locale/localePath';
 
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const lp = useLocalePath();
-const route = useRoute();
-
-/** A page links to its address in the other language, so crawlers can follow it too. */
-function otherLanguage(code: string) {
-  return { path: localizedPath(route.path, code), query: route.query, hash: route.hash };
-}
 </script>
 
 <template>
@@ -33,33 +27,11 @@ function otherLanguage(code: string) {
       </RouterLink>
       <nav class="links">
         <RouterLink :to="lp('/guides')">{{ t('nav.guides') }}</RouterLink>
+        <RouterLink :to="lp('/revit-version-checker')">{{ t('nav.checker') }}</RouterLink>
         <RouterLink :to="lp('/how-it-works')">{{ t('nav.about') }}</RouterLink>
         <a class="source" :href="REPO_URL" rel="noopener">{{ t('nav.source') }}</a>
-        <span class="languages" role="group" :aria-label="t('app.language')">
-          <template v-for="code in LOCALES" :key="code">
-            <!-- A job's page has one address for every language: there, the language just changes. -->
-            <button
-              v-if="route.name === 'job'"
-              type="button"
-              :aria-pressed="locale === code"
-              :class="{ 'is-on': locale === code }"
-              @click="locale = code"
-            >
-              {{ code.toUpperCase() }}
-            </button>
-            <RouterLink
-              v-else
-              :to="otherLanguage(code)"
-              :hreflang="code"
-              :lang="code"
-              :aria-current="locale === code ? 'true' : undefined"
-              :class="{ 'is-on': locale === code }"
-            >
-              {{ code.toUpperCase() }}
-            </RouterLink>
-          </template>
-        </span>
       </nav>
+      <LanguageMenu class="language" />
     </header>
     <main>
       <RouterView />
@@ -81,6 +53,10 @@ function otherLanguage(code: string) {
           <a :href="THANKS_URL" target="_blank" rel="noopener">{{ THANKS_NAME }}</a>
         </template>
       </i18n-t>
+      <p>
+        <RouterLink :to="lp('/privacy')">{{ t('footer.privacy') }}</RouterLink> ·
+        <RouterLink :to="lp('/terms')">{{ t('footer.terms') }}</RouterLink>
+      </p>
       <p>{{ t('footer.trademark') }}</p>
     </footer>
   </div>
@@ -123,6 +99,7 @@ function otherLanguage(code: string) {
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-2) var(--space-4);
+  margin-left: auto;
 }
 
 .links a {
@@ -141,44 +118,17 @@ function otherLanguage(code: string) {
   }
 }
 
-.languages {
-  display: inline-flex;
-  border: 1px solid var(--color-border);
-}
+/* On a phone the language stays beside the name, and the links take the next line. */
+@media (width < 48rem) {
+  .language {
+    order: 1;
+  }
 
-.languages button,
-.languages a {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  text-decoration: none;
-  font: inherit;
-  font-size: 0.875rem;
-  min-width: 2.75rem;
-  min-height: 2.75rem;
-  padding: var(--space-1) var(--space-2);
-  background: transparent;
-  color: var(--color-text-muted);
-  border: 0;
-  cursor: pointer;
-}
-
-.languages > * + * {
-  border-left: 1px solid var(--color-border);
-}
-
-.languages > :first-child {
-  border-radius: var(--radius) 0 0 var(--radius);
-}
-
-.languages > :last-child {
-  border-radius: 0 var(--radius) var(--radius) 0;
-}
-
-.languages .is-on {
-  background: var(--color-primary);
-  color: var(--color-primary-text);
+  .links {
+    order: 2;
+    width: 100%;
+    margin-left: 0;
+  }
 }
 
 main {

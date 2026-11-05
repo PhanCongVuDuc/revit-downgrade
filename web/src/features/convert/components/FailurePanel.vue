@@ -10,6 +10,8 @@ const props = defineProps<{
   kind: string;
   message: string | null;
   reportCode: string | null;
+  /** An earlier report already holds this same file. */
+  alreadyReported: boolean;
   /** Why the last report request failed, if it did. */
   reportError: string | null;
   sending: boolean;
@@ -38,6 +40,7 @@ const reportFailure = computed(() => {
   <div class="failure-panel">
     <p class="err" role="alert">{{ failure }}</p>
     <p v-if="reportCode" class="muted">{{ t('convert.report.sent', { code: reportCode }) }}</p>
+    <p v-else-if="alreadyReported" class="muted">{{ t('convert.report.known') }}</p>
     <form v-else class="report" @submit.prevent="emit('send')">
       <BaseCheckbox v-model="consent">{{ t('convert.report.consent') }}</BaseCheckbox>
       <BaseButton type="submit" :disabled="!consent || sending">{{ t('convert.report.send') }}</BaseButton>

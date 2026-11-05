@@ -106,7 +106,7 @@ pub fn spawn_cleanup(
 mod tests {
     use super::*;
     use crate::clock::ManualClock;
-    use crate::stats::{Outcome, Stats};
+    use crate::stats::Stats;
 
     #[test]
     fn startup_and_sweeps_leave_statistics_alone() {
@@ -114,8 +114,8 @@ mod tests {
         let data = dir.path();
         let now = DateTime::from_timestamp(1_800_000_000, 0).unwrap();
         let stats = Stats::open(data.join("stats"), now);
-        stats.record_outcome(Outcome::Succeeded, "203.0.113.7".parse().unwrap());
-        stats.record_contribution();
+        stats.record_success("203.0.113.7".parse().unwrap(), None, 2024);
+        stats.record_contribution(None, "R-AAAAAA");
         let stats_file = data.join("stats").join("stats.json");
         let key_file = data.join("stats").join("key");
         let (before_stats, before_key) = (

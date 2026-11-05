@@ -12,6 +12,7 @@
 //! HTTP API reads reports back.
 
 use crate::jobs::Job;
+use crate::stats::Stats;
 use chrono::{DateTime, Duration, SecondsFormat, Utc};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -84,6 +85,13 @@ impl Reports {
 
     pub fn dir(&self) -> &Path {
         &self.dir
+    }
+
+    /// True while a report sent under this engine build holds this file.
+    pub fn holds(&self, stats: &Stats, file: &str) -> bool {
+        stats
+            .known_report(file)
+            .is_some_and(|code| self.dir.join(code).is_dir())
     }
 
     /// Moves the failed job's input (and log, if any) into a new report and returns its code.

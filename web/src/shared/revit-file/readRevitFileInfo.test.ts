@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import { basicFileInfo, countingFile, fileOf, makeOle, makeOleV4, utf16le } from './makeOle.testutil';
 import { readStream } from './ole';
-import { readRevitFileInfo, RevitFileError } from './readRevitFileInfo';
+import { readRevitFileDetails, readRevitFileInfo, RevitFileError } from './readRevitFileInfo';
 
 const MIB = 1024 * 1024;
 
@@ -18,6 +18,38 @@ async function errorCodeOf(promise: Promise<unknown>): Promise<string> {
     return error instanceof RevitFileError ? error.code : `unexpected ${String(error)}`;
   }
 }
+
+function infoText(worksharing: string): Uint8Array {
+  return utf16le(`Worksharing: ${worksharing}\r\nUsername: \r\nFormat: 2026\r\nBuild: 20250227_1515(x64)\r\n`);
+}
+
+describe('readRevitFileDetails', () => {
+  it('reads the build and whether the file is workshared', async () => {
+    const file = fileOf(makeOle([['BasicFileInfo', infoText('Central')]]), 'tower.rvt');
+    await expect(readRevitFileDetails(file)).resolves.toEqual({
+      kind: 'rvt',
+      year: 2026,
+      build: '20250227_1515(x64)',
+      workshared: true,
+    });
+  });
+
+  it('says a file without worksharing is not workshared', async () => {
+    const file = fileOf(makeOle([['BasicFileInfo', infoText('Not enabled')]]), 'tower.rvt');
+    await expect(readRevitFileDetails(file)).resolves.toMatchObject({ workshared: false });
+  });
+
+  it('leaves out what the file does not say', async () => {
+    const file = fileOf(makeOle([['BasicFileInfo', utf16le('Format: 2024')]]), 'tower.rvt');
+    await expect(readRevitFileDetails(file)).resolves.toMatchObject({ year: 2024, build: null, workshared: null });
+  });
+
+  it('has no size limit, since nothing is uploaded', async () => {
+    const bytes = makeOle([['BasicFileInfo', infoText('Local')]]);
+    const { file } = countingFile(bytes, 'huge.rvt', 5 * 1024 * MIB);
+    await expect(readRevitFileDetails(file)).resolves.toMatchObject({ year: 2026 });
+  });
+});
 
 describe('readRevitFileInfo', () => {
   it('reads_year_and_kind_from_generated_ole', async () => {

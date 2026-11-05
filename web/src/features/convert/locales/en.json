@@ -7,7 +7,7 @@
       "label": "Usage so far",
       "people": "people have used it",
       "succeeded": "files downgraded",
-      "failed": "files failed",
+      "failed": "files still failing",
       "contributed": "failed files sent to help fix them",
       "since": "Counted since {date}",
       "help": "Downgrading Revit files is hard and takes a lot of real data to get right. Every failed file you send helps me fix bugs and keep improving the tool."
@@ -205,7 +205,8 @@
       "sent": "Thank you. Your report code is {code}. Quote it if you ask for the file to be deleted.",
       "failed": "The report could not be sent ({code}). Please try again.",
       "failed_already_reported": "A report for this file was already sent.",
-      "failed_expired": "The file is no longer kept, so it cannot be sent."
+      "failed_expired": "The file is no longer kept, so it cannot be sent.",
+      "known": "I already have this file, so there is no need to send it again."
     },
     "unopenable": {
       "open": "File doesn't open in Revit?",
@@ -282,11 +283,11 @@
         },
         "workshared": {
           "q": "Can I downgrade a workshared (central) model?",
-          "a": "Upload a copy of the central model file, not a local copy. After the conversion, open it in the older Revit and check its worksets before you save it as the new central model. If worksharing does not come through as expected, send the file from the result page so I can look into it. A cloud model in Autodesk Docs has to be saved as a local .rvt file first."
+          "a": "Yes. Worksets and worksharing are kept. Convert the central model like any other file. A cloud model in Autodesk Docs has to be saved as a local .rvt file first."
         },
         "links": {
-          "q": "What about linked models and families?",
-          "a": "An older Revit cannot load a family or link a Revit model saved in a newer version, so each of them has to be converted too, to the same version as the project. Convert them one by one, then load or reload them in the older Revit."
+          "q": "What about families and linked models?",
+          "a": "Families loaded in a model are converted with it, so there is nothing extra to do. A linked Revit model is a separate file, so convert it on its own, to the same version. The same goes for a family file (.rfa) you want to load later."
         }
       },
       "pairItems": {

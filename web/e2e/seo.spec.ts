@@ -1,6 +1,8 @@
 // What a search engine or link preview gets from the real server before any JavaScript runs.
 import { expect, test } from '@playwright/test';
 
+import { revitFile } from './fixtures';
+
 test('each_page_is_served_with_its_own_head_and_content', async ({ request }) => {
   const resp = await request.get('/revit-2026-to-2024', { maxRedirects: 0 });
   expect(resp.status()).toBe(200);
@@ -52,7 +54,7 @@ test('one_address_per_page', async ({ request }) => {
 
 test('sitemap_lists_every_page_with_its_date', async ({ request }) => {
   const xml = await (await request.get('/sitemap.xml')).text();
-  expect(xml.match(/<url>/g)).toHaveLength(44);
+  expect(xml.match(/<url>/g)).toHaveLength(100);
   expect(xml).toContain('<loc>https://revitdowngrade.com/vi/guides</loc>');
   expect(xml).toContain('<loc>https://revitdowngrade.com/revit-2023-to-2022</loc><lastmod>');
   for (const file of ['/robots.txt', '/llms.txt', '/favicon.svg', '/favicon.ico', '/og-image.png']) {
@@ -92,9 +94,67 @@ test('vietnamese_pages_have_their_own_address', async ({ request, page }) => {
   expect(await missing.text()).toContain('Không tìm thấy trang');
 
   await page.goto('/guides');
-  await page.getByRole('link', { name: 'VI', exact: true }).click();
+  await page.getByTestId('language-menu').click();
+  await page.getByRole('link', { name: 'Tiếng Việt', exact: true }).click();
   await expect(page).toHaveURL(/\/vi\/guides$/);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Hướng dẫn hạ phiên bản Revit');
-  await page.getByRole('link', { name: 'EN', exact: true }).click();
+  await page.getByTestId('language-menu').click();
+  await page.getByRole('link', { name: 'English', exact: true }).click();
   await expect(page).toHaveURL(/\/guides$/);
+});
+
+test('chinese_and_hindi_pages_have_their_own_address', async ({ request, page }) => {
+  for (const [code, og] of [
+    ['zh', 'zh_CN'],
+    ['hi', 'hi_IN'],
+  ] as const) {
+    const resp = await request.get(`/${code}/revit-2026-to-2024`);
+    expect(resp.status()).toBe(200);
+    const html = await resp.text();
+    expect(html).toContain(`<html lang="${code}">`);
+    expect(html).toContain(`<meta property="og:locale" content="${og}" />`);
+    expect(html).toContain(`<link rel="canonical" href="https://revitdowngrade.com/${code}/revit-2026-to-2024" />`);
+    const missing = await request.get(`/${code}/nothing-here`);
+    expect(missing.status()).toBe(404);
+    expect(await missing.text()).toContain(`<html lang="${code}">`);
+  }
+
+  // The text of these languages is fetched when they are opened, in the page and from a link alike.
+  await page.goto('/zh/guides');
+  await expect(page.getByTestId('language-menu')).toContainText('中文');
+  await page.getByTestId('language-menu').click();
+  await page.getByRole('link', { name: 'हिन्दी', exact: true }).click();
+  await expect(page).toHaveURL(/\/hi\/guides$/);
+  await expect(page.getByTestId('language-menu')).toContainText('हिन्दी');
+  await expect(page.getByRole('link', { name: 'English', exact: true })).toBeHidden();
+});
+
+test('version_checker_reads_files_without_sending_them', async ({ page }) => {
+  const sent: string[] = [];
+  page.on('request', (request) => {
+    if (request.method() !== 'GET') {
+      sent.push(request.url());
+    }
+  });
+  await page.goto('/revit-version-checker');
+  await page
+    .getByLabel('Choose files')
+    .setInputFiles([revitFile('model_2026.rvt', 2026), revitFile('old_2022.rvt', 2022)]);
+  await expect(page.getByRole('cell', { name: 'Revit 2026', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'Revit 2022', exact: true })).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'Revit 2026 or newer' })).toBeVisible();
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Download CSV' }).click();
+  expect((await download).suggestedFilename()).toBe('revit-versions.csv');
+  expect(sent).toEqual([]);
+});
+
+test('privacy_and_terms_are_linked_from_every_page', async ({ page }) => {
+  await page.goto('/vi');
+  await page.getByRole('link', { name: 'Quyền riêng tư' }).click();
+  await expect(page).toHaveURL(/\/vi\/privacy$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Chính sách quyền riêng tư');
+  await page.getByRole('link', { name: 'Điều khoản sử dụng' }).click();
+  await expect(page).toHaveURL(/\/vi\/terms$/);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Điều khoản sử dụng');
 });

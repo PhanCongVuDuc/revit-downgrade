@@ -48,7 +48,7 @@
     },
     "stats": {
       "title": "Thống kê sử dụng",
-      "body": "Máy chủ cộng dồn các con số: số lần hạ file thành công, số lần lỗi, số file lỗi được gửi để xem xét, và số người khác nhau đã hạ file. Mỗi người được nhận ra bằng giá trị băm một chiều có khoá bí mật của địa chỉ mạng (địa chỉ IPv6 được gom theo mạng /64), nên con số chỉ gần đúng: nhiều người dùng chung một mạng được tính là một, một người đổi mạng có thể bị tính hai lần. Máy chủ không lưu địa chỉ thật, tên file hay nội dung file cho việc này. File đã hạ được báo là không mở được trong Revit chuyển từ thành công sang lỗi. Các con số tổng được hiện công khai trên trang chính."
+      "body": "Server giữ các số tổng: số lần hạ xong, số file còn lỗi, số file lỗi được gửi để xem, và số người khác nhau đã hạ file. Mỗi người được nhận ra bằng một hash một chiều có khoá của địa chỉ mạng (địa chỉ IPv6 gom theo mạng /64), nên con số chỉ gần đúng: những người dùng chung mạng tính là một, người đổi mạng có thể bị tính hai lần. Mỗi file được nhận ra bằng một hash một chiều có khoá của nội dung, nên file lỗi gửi lại chỉ tính một lần. Hash của file lỗi hoặc không mở được được giữ tới khi một lần hạ cho thấy file đã được sửa, và không thể dựng lại file từ hash. Bản thân địa chỉ, tên file và nội dung file không bao giờ được lưu cho việc này. File đã hạ mà được báo là không mở được trong Revit sẽ chuyển từ hạ xong sang lỗi. Các số tổng được hiện công khai ở trang chủ."
     },
     "logs": {
       "title": "Nhật ký máy chủ",

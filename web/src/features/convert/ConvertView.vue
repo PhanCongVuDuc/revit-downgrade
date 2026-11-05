@@ -246,6 +246,7 @@ onMounted(() => {
         :kind="store.error.code"
         :message="store.error.message"
         :report-code="store.reportCode"
+        :already-reported="store.alreadyReported"
         :report-error="store.reportError"
         :sending="sending"
         @send="send"

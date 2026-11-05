@@ -199,6 +199,7 @@ struct JobOut {
     error: Option<ErrorOut>,
     result: Option<ResultOut>,
     report_code: Option<String>,
+    already_reported: bool,
     /// The job id is the capability: its holder sees the request it made, to resume an upload.
     name: String,
     size: u64,
@@ -253,6 +254,7 @@ async fn get_job(
             }),
             result,
             report_code: job.report_code.clone(),
+            already_reported: job.already_reported,
             name: job.name.clone(),
             size: job.size,
             kind: job.kind,
@@ -399,6 +401,16 @@ async fn report_job(
         }
         ReportClaim::AlreadyReported => return Err(already_reported()),
     };
+    // Two jobs of one file can fail before either is reported; the file is kept only once.
+    if job
+        .file_id
+        .as_deref()
+        .is_some_and(|f| s.reports.holds(&s.stats, f))
+    {
+        s.store.set_already_reported(&job.id);
+        s.store.release_report(&job.id);
+        return Err(already_reported());
+    }
     let input = s.store.input_path(&job);
     let log = s.store.log_path(&job);
     let (reports, stats, version, now) = (
@@ -411,8 +423,8 @@ async fn report_job(
         let job = job.clone();
         tokio::task::spawn_blocking(move || {
             let made = reports.create(&job, &input, &log, &version, now);
-            if made.is_ok() {
-                stats.record_contribution();
+            if let Ok(code) = &made {
+                stats.record_contribution(job.file_id.as_deref(), code);
                 reports.enforce(now);
             }
             made
@@ -610,8 +622,8 @@ async fn finish_open_report(s: &AppState, raw: &str) -> Result<Response, ApiErro
                 done_at,
                 now,
             );
-            if made.is_ok() {
-                stats.record_unopenable();
+            if let Ok(code) = &made {
+                stats.record_unopenable(job.file_id.as_deref(), job.target, code);
                 reports.enforce(now);
             }
             made

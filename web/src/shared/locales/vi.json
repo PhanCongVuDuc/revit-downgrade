@@ -7,7 +7,8 @@
     "guides": "Hướng dẫn",
     "about": "Cách hoạt động",
     "source": "Mã nguồn",
-    "home": "Trang chủ Revit Downgrade"
+    "home": "Trang chủ Revit Downgrade",
+    "checker": "Kiểm tra phiên bản"
   },
   "notFound": {
     "title": "Không tìm thấy trang",
@@ -21,6 +22,8 @@
     "authorAbout": "kỹ sư đến từ Việt Nam",
     "thanks": "Cảm ơn {name} đã hỗ trợ.",
     "trademark": "Revit is a registered trademark of Autodesk, Inc. Revit Downgrade is not affiliated with or endorsed by Autodesk.",
-    "openSource": "Website và server của Revit Downgrade là mã nguồn mở, nên bạn có thể tự kiểm tra file của mình được xử lý ra sao: {repo}. Riêng bộ chuyển đổi là mã đóng."
+    "openSource": "Website và server của Revit Downgrade là mã nguồn mở, nên bạn có thể tự kiểm tra file của mình được xử lý ra sao: {repo}. Riêng bộ chuyển đổi là mã đóng.",
+    "privacy": "Quyền riêng tư",
+    "terms": "Điều khoản sử dụng"
   }
 }

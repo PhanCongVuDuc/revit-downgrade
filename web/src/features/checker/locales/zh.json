@@ -1,0 +1,44 @@
+{
+  "checker": {
+    "title": "Revit 文件版本查看工具",
+    "pageTitle": "Revit 文件版本查看：这个 rvt 是哪个版本？ {'|'} Revit Downgrade",
+    "description": "免费工具：不用打开 Revit，查看 .rvt、.rfa、.rte 或 .rft 文件是哪个 Revit 版本保存的。可以检查整个文件夹，并把清单下载为 CSV。",
+    "intro": "不用打开 Revit，查看文件是哪个 Revit 版本保存的。可以检查单个文件或整个文件夹。",
+    "chooseFiles": "选择文件",
+    "chooseFolder": "选择文件夹",
+    "drop": "或拖到这里。每次最多 {max} 个文件。",
+    "privacy": "文件留在你的电脑上：它们在这个浏览器中读取，不会上传任何内容。",
+    "checking": "正在检查…",
+    "nothingFound": "没有找到 Revit 文件。只检查 .rvt、.rfa、.rte 和 .rft 文件。",
+    "leftOut": "还有 {count} 个 Revit 文件没有检查：每次最多检查 {max} 个。",
+    "opensIn": "Revit {year} 或更高版本",
+    "yes": "是",
+    "no": "否",
+    "csv": "下载 CSV",
+    "next": "需要在低版本 Revit 中打开其中某个文件？",
+    "nextLink": "在这里降版本",
+    "column": {
+      "file": "文件",
+      "savedIn": "保存版本",
+      "opensIn": "可打开版本",
+      "type": "类型",
+      "build": "内部版本号",
+      "workshared": "工作共享",
+      "size": "大小",
+      "status": "问题"
+    },
+    "problem": {
+      "bad_extension": "不是 Revit 文件类型",
+      "too_large": "文件太大",
+      "not_ole": "不是 Revit 文件，或者文件已损坏",
+      "not_revit": "这个文件没有说明是哪个 Revit 保存的",
+      "unreadable": "无法读取文件"
+    },
+    "sections": [
+      {
+        "heading": "它怎么知道版本？",
+        "body": "每个 Revit 文件都带有一小块信息，记录保存它的 Revit。你的浏览器只读取这一小块，所以即使是大模型也只要片刻，而且不需要安装 Revit。"
+      }
+    ]
+  }
+}

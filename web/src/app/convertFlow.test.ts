@@ -59,6 +59,7 @@ function status(overrides: Partial<JobStatus>): JobStatus {
     error: null,
     result: null,
     reportCode: null,
+    alreadyReported: false,
     name: 'tower.rvt',
     size: 1000,
     kind: 'rvt',
@@ -268,9 +269,8 @@ describe('finished job', () => {
     expect(screen.queryByText(/^501 ·/)).not.toBeVisible();
     await user().click(toggle);
     expect(screen.getByRole('button', { name: 'Hide element IDs' })).toHaveAttribute('aria-expanded', 'true');
-    const list = screen.getByRole('list');
-    expect(within(list).getByText('501 · Wall · Not supported yet')).toBeVisible();
-    expect(within(list).getByText('504 · Tag · Depends on removed element 501')).toBeVisible();
+    expect(screen.getByText('501 · Wall · Not supported yet')).toBeVisible();
+    expect(screen.getByText('504 · Tag · Depends on removed element 501')).toBeVisible();
   });
 
   it('says so when the removed-elements list could not be loaded', async () => {
@@ -359,10 +359,11 @@ describe('shell', () => {
     const source = screen.getByRole('link', { name: 'Source code' });
     expect(source).toHaveAttribute('href', 'https://github.com/PhanCongVuDuc/revit-downgrade');
     expect(source).toHaveAttribute('rel', 'noopener');
-    expect(screen.getByRole('link', { name: 'EN' })).toHaveAttribute('aria-current', 'true');
+    await user().click(screen.getByLabelText('Language: English'));
+    expect(screen.getByRole('link', { name: 'English' })).toHaveAttribute('aria-current', 'true');
     // The other language is a link to the same page in that language, for visitors and crawlers alike.
-    expect(screen.getByRole('link', { name: 'VI' })).toHaveAttribute('href', '/vi');
-    await user().click(screen.getByRole('link', { name: 'VI' }));
+    expect(screen.getByRole('link', { name: 'Tiếng Việt' })).toHaveAttribute('href', '/vi');
+    await user().click(screen.getByRole('link', { name: 'Tiếng Việt' }));
     expect(i18n.global.locale.value).toBe('vi');
     expect(await screen.findByRole('button', { name: viConvert.convert.add.button })).toBeInTheDocument();
     await vi.waitFor(() => {

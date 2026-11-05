@@ -125,6 +125,7 @@ interface WireJob {
   error: { kind: JobErrorKind; message: string } | null;
   result: { file_name: string; size: number; dropped_count: number } | null;
   report_code: string | null;
+  already_reported: boolean;
   name: string;
   size: number;
   kind: FileKind;
@@ -145,6 +146,7 @@ export async function getJob(id: string): Promise<JobStatus> {
       ? { fileName: wire.result.file_name, size: wire.result.size, droppedCount: wire.result.dropped_count }
       : null,
     reportCode: wire.report_code,
+    alreadyReported: wire.already_reported,
     name: wire.name,
     size: wire.size,
     kind: wire.kind,

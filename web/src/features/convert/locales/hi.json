@@ -1,0 +1,309 @@
+{
+  "convert": {
+    "title": "Revit file को पुराने version में downgrade करें",
+    "lead": "नया model पुराने Revit में खोलें। मुफ़्त। आपकी file 2 घंटे बाद delete हो जाती है।",
+    "versions": "Revit 2027 · 2026 · 2025 · 2024 · 2023 → Revit 2022 तक",
+    "stats": {
+      "label": "अब तक का उपयोग",
+      "people": "लोगों ने इस्तेमाल किया",
+      "succeeded": "files downgrade हुईं",
+      "failed": "files अब भी fail हो रही हैं",
+      "contributed": "fail हुई files ठीक करने के लिए भेजी गईं",
+      "since": "{date} से गिनती",
+      "help": "Revit files को downgrade करना मुश्किल काम है और इसे सही करने के लिए बहुत सारा असली data चाहिए। आपकी भेजी हर fail file मुझे bugs ठीक करने और tool को लगातार बेहतर बनाने में मदद करती है।"
+    },
+    "pageTitle": "Revit files online downgrade करें (2027 → 2022), मुफ़्त {'|'} Revit Downgrade",
+    "description": "मुफ़्त online Revit downgrade: Revit 2027 से 2023 तक की file (.rvt, .rfa, .rte, .rft) को पुराने version में खोलें, Revit 2022 तक। कुछ install नहीं करना।",
+    "pairPage": {
+      "title": "Revit {from} को Revit {to} में downgrade करें",
+      "pageTitle": "Revit {from} को {to} में online downgrade करें, मुफ़्त {'|'} Revit Downgrade",
+      "description": "Revit {from} की file (.rvt, .rfa, .rte, .rft) को convert करें ताकि वह Revit {to} में खुले। मुफ़्त, कुछ install नहीं करना, files 2 घंटे बाद delete हो जाती हैं।",
+      "details": {
+        "title": "Revit {from} को Revit {to} में downgrade करने के बारे में",
+        "why": "Revit {to} उस file को नहीं खोल सकता जो Revit {from} में save हुई हो: Revit का कोई भी release सिर्फ़ अपने version और उससे पुराने versions की files खोलता है। Revit Downgrade file को Revit {to} format में दोबारा लिखता है, इसलिए वह Revit {to} में एक सामान्य, editable Revit file की तरह खुलती है, बीच में IFC या कोई और export नहीं होता।",
+        "steps": "यह एक version का step है, {route}। जो कुछ Revit {to} नहीं जानता वह हटा दिया जाता है, और हर हटाया गया element result page पर list होता है। | File {n} versions नीचे जाती है, एक-एक करके: {route}। हर step वह हटाता है जो उससे नीचे का version नहीं जानता, और हर हटाया गया element result page पर list होता है।",
+        "time": "छोटी files में करीब एक मिनट लगता है; बड़े models में कुछ मिनट। | छोटी files में एक-दो मिनट लगते हैं; बड़े models में {n} versions में से हर एक के लिए कुछ मिनट।",
+        "opensIn": "Convert की गई file Revit {to} में और उससे नए किसी भी Revit में खुलती है, जो उसे हमेशा की तरह upgrade कर देता है। इसे एक बार Revit {to} में save कर लें, उसके बाद यह एक सामान्य Revit {to} file है।",
+        "files": "Revit {from} में save किए गए projects (.rvt), project templates (.rte), families (.rfa) और family templates (.rft) के लिए यह एक जैसा काम करता है, 1 GB तक।"
+      },
+      "alternatives": {
+        "title": "Revit {from} model को Revit {to} में लाने के दूसरे तरीके",
+        "intro": "Convert करना अकेला विकल्प नहीं है। Revit {to} वाले व्यक्ति को हर विकल्प से क्या मिलता है:",
+        "items": [
+          {
+            "label": "Upgrade से पहले की copy",
+            "text": "अगर भेजने वाले के पास file अब भी Revit {to} या उससे पुराने version में save है, तो वह जैसी है वैसी खुल जाती है, लेकिन उसके बाद किए गए बदलावों के बिना।"
+          },
+          {
+            "label": "IFC",
+            "text": "Revit {from} IFC export करता है और Revit {to} उसे link या import करता है। Geometry और काफ़ी data आ जाता है, लेकिन walls, families और parameters अब native, editable Revit elements नहीं रहते।"
+          },
+          {
+            "label": "Revit {from} install करना",
+            "text": "File जैसी है वैसी खुलती है, लेकिन इसके लिए Revit {from} का license चाहिए, और वहाँ save की गई कोई भी चीज़ वे लोग नहीं खोल पाएँगे जो Revit {to} पर ही रहते हैं।"
+          },
+          {
+            "label": "File convert करना",
+            "text": "एक native Revit {to} file जिस पर आप काम जारी रखते हैं। जिन elements के लिए Revit {to} में जगह नहीं है वे हटा दिए जाते हैं और उनकी ElementIds के साथ list किए जाते हैं।"
+          }
+        ]
+      }
+    },
+    "changes": {
+      "title": "Revit {to} किन चीज़ों को support नहीं करता",
+      "intro": "Revit के हर release में नए तरह के elements जुड़ते हैं। जब file नीचे जाती है, तो जिन elements के लिए पुराने version में जगह नहीं होती वे हटा दिए जाते हैं, और उनमें से हर एक result page पर अपनी ElementId के साथ list होता है, ताकि आप उसे original model में ढूँढ सकें।",
+      "step": "Revit {from} → Revit {to}",
+      "removedLabel": "Revit {to} में नहीं:",
+      "otherLabel": "ये भी बदलता है:",
+      "whatsNew": "Revit {year} में नया क्या है (Autodesk Help)",
+      "2027": {
+        "removed": "नई Revit 2027 categories में point, line और area boundary conditions, rebar distribution paths और rebar concrete edges।",
+        "other": "\"Server Room\" space type हटकर कोई space type नहीं रहता, और stair riser numbers Revit 2026 की size और color settings पर लौट आते हैं।"
+      },
+      "2026": {
+        "removed": "rebar crank types और MEP system zone color fills।",
+        "other": "toposolid sub-divisions toposolids के रूप में बने रहते हैं; mesh से बना toposolid अपना solid रखता है लेकिन mesh shape खो देता है; cable types और conductor sizes Revit 2025 के wire types और sizes बन जाते हैं।"
+      },
+      "2025": {
+        "removed": "sheet collections, pipe और duct analytical segments, rebar splice types और splice lines।",
+        "other": "\"Apparent power\" labels पुराने \"load\" शब्दों पर लौट आते हैं।"
+      },
+      "2024": {
+        "removed": "electrical connectors, electrical load cases, rebar bending details, और wall और floor layer elements।"
+      },
+      "2023": {
+        "removed": "plumbing equipment, mechanical control devices, MEP ancillary framing, fabrication ductwork stiffeners, electrical load sets, analytical feeders और transformers, analytical panels और openings, और उन categories के tags जिन्हें सिर्फ़ Revit 2023 से tag किया जा सकता है (जैसे column, model group और link tags)।"
+      }
+    },
+    "guideLinks": {
+      "title": "गाइड"
+    },
+    "guide": {
+      "stepsTitle": "Revit file downgrade कैसे करें",
+      "steps": {
+        "add": {
+          "title": "अपनी file जोड़ें",
+          "body": ".rvt, .rfa, .rte या .rft file चुनें या drop करें।"
+        },
+        "pick": {
+          "title": "Version चुनें",
+          "body": "उस Revit version पर click करें जिसमें आपको इसे खोलना है।"
+        },
+        "download": {
+          "title": "Download करें",
+          "body": "Convert की गई file लें और उसे पुराने Revit में खोलें।"
+        }
+      },
+      "highlightsTitle": "Revit Downgrade क्यों इस्तेमाल करें",
+      "highlights": {
+        "free": {
+          "title": "मुफ़्त",
+          "body": "न account, न payment।"
+        },
+        "noInstall": {
+          "title": "कुछ install नहीं करना",
+          "body": "आपके browser में चलता है।"
+        },
+        "deleted": {
+          "title": "2 घंटे बाद delete",
+          "body": "किसी के साथ share नहीं की जाती। ज़्यादा समय तक तभी रखी जाती है जब आप fail हुई file को ठीक करने में मदद के लिए भेजना चुनें।"
+        },
+        "openSource": {
+          "title": "Open source web app",
+          "body": "Website और server का code public है, इसलिए कोई भी देख सकता है कि files के साथ क्या होता है।"
+        }
+      }
+    },
+    "pairs": {
+      "title": "लोकप्रिय conversions",
+      "others": "दूसरे conversions",
+      "link": "Revit {from} से {to}"
+    },
+    "status": {
+      "pick": "File चुनें",
+      "ready": "Downgrade के लिए तैयार",
+      "uploading": "Upload हो रहा है",
+      "queued": "Queue में है",
+      "running": "Convert हो रहा है",
+      "done": "Conversion पूरा हुआ",
+      "failed": "Conversion fail हो गया",
+      "error": "कुछ गड़बड़ हो गई"
+    },
+    "add": {
+      "button": "Revit file जोड़ें",
+      "drop": "या यहाँ drop करें",
+      "limits": ".rvt, .rte, .rfa, .rft - 1 GB तक",
+      "support": "Revit Downgrade मुफ़्त है और एक छोटे server पर चलता है जिसका खर्च मेरी अपनी जेब से जाता है, इसलिए files की सीमा 1 GB है। क्या आपको इससे बड़ी files convert करनी हैं, या अपनी company के लिए private version चाहिए? मुझसे संपर्क करें, मेरी contact details page के नीचे हैं। अगर आपको यह project काम का लगता है और आप बड़ी files और तेज़ conversions के लिए server upgrade करने में मदद करना चाहते हैं, तो वहीं मुझसे संपर्क कर सकते हैं।",
+      "input": "Revit file"
+    },
+    "kind": {
+      "rvt": "Project",
+      "rte": "Project template",
+      "rfa": "Family",
+      "rft": "Family template"
+    },
+    "summary": "Revit {year} · {kind} · {size}",
+    "target": {
+      "label": "Target Revit version",
+      "option": "Revit {year}"
+    },
+    "downgrade": "Downgrade",
+    "continueUpload": "Upload जारी रखें",
+    "privacy": "आपकी file तभी भेजी जाती है जब आप Downgrade दबाते हैं। वह 2 घंटे बाद delete हो जाती है।",
+    "privacyContinue": "जब तक आप \"Upload जारी रखें\" नहीं दबाते, आगे कुछ नहीं भेजा जाता। File 2 घंटे बाद delete हो जाती है।",
+    "chooseAnother": "दूसरी file चुनें",
+    "convertAnother": "दूसरी file convert करें",
+    "cancel": "Cancel करें और file delete करें",
+    "leave": "शुरुआत पर वापस जाएँ",
+    "resume": "Resume करें",
+    "progress": {
+      "label": "Upload progress",
+      "uploading": "Upload हो रहा है... {percent}%",
+      "interrupted": "Upload बीच में रुक गया। अपना connection जाँचें, फिर resume करें।",
+      "waiting": "इंतज़ार — अगला नंबर आपका है | इंतज़ार — आगे 1 file है | इंतज़ार — आगे {n} files हैं",
+      "waitingUnknown": "Queue में इंतज़ार",
+      "converting": "{from} → {to} convert हो रहा है — {elapsed}",
+      "convertingEstimate": "{from} → {to} convert हो रहा है — {elapsed} / करीब {estimate}",
+      "continuing": "आपका पिछला upload जारी है"
+    },
+    "result": {
+      "title": "Revit {year} में convert हो गई",
+      "download": "{file} download करें ({size})",
+      "expires": "{time} पर अपने आप delete हो जाएगी।",
+      "deleteNow": "अभी delete करें",
+      "titleReady": "आपकी file तैयार है"
+    },
+    "dropped": {
+      "title": "कोई element नहीं हटाया गया | 1 element हटाया गया | {n} elements हटाए गए",
+      "class": "Class",
+      "reason": "कारण",
+      "count": "संख्या",
+      "showIds": "Element IDs दिखाएँ",
+      "hideIds": "Element IDs छिपाएँ",
+      "csv": "CSV download करें",
+      "loadFailed": "हटाए गए elements की list load नहीं हो सकी। File फिर भी download की जा सकती है।",
+      "loading": "हटाए गए elements की list load हो रही है...",
+      "reason_no_rule": "अभी support नहीं है",
+      "reason_rule_broken": "Convert नहीं हो सका",
+      "reason_cascade": "एक हटाए गए element पर निर्भर है",
+      "reasonOf_cascade": "हटाए गए element {id} पर निर्भर है",
+      "truncated": "पहले {shown} दिखाए जा रहे हैं। CSV में सभी हैं।"
+    },
+    "failure": {
+      "refused": "अभी support नहीं है: {message}",
+      "corrupt": "File पढ़ी नहीं जा सकी। हो सकता है वह खराब हो।",
+      "failed": "Conversion fail हो गया। समस्या log कर ली गई है।",
+      "crashed": "Conversion fail हो गया। समस्या log कर ली गई है।",
+      "timed_out": "Conversion fail हो गया। समस्या log कर ली गई है।",
+      "mismatch": "File वैसी नहीं है जैसी browser ने बताई थी। कृपया फिर से कोशिश करें।",
+      "disk_full": "Server पर जगह नहीं बची है। कृपया थोड़ी देर बाद फिर से कोशिश करें।",
+      "unknown": "Conversion fail हो गया। समस्या log कर ली गई है।"
+    },
+    "report": {
+      "consent": "Revit Downgrade को यह file ज़्यादा से ज़्यादा 30 दिन तक रखने दें ताकि समस्या ढूँढकर ठीक की जा सके। इसका इस्तेमाल सिर्फ़ tool ठीक करने के लिए होता है, यह किसी के साथ share नहीं की जाती, और 30 दिन बाद या आपके कहने पर delete हो जाती है (आपको बताने के लिए एक code मिलेगा)।",
+      "send": "भेजें",
+      "sent": "धन्यवाद। आपका report code {code} है। File delete करवाने के लिए कहते समय यह code बताएँ।",
+      "failed": "Report नहीं भेजी जा सकी ({code})। कृपया फिर से कोशिश करें।",
+      "failed_already_reported": "इस file की report पहले ही भेजी जा चुकी है।",
+      "failed_expired": "यह file अब रखी नहीं गई है, इसलिए भेजी नहीं जा सकती।",
+      "known": "यह file मेरे पास पहले से है, इसलिए इसे दोबारा भेजने की ज़रूरत नहीं है।"
+    },
+    "unopenable": {
+      "open": "File Revit में नहीं खुल रही?",
+      "intro": "अगर Revit convert की गई file को खोलने से मना करे, तो उसे मुझे भेजें ताकि मैं समस्या ढूँढकर ठीक कर सकूँ।",
+      "consent": "Original file, convert की गई file और conversion log भेजें। इन्हें tool ठीक करने के लिए ज़्यादा से ज़्यादा 30 दिन तक रखा जाता है, किसी के साथ share नहीं किया जाता, और 30 दिन बाद या आपके कहने पर delete कर दिया जाता है (आपको बताने के लिए एक code मिलेगा)।",
+      "note": "Revit क्या कहता है? (optional)",
+      "pick": "इस page पर अब आपकी original file नहीं है। वही file चुनें जो आपने convert की थी:",
+      "send": "भेजें",
+      "sending": "भेजा जा रहा है… {percent}%",
+      "sent": "धन्यवाद। आपका report code {code} है। Files delete करवाने के लिए कहते समय यह code बताएँ।",
+      "failed": "Report नहीं भेजी जा सकी ({code})। कृपया फिर से कोशिश करें।",
+      "failed_size_mismatch": "यह इस conversion की original file नहीं है। वह file चुनें जो आपने convert की थी।",
+      "failed_already_reported": "इस conversion की report पहले ही की जा चुकी है।",
+      "failed_expired": "यह conversion अब रखा नहीं गया है, इसलिए इसकी report यहाँ नहीं की जा सकती। कृपया page के नीचे दी गई जानकारी से author से संपर्क करें।",
+      "failed_not_found": "यह conversion अब रखा नहीं गया है, इसलिए इसकी report यहाँ नहीं की जा सकती। कृपया page के नीचे दी गई जानकारी से author से संपर्क करें।",
+      "failed_storage_error": "Server report save नहीं कर सका। कृपया फिर से कोशिश करें।",
+      "failed_needs_file": "भेजने के लिए अपनी original file चुनें।",
+      "failed_uploads_in_progress": "आपके uploads पहले से चल रहे हैं। उनके पूरा होने का इंतज़ार करें, फिर से कोशिश करें।",
+      "failed_server_full": "Server दूसरी files में व्यस्त है। कृपया थोड़ी देर बाद फिर से कोशिश करें।",
+      "failed_upload_failed": "Upload बीच में रुक गया। अपना connection जाँचें और फिर से कोशिश करें।",
+      "failed_network": "Server तक नहीं पहुँचा जा सका। अपना connection जाँचें और फिर से कोशिश करें।"
+    },
+    "error": {
+      "bad_extension": "यह Revit file नहीं है। .rvt, .rte, .rfa या .rft file चुनें।",
+      "too_large": "File 1 GB से बड़ी है, जो सीमा है। बड़ी files के लिए page के नीचे दी गई जानकारी से मुझसे संपर्क करें।",
+      "not_ole": "यह file Revit file नहीं है, या खराब हो गई है।",
+      "not_revit": "यह file Revit file नहीं लगती, या खराब हो गई है।",
+      "unreadable": "File आपके browser में नहीं पढ़ी जा सकी।",
+      "unsupported_year": "Revit {year} की files अभी downgrade नहीं की जा सकतीं। कुछ नहीं भेजा गया।",
+      "unsupported_pair": "यह conversion अभी support नहीं है।",
+      "server_restarted": "Server restart हुआ और यह file खो गई। कृपया इसे फिर से चुनें।",
+      "expired": "इस conversion की समय-सीमा खत्म हो गई और उसकी file delete हो गई, इसलिए अब इसकी report यहाँ नहीं की जा सकती। मुझसे संपर्क करने के लिए page के नीचे दी गई contact details देखें।",
+      "cancelled": "Conversion cancel कर दिया गया।",
+      "hourly_limit": "आपके network से बहुत ज़्यादा conversions हुए हैं। {minutes} मिनट बाद फिर से कोशिश करें।",
+      "active_job": "आपका एक conversion पहले से चल रहा है। उसके पूरा होने का इंतज़ार करें।",
+      "uploads_in_progress": "आपके uploads पहले से चल रहे हैं। उनके पूरा होने का इंतज़ार करें।",
+      "queue_full": "Queue भरी हुई है। कृपया एक मिनट बाद फिर से कोशिश करें।",
+      "job_gone": "Server पर अब यह conversion नहीं है। कृपया file फिर से चुनें।",
+      "network": "Server तक नहीं पहुँचा जा सका। अपना connection जाँचें और फिर से कोशिश करें।",
+      "unknown": "कुछ गड़बड़ हो गई। कृपया फिर से कोशिश करें।",
+      "upload_failed": "Upload बीच में रुक गया। अपना connection जाँचें, फिर resume करें।",
+      "storage_error": "Server file store नहीं कर सका। कृपया थोड़ी देर बाद फिर से कोशिश करें।",
+      "upload_closed": "यह upload पहले ही पूरा हो चुका है या रोक दिया गया था।",
+      "server_full": "Server दूसरी files में व्यस्त है। कृपया {minutes} मिनट बाद फिर से कोशिश करें।",
+      "upload_in_other_tab": "यह file दूसरे tab में upload हो रही है।"
+    },
+    "faq": {
+      "title": "Revit files downgrade करने के बारे में सवाल",
+      "items": {
+        "howTo": {
+          "q": "Revit file को पुराने version में downgrade कैसे करें?",
+          "a": "ऊपर अपनी file जोड़ें, जो Revit version चाहिए उसे चुनें और Downgrade दबाएँ, फिर convert की गई file download करके उसे उस पुराने Revit में खोलें। उदाहरण के लिए, Revit 2026 का model Revit 2024 में खोला जा सकता है। Revit 2023 से 2027 तक की कोई भी file Revit 2022 तक downgrade हो सकती है, कुछ install नहीं करना।"
+        },
+        "saveOlder": {
+          "q": "क्या Revit किसी file को पुराने version में save कर सकता है?",
+          "a": "नहीं। Revit सिर्फ़ upgrade करता है: वह पुराने versions की files खोलता है और हमेशा अपने ही version में save करता है। Revit में \"Save As older version\" जैसा कुछ नहीं है, इसीलिए यह tool बना है।"
+        },
+        "supported": {
+          "q": "कौन सी files और versions support होते हैं?",
+          "a": "Revit 2023, 2024, 2025, 2026 या 2027 में save किए गए projects (.rvt), project templates (.rte), families (.rfa) और family templates (.rft), जो Revit 2022 तक किसी भी पुराने version में convert होते हैं। 1 GB तक की files।"
+        },
+        "lost": {
+          "q": "क्या मेरा कुछ छूट जाएगा?",
+          "a": "जो elements पुराना Revit नहीं जानता, जैसे नए version में जोड़े गए features, वे हटा दिए जाते हैं। Conversion के बाद आपको हटाए गए सभी elements की पूरी list उनकी ElementIds के साथ दिखती है और आप उसे CSV के रूप में download कर सकते हैं।"
+        },
+        "backsave": {
+          "q": "क्या Revit file को backsave किया जा सकता है?",
+          "a": "Revit के अंदर नहीं: Revit में backsave या \"save to previous version\" command नहीं है। इसकी जगह Revit Downgrade online backsave करता है, Revit 2023 से 2027 तक की files के लिए, Revit 2022 तक।"
+        },
+        "safe": {
+          "q": "क्या मेरी file सुरक्षित है?",
+          "a": "आपकी original file conversion पूरा होते ही delete हो जाती है, और convert की गई file 2 घंटे बाद। Files कभी किसी के साथ share नहीं की जातीं। कोई file ज़्यादा समय तक तभी रखी जाती है जब आप fail हुए conversion को ठीक करने में मदद के लिए उसे भेजना चुनें। Files संभालने वाला website और server का code open source है; conversion engine खुद closed source है।",
+          "more": "Files के साथ क्या होता है"
+        },
+        "workshared": {
+          "q": "क्या workshared (central) model downgrade किया जा सकता है?",
+          "a": "हाँ। Worksets और worksharing बने रहते हैं। Central model को किसी भी दूसरी file की तरह downgrade करें। Autodesk Docs का cloud model पहले local .rvt file के रूप में save करना होगा।"
+        },
+        "links": {
+          "q": "Families और linked models का क्या?",
+          "a": "Model में load की गई families उसी के साथ downgrade हो जाती हैं, अलग से कुछ नहीं करना पड़ता। Linked Revit model एक अलग file होती है, इसलिए उसे अलग से उसी version में downgrade करें। बाद में load की जाने वाली family file (.rfa) के लिए भी यही है।"
+        }
+      },
+      "pairItems": {
+        "howTo": {
+          "q": "Revit {from} की file Revit {to} में कैसे खोलें?",
+          "a": "ऊपर file जोड़ें: Revit {to} अपने आप चुन लिया जाता है। Downgrade दबाएँ, फिर convert की गई file download करके उसे Revit {to} में खोलें। कुछ install नहीं करना, कोई account नहीं चाहिए।"
+        },
+        "saveOlder": {
+          "q": "क्या Revit {from} किसी file को Revit {to} के लिए save कर सकता है?",
+          "a": "नहीं। Revit {from} में Save As older version नहीं है: हर save Revit {from} format में लिखता है, जिसे Revit {to} नहीं खोल सकता। File को Revit {to} में लाने का तरीका उसे convert करना है।"
+        }
+      }
+    },
+    "schema": {
+      "operatingSystem": "कोई भी (web browser में चलता है)",
+      "browserRequirements": "JavaScript ज़रूरी है।"
+    }
+  }
+}

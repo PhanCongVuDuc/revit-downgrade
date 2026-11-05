@@ -1,0 +1,309 @@
+{
+  "convert": {
+    "title": "Revit 降版本：把文件转成低版本",
+    "lead": "在低版本 Revit 中打开高版本模型。免费。文件 2 小时后删除。",
+    "versions": "Revit 2027 · 2026 · 2025 · 2024 · 2023 → 最低到 Revit 2022",
+    "stats": {
+      "label": "目前的使用情况",
+      "people": "人使用过",
+      "succeeded": "个文件已降版本",
+      "failed": "个文件仍然失败",
+      "contributed": "个失败文件已发送，帮助修复",
+      "since": "自 {date} 起统计",
+      "help": "给 Revit 文件降版本很难，需要大量真实数据才能做好。你发送的每个失败文件，都能帮我修复 bug，持续改进这个工具。"
+    },
+    "pageTitle": "Revit 降版本在线工具：高版本转低版本（2027 → 2022），免费 {'|'} Revit Downgrade",
+    "description": "免费在线 Revit 降版本：把 Revit 2027 至 2023 的文件（.rvt、.rfa、.rte、.rft）高版本转低版本，在低版本 Revit 中打开，最低到 2022。无需安装。",
+    "pairPage": {
+      "title": "Revit {from} 降版本到 Revit {to}",
+      "pageTitle": "Revit {from} 转 {to} 在线降版本，免费 {'|'} Revit Downgrade",
+      "description": "转换 Revit {from} 文件（.rvt、.rfa、.rte、.rft），让它能在 Revit {to} 中打开。免费，无需安装，文件 2 小时后删除。",
+      "details": {
+        "title": "关于 Revit {from} 降版本到 Revit {to}",
+        "why": "Revit {to} 打不开在 Revit {from} 中保存的文件：一个 Revit 版本只能打开本版本和更早版本的文件。Revit Downgrade 把文件重写为 Revit {to} 格式，因此它能在 Revit {to} 中作为普通的、可编辑的 Revit 文件打开，中间不经过 IFC 或其他导出。",
+        "steps": "这是一步降一个版本：{route}。Revit {to} 不识别的内容都会被移除，每个被移除的图元都会列在结果页上。 | 文件要下降 {n} 个版本，一次降一个：{route}。每一步都会移除下一版本不识别的内容，每个被移除的图元都会列在结果页上。",
+        "time": "小文件大约一分钟，大模型要几分钟。 | 小文件要一两分钟；大模型在这 {n} 个版本中每个都要几分钟。",
+        "opensIn": "转换后的文件可以在 Revit {to} 及任何更高版本中打开，更高版本会照常升级它。在 Revit {to} 中保存一次后，它就是普通的 Revit {to} 文件了。",
+        "files": "在 Revit {from} 中保存的项目（.rvt）、项目样板（.rte）、族（.rfa）和族样板（.rft）都一样处理，最大 1 GB。"
+      },
+      "alternatives": {
+        "title": "把 Revit {from} 模型用到 Revit {to} 的其他办法",
+        "intro": "转换不是唯一的选择。下面是每种办法能给使用 Revit {to} 的人带来什么：",
+        "items": [
+          {
+            "label": "升级前的副本",
+            "text": "如果发送方还留着在 Revit {to} 或更低版本中保存的文件，可以直接打开，但不包含之后做的修改。"
+          },
+          {
+            "label": "IFC",
+            "text": "Revit {from} 导出 IFC，Revit {to} 链接或导入。几何和很多数据能带过来，但墙、族和参数不再是原生的、可编辑的 Revit 图元。"
+          },
+          {
+            "label": "安装 Revit {from}",
+            "text": "可以直接打开文件，但需要 Revit {from} 许可，而且在其中保存的内容，继续使用 Revit {to} 的人就打不开了。"
+          },
+          {
+            "label": "转换文件",
+            "text": "得到一个可以继续工作的原生 Revit {to} 文件。Revit {to} 无处存放的图元会被移除，并连同 ElementId 一起列出。"
+          }
+        ]
+      }
+    },
+    "changes": {
+      "title": "Revit {to} 不支持的内容",
+      "intro": "每个 Revit 版本都会新增图元种类。文件降版本时，低版本无处存放的图元会被移除，每一个都会连同 ElementId 列在结果页上，方便你在原模型中找到它。",
+      "step": "Revit {from} → Revit {to}",
+      "removedLabel": "Revit {to} 中没有：",
+      "otherLabel": "另有变化：",
+      "whatsNew": "Revit {year} 新增功能（Autodesk 帮助）",
+      "2027": {
+        "removed": "Revit 2027 新类别中的点、线、面边界条件，钢筋分布路径和钢筋的混凝土边。",
+        "other": "“服务器机房”空间类型变为无空间类型，楼梯踢面编号恢复为 Revit 2026 的大小和颜色设置。"
+      },
+      "2026": {
+        "removed": "钢筋弯起类型和 MEP 系统分区颜色填充。",
+        "other": "地形实体子分区保留为地形实体；由网格生成形状的地形实体保留实体，但失去网格形状；电缆类型和导体尺寸变为 Revit 2025 的导线类型和尺寸。"
+      },
+      "2025": {
+        "removed": "图纸集合、管道和风管分析段、钢筋搭接类型和搭接线。",
+        "other": "“视在功率”标签恢复为旧版的“负荷”措辞。"
+      },
+      "2024": {
+        "removed": "电气连接件、电气负荷工况、钢筋弯曲详图，以及墙和楼板的层图元。"
+      },
+      "2023": {
+        "removed": "给排水设备、机械控制设备、MEP 辅助框架、预制风管加强筋、电气负荷集、分析馈线和变压器、分析面板和洞口，以及从 Revit 2023 起才能标记的类别的标记（如柱、模型组和链接的标记）。"
+      }
+    },
+    "guideLinks": {
+      "title": "指南"
+    },
+    "guide": {
+      "stepsTitle": "如何给 Revit 文件降版本",
+      "steps": {
+        "add": {
+          "title": "添加文件",
+          "body": "选择或拖入一个 .rvt、.rfa、.rte 或 .rft 文件。"
+        },
+        "pick": {
+          "title": "选择版本",
+          "body": "点击你要用来打开它的 Revit 版本。"
+        },
+        "download": {
+          "title": "下载",
+          "body": "下载转换后的文件，在低版本 Revit 中打开。"
+        }
+      },
+      "highlightsTitle": "为什么用 Revit Downgrade",
+      "highlights": {
+        "free": {
+          "title": "免费",
+          "body": "无需账号，无需付费。"
+        },
+        "noInstall": {
+          "title": "无需安装",
+          "body": "在浏览器中使用。"
+        },
+        "deleted": {
+          "title": "2 小时后删除",
+          "body": "绝不共享。只有你选择发送失败文件帮助修复时，才会保留更久。"
+        },
+        "openSource": {
+          "title": "开源网页应用",
+          "body": "网站和服务器代码是公开的，任何人都可以查看文件是怎么处理的。"
+        }
+      }
+    },
+    "pairs": {
+      "title": "常用转换",
+      "others": "其他转换",
+      "link": "Revit {from} 转 {to}"
+    },
+    "status": {
+      "pick": "选择文件",
+      "ready": "可以降版本了",
+      "uploading": "正在上传",
+      "queued": "排队中",
+      "running": "正在转换",
+      "done": "转换完成",
+      "failed": "转换失败",
+      "error": "出错了"
+    },
+    "add": {
+      "button": "添加 Revit 文件",
+      "drop": "或拖到这里",
+      "limits": ".rvt、.rte、.rfa、.rft，最大 1 GB",
+      "support": "Revit Downgrade 是免费的，运行在我自费租用的一台小服务器上，所以文件限制在 1 GB 以内。需要转换更大的文件，或者想要公司专用的私有版本？欢迎联系我，联系方式在页面底部。如果你觉得这个项目有用，愿意帮忙升级服务器，以支持更大的文件和更快的转换，也可以通过那里联系我。",
+      "input": "Revit 文件"
+    },
+    "kind": {
+      "rvt": "项目",
+      "rte": "项目样板",
+      "rfa": "族",
+      "rft": "族样板"
+    },
+    "summary": "Revit {year} · {kind} · {size}",
+    "target": {
+      "label": "目标 Revit 版本",
+      "option": "Revit {year}"
+    },
+    "downgrade": "降版本",
+    "continueUpload": "继续上传",
+    "privacy": "只有点击“降版本”后，文件才会发送。文件 2 小时后删除。",
+    "privacyContinue": "点击“继续上传”之前，不会再发送任何内容。文件 2 小时后删除。",
+    "chooseAnother": "选择其他文件",
+    "convertAnother": "转换另一个文件",
+    "cancel": "取消并删除文件",
+    "leave": "回到开始",
+    "resume": "恢复上传",
+    "progress": {
+      "label": "上传进度",
+      "uploading": "正在上传... {percent}%",
+      "interrupted": "上传中断了。请检查网络连接，然后恢复上传。",
+      "waiting": "等待中 — 下一个就是你 | 等待中 — 前面还有 1 个文件 | 等待中 — 前面还有 {n} 个文件",
+      "waitingUnknown": "正在排队",
+      "converting": "正在转换 {from} → {to} — {elapsed}",
+      "convertingEstimate": "正在转换 {from} → {to} — {elapsed} / 约 {estimate}",
+      "continuing": "正在继续之前的上传"
+    },
+    "result": {
+      "title": "已转换为 Revit {year}",
+      "download": "下载 {file}（{size}）",
+      "expires": "将在 {time} 自动删除。",
+      "deleteNow": "立即删除",
+      "titleReady": "文件已准备好"
+    },
+    "dropped": {
+      "title": "没有图元被移除 | 移除了 1 个图元 | 移除了 {n} 个图元",
+      "class": "类名",
+      "reason": "原因",
+      "count": "数量",
+      "showIds": "显示图元 ID",
+      "hideIds": "隐藏图元 ID",
+      "csv": "下载 CSV",
+      "loadFailed": "已移除图元清单加载失败。文件仍可下载。",
+      "loading": "正在加载已移除图元清单...",
+      "reason_no_rule": "暂不支持",
+      "reason_rule_broken": "无法转换",
+      "reason_cascade": "依赖已移除的图元",
+      "reasonOf_cascade": "依赖已移除的图元 {id}",
+      "truncated": "仅显示前 {shown} 条。CSV 中有全部内容。"
+    },
+    "failure": {
+      "refused": "暂不支持：{message}",
+      "corrupt": "无法读取文件，文件可能已损坏。",
+      "failed": "转换失败。问题已记录。",
+      "crashed": "转换失败。问题已记录。",
+      "timed_out": "转换失败。问题已记录。",
+      "mismatch": "文件与浏览器报告的不一致。请重试。",
+      "disk_full": "服务器空间不足。请稍后重试。",
+      "unknown": "转换失败。问题已记录。"
+    },
+    "report": {
+      "consent": "允许 Revit Downgrade 保留此文件最长 30 天，用于查找和修复问题。文件仅用于修复这个工具，绝不共享，30 天后或你提出要求时删除（你会得到一个编号，需要时提供即可）。",
+      "send": "发送",
+      "sent": "谢谢。你的报告编号是 {code}。如需删除文件，请提供这个编号。",
+      "failed": "报告发送失败（{code}）。请重试。",
+      "failed_already_reported": "这个文件的报告已经发送过了。",
+      "failed_expired": "文件已不再保留，无法发送。",
+      "known": "这个文件我已经有了，不需要再次发送。"
+    },
+    "unopenable": {
+      "open": "文件在 Revit 中打不开？",
+      "intro": "如果 Revit 拒绝打开转换后的文件，请发给我，我来查找和修复问题。",
+      "consent": "发送原始文件、转换后的文件和转换日志。这些内容最多保留 30 天，用于修复这个工具，绝不共享，30 天后或你提出要求时删除（你会得到一个编号，需要时提供即可）。",
+      "note": "Revit 提示了什么？（可选）",
+      "pick": "这个页面已不再保留你的原始文件。请选择你转换过的同一个文件：",
+      "send": "发送",
+      "sending": "正在发送… {percent}%",
+      "sent": "谢谢。你的报告编号是 {code}。如需删除这些文件，请提供这个编号。",
+      "failed": "报告发送失败（{code}）。请重试。",
+      "failed_size_mismatch": "这不是这次转换的原始文件。请选择你转换过的文件。",
+      "failed_already_reported": "这次转换已经报告过了。",
+      "failed_expired": "这次转换已不再保留，无法在这里报告。请通过页面底部的方式联系作者。",
+      "failed_not_found": "这次转换已不再保留，无法在这里报告。请通过页面底部的方式联系作者。",
+      "failed_storage_error": "服务器无法保存报告。请重试。",
+      "failed_needs_file": "请选择你的原始文件以发送。",
+      "failed_uploads_in_progress": "你已有正在进行的上传。请等它们完成后重试。",
+      "failed_server_full": "服务器正忙于处理其他文件。请稍后重试。",
+      "failed_upload_failed": "上传中断了。请检查网络连接后重试。",
+      "failed_network": "无法连接服务器。请检查网络连接后重试。"
+    },
+    "error": {
+      "bad_extension": "这不是 Revit 文件。请选择 .rvt、.rte、.rfa 或 .rft 文件。",
+      "too_large": "文件超过了 1 GB 的上限。更大的文件请通过页面底部的方式联系我。",
+      "not_ole": "这个文件不是 Revit 文件，或者已损坏。",
+      "not_revit": "这个文件看起来不是 Revit 文件，或者已损坏。",
+      "unreadable": "无法在浏览器中读取这个文件。",
+      "unsupported_year": "Revit {year} 文件暂时无法降版本。没有发送任何内容。",
+      "unsupported_pair": "暂不支持这种转换。",
+      "server_restarted": "服务器重启了，这个文件已丢失。请重新选择。",
+      "expired": "这次转换已过期，文件已删除，无法在这里报告。如需联系我，请使用页面底部的联系方式。",
+      "cancelled": "转换已取消。",
+      "hourly_limit": "你所在网络的转换次数过多。请在 {minutes} 分钟后重试。",
+      "active_job": "你已有正在进行的转换。请等它完成。",
+      "uploads_in_progress": "你已有正在进行的上传。请等它们完成。",
+      "queue_full": "队列已满。请过一分钟再试。",
+      "job_gone": "服务器上已没有这次转换。请重新选择文件。",
+      "network": "无法连接服务器。请检查网络连接后重试。",
+      "unknown": "出错了。请重试。",
+      "upload_failed": "上传中断了。请检查网络连接，然后恢复上传。",
+      "storage_error": "服务器无法保存文件。请稍后重试。",
+      "upload_closed": "这次上传已经完成或已停止。",
+      "server_full": "服务器正忙于处理其他文件。请在 {minutes} 分钟后重试。",
+      "upload_in_other_tab": "这个文件正在另一个标签页中上传。"
+    },
+    "faq": {
+      "title": "Revit 文件降版本常见问题",
+      "items": {
+        "howTo": {
+          "q": "如何把 Revit 文件降到低版本？",
+          "a": "在上方添加文件，选择你需要的 Revit 版本，点击“降版本”，然后下载转换后的文件，用那个低版本 Revit 打开。比如，Revit 2026 模型可以在 Revit 2024 中打开。Revit 2023 到 2027 的任何文件都可以降到最低 Revit 2022，无需安装任何东西。"
+        },
+        "saveOlder": {
+          "q": "Revit 能把文件保存成低版本吗？",
+          "a": "不能。Revit 只能升级：它能打开低版本的文件，但始终按自身版本保存。Revit 里没有“另存为低版本”，这也正是这个工具存在的原因。"
+        },
+        "supported": {
+          "q": "支持哪些文件和版本？",
+          "a": "在 Revit 2023、2024、2025、2026 或 2027 中保存的项目（.rvt）、项目样板（.rte）、族（.rfa）和族样板（.rft），可以转换到任何更低的版本，最低到 Revit 2022。文件最大 1 GB。"
+        },
+        "lost": {
+          "q": "会丢失内容吗？",
+          "a": "低版本 Revit 不识别的图元（比如高版本新增的功能）会被移除。转换后，你可以看到已移除图元的完整清单及其 ElementId，也可以下载为 CSV。"
+        },
+        "backsave": {
+          "q": "Revit 文件能回存（backsave）到旧版本吗？",
+          "a": "在 Revit 里不行：Revit 没有回存或“保存为上一版本”的命令。Revit Downgrade 改为在线完成回存，支持 Revit 2023 到 2027 的文件，最低到 Revit 2022。"
+        },
+        "safe": {
+          "q": "我的文件安全吗？",
+          "a": "你的原始文件在转换完成后立即删除，转换后的文件在 2 小时后删除。文件绝不共享。只有你选择发送文件帮助修复失败的转换时，文件才会保留更久。处理文件的网站和服务器代码是开源的；转换引擎本身不开源。",
+          "more": "文件如何处理"
+        },
+        "workshared": {
+          "q": "工作共享（中心）模型能降版本吗？",
+          "a": "可以。工作集和工作共享都会保留。中心模型和其他文件一样转换即可。Autodesk Docs 上的云模型需要先另存为本地 .rvt 文件。"
+        },
+        "links": {
+          "q": "族和链接模型怎么办？",
+          "a": "模型中已载入的族会随模型一起转换，无需额外操作。链接的 Revit 模型是单独的文件，需要单独转换到相同版本。之后要载入的族文件（.rfa）也一样。"
+        }
+      },
+      "pairItems": {
+        "howTo": {
+          "q": "如何在 Revit {to} 中打开 Revit {from} 文件？",
+          "a": "在上方添加文件：系统会自动选好 Revit {to}。点击“降版本”，然后下载转换后的文件，在 Revit {to} 中打开。无需安装，无需账号。"
+        },
+        "saveOlder": {
+          "q": "Revit {from} 能把文件保存成 Revit {to} 版本吗？",
+          "a": "不能。Revit {from} 没有“另存为低版本”：每次保存都写成 Revit {from} 格式，而 Revit {to} 打不开这种格式。要把文件用到 Revit {to} 中，办法就是转换文件。"
+        }
+      }
+    },
+    "schema": {
+      "operatingSystem": "不限（在网页浏览器中运行）",
+      "browserRequirements": "需要 JavaScript。"
+    }
+  }
+}

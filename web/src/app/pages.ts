@@ -8,7 +8,7 @@ export interface SitePage {
 }
 
 /** Date the guides list and the "how it works" page last changed in substance. */
-const OTHER_PAGES_UPDATED = '2026-11-03';
+const OTHER_PAGES_UPDATED = '2026-11-05';
 
 /** Every page a search engine should find, in sitemap order. */
 export const SITE_PAGES: SitePage[] = [
@@ -17,6 +17,9 @@ export const SITE_PAGES: SitePage[] = [
   ...PAIRS.map((pair) => ({ path: pairPath(pair), updated: CONVERT_PAGES_UPDATED })),
   { path: '/guides', updated: OTHER_PAGES_UPDATED },
   ...GUIDES.map((guide) => ({ path: guidePath(guide), updated: guide.updated })),
+  { path: '/revit-version-checker', updated: OTHER_PAGES_UPDATED },
+  { path: '/privacy', updated: OTHER_PAGES_UPDATED },
+  { path: '/terms', updated: OTHER_PAGES_UPDATED },
 ];
 
 /** Rendered once to the HTML the server returns, with status 404, for an address that is no page. */

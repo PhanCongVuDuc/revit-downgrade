@@ -49,6 +49,8 @@ export interface JobStatus {
   error: { kind: JobErrorKind; message: string } | null;
   result: { fileName: string; size: number; droppedCount: number } | null;
   reportCode: string | null;
+  /** An earlier report already holds this same file. */
+  alreadyReported: boolean;
   /** What the job was created with; the job id is the capability that reveals them. */
   name: string;
   size: number;

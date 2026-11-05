@@ -85,7 +85,7 @@
           {
             "heading": "Family và model link",
             "paragraphs": [
-              "Revit bản cũ cũng không load được family hay link model Revit lưu bằng bản mới hơn. Hãy hạ từng family (.rfa) và từng model link về cùng phiên bản với project, rồi load hoặc reload lại trong Revit bản cũ."
+              "Family đã load trong project được hạ cùng project. File riêng thì không: Revit bản cũ không load được file family (.rfa) hay link được model Revit lưu bằng bản mới hơn, nên hãy hạ từng file về cùng phiên bản với project, rồi load hoặc reload trong Revit bản cũ."
             ]
           },
           {

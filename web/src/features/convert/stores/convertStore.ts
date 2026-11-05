@@ -55,6 +55,8 @@ export const useConvertStore = defineStore('convert', () => {
   const dropped = ref<DroppedElement[] | null>(null);
   const error = ref<ConvertError | null>(null);
   const reportCode = ref<string | null>(null);
+  /** An earlier report already holds this same file: there is nothing new to send. */
+  const alreadyReported = ref(false);
   /** Why the last report request failed: the ApiError code, or `network`. */
   const reportError = ref<string | null>(null);
   /** The size of the file the current job was made from, from the server. */
@@ -196,6 +198,7 @@ export const useConvertStore = defineStore('convert', () => {
     dropped.value = null;
     error.value = null;
     reportCode.value = null;
+    alreadyReported.value = false;
     reportError.value = null;
     jobSize.value = null;
     unopenableSending.value = false;
@@ -399,6 +402,7 @@ export const useConvertStore = defineStore('convert', () => {
     estimateS.value = current.estimateS;
     expiresAt.value = current.expiresAt;
     reportCode.value = current.reportCode;
+    alreadyReported.value = current.alreadyReported;
     jobSize.value = current.size;
     result.value = current.result;
     if (current.state !== 'waiting_upload') {
@@ -780,6 +784,7 @@ export const useConvertStore = defineStore('convert', () => {
     dropped,
     error,
     reportCode,
+    alreadyReported,
     reportError,
     jobSize,
     canReuseFile,

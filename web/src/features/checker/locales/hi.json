@@ -1,0 +1,44 @@
+{
+  "checker": {
+    "title": "Revit version checker",
+    "pageTitle": "Revit Version Checker: यह file किस Revit version की है? {'|'} Revit Downgrade",
+    "description": "मुफ़्त tool: देखें कि .rvt, .rfa, .rte या .rft file किस Revit version में save हुई थी, Revit खोले बिना। पूरा folder check करें और list को CSV में download करें।",
+    "intro": "देखें कि file किस Revit version में save हुई थी, Revit खोले बिना। एक file check करें या पूरा folder।",
+    "chooseFiles": "Files चुनें",
+    "chooseFolder": "Folder चुनें",
+    "drop": "या उन्हें यहाँ drop करें। एक बार में {max} files तक।",
+    "privacy": "आपकी files आपके computer पर ही रहती हैं: वे इसी browser में पढ़ी जाती हैं और कुछ भी upload नहीं होता।",
+    "checking": "Check हो रहा है…",
+    "nothingFound": "कोई Revit file नहीं मिली। सिर्फ़ .rvt, .rfa, .rte और .rft files check की जाती हैं।",
+    "leftOut": "{count} और Revit files छोड़ दी गईं: एक बार में ज़्यादा से ज़्यादा {max} files check की जाती हैं।",
+    "opensIn": "Revit {year} या उससे नया",
+    "yes": "हाँ",
+    "no": "नहीं",
+    "csv": "CSV download करें",
+    "next": "इनमें से कोई file पुराने Revit में चाहिए?",
+    "nextLink": "उसे यहाँ downgrade करें",
+    "column": {
+      "file": "File",
+      "savedIn": "किसमें save हुई",
+      "opensIn": "किसमें खुलती है",
+      "type": "Type",
+      "build": "Build",
+      "workshared": "Workshared",
+      "size": "Size",
+      "status": "समस्या"
+    },
+    "problem": {
+      "bad_extension": "यह Revit file type नहीं है",
+      "too_large": "File बहुत बड़ी है",
+      "not_ole": "यह Revit file नहीं है, या file खराब हो गई है",
+      "not_revit": "इस file में यह नहीं लिखा कि उसे किस Revit ने save किया",
+      "unreadable": "File पढ़ी नहीं जा सकी"
+    },
+    "sections": [
+      {
+        "heading": "इसे version का पता कैसे चलता है?",
+        "body": "हर Revit file में उसे save करने वाले Revit की जानकारी का एक छोटा block होता है। आपका browser सिर्फ़ वही block पढ़ता है, इसलिए बड़े model में भी बस एक पल लगता है और Revit install होना ज़रूरी नहीं है।"
+      }
+    ]
+  }
+}

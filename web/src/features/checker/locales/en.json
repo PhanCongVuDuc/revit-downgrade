@@ -1,0 +1,44 @@
+{
+  "checker": {
+    "title": "Revit version checker",
+    "pageTitle": "Revit Version Checker: Which Version Is This File? {'|'} Revit Downgrade",
+    "description": "Free tool: see which Revit version saved a .rvt, .rfa, .rte or .rft file, without opening Revit. Check a whole folder and download the list as CSV.",
+    "intro": "See which Revit version saved a file, without opening Revit. Check one file or a whole folder.",
+    "chooseFiles": "Choose files",
+    "chooseFolder": "Choose a folder",
+    "drop": "or drop them here. Up to {max} files at a time.",
+    "privacy": "Your files stay on your computer: they are read in this browser and nothing is uploaded.",
+    "checking": "Checking…",
+    "nothingFound": "No Revit files found. Only .rvt, .rfa, .rte and .rft files are checked.",
+    "leftOut": "{count} more Revit files were left out: at most {max} are checked at a time.",
+    "opensIn": "Revit {year} or newer",
+    "yes": "Yes",
+    "no": "No",
+    "csv": "Download CSV",
+    "next": "Need one of these in an older Revit?",
+    "nextLink": "Downgrade it here",
+    "column": {
+      "file": "File",
+      "savedIn": "Saved in",
+      "opensIn": "Opens in",
+      "type": "Type",
+      "build": "Build",
+      "workshared": "Workshared",
+      "size": "Size",
+      "status": "Problem"
+    },
+    "problem": {
+      "bad_extension": "Not a Revit file type",
+      "too_large": "The file is too large",
+      "not_ole": "Not a Revit file, or the file is damaged",
+      "not_revit": "This file does not say which Revit saved it",
+      "unreadable": "The file could not be read"
+    },
+    "sections": [
+      {
+        "heading": "How does it know the version?",
+        "body": "Every Revit file carries a small block of information about the Revit that saved it. Your browser reads only that block, so even a large model takes a moment and Revit does not need to be installed."
+      }
+    ]
+  }
+}

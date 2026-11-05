@@ -8,6 +8,8 @@ const ConvertView = () => import('@/features/convert/ConvertView.vue');
 const AboutView = () => import('@/features/about/AboutView.vue');
 const GuidesView = () => import('@/features/guides/GuidesView.vue');
 const GuideView = () => import('@/features/guides/GuideView.vue');
+const CheckerView = () => import('@/features/checker/CheckerView.vue');
+const LegalView = () => import('@/features/legal/LegalView.vue');
 const NotFoundView = () => import('@/features/not-found/NotFoundView.vue');
 
 /** Shows the "page not found" view at the address that was asked for. */
@@ -15,8 +17,8 @@ function notFound(to: RouteLocationNormalized) {
   return { name: 'notFound', params: { unknown: to.path.slice(1).split('/') }, query: to.query, hash: to.hash };
 }
 
-/** Every page exists in English at the root and in Vietnamese under /vi (see @/shared/locale/localePath). */
-const LANG = '/:lang(vi)?';
+/** Every page exists in English at the root and in each other language under its code (see @/shared/locale/localePath). */
+const LANG = '/:lang(vi|zh|hi)?';
 
 export function createAppRouter(history: RouterHistory) {
   return createRouter({
@@ -38,6 +40,9 @@ export function createAppRouter(history: RouterHistory) {
         component: GuideView,
         beforeEnter: (to) => (guideBySlug(String(to.params.slug)) ? true : notFound(to)),
       },
+      { path: `${LANG}/revit-version-checker`, name: 'checker', component: CheckerView },
+      { path: `${LANG}/privacy`, name: 'privacy', component: LegalView, props: { page: 'privacy' } },
+      { path: `${LANG}/terms`, name: 'terms', component: LegalView, props: { page: 'terms' } },
       // A conversion's address belongs to one visitor and stays in the language they chose.
       { path: '/job/:id', name: 'job', component: ConvertView },
       { path: '/:unknown(.*)*', name: 'notFound', component: NotFoundView },

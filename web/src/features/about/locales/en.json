@@ -48,7 +48,7 @@
     },
     "stats": {
       "title": "Usage statistics",
-      "body": "The server keeps running totals: conversions that finished, conversions that failed, failed files sent for review, and the number of different visitors who converted a file. A visitor is recognised by a one-way, keyed hash of their network address (IPv6 addresses are grouped by /64 network), so the count is approximate: people who share a network count once, and a person who changes network may count twice. The address itself, file names and file contents are never stored for this. A converted file reported as not opening in Revit moves from finished to failed. The totals are shown publicly on the home page."
+      "body": "The server keeps running totals: conversions that finished, files that still fail, failed files sent for review, and the number of different visitors who converted a file. A visitor is recognised by a one-way, keyed hash of their network address (IPv6 addresses are grouped by /64 network), so the count is approximate: people who share a network count once, and a person who changes network may count twice. A file is recognised by a one-way, keyed hash of its content, so a failing file sent again counts once. The hash of a file that fails or does not open is kept until a conversion shows the file is fixed, and the file cannot be rebuilt from it. The address itself, file names and file contents are never stored for this. A converted file reported as not opening in Revit moves from finished to failed. The totals are shown publicly on the home page."
     },
     "logs": {
       "title": "Server logs",

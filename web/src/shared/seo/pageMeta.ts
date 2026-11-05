@@ -1,6 +1,6 @@
 import { useSSRContext, watchEffect } from 'vue';
 
-import { localizedPath, pathLocale } from '@/shared/locale/localePath';
+import { type AppLocale, LOCALES, localizedPath, pathLocale } from '@/shared/locale/localePath';
 
 /** Address the site is published at; canonical and share links point here. */
 export const SITE_URL = 'https://revitdowngrade.com';
@@ -22,10 +22,15 @@ export interface PageMeta {
 }
 
 /** Description of the shared link-preview picture, in each language. */
-export const IMAGE_ALT: Record<'en' | 'vi', string> = {
+export const IMAGE_ALT: Record<AppLocale, string> = {
   en: 'Revit Downgrade: open a newer Revit file in an older Revit',
   vi: 'Revit Downgrade: mở file Revit mới hơn bằng Revit cũ hơn',
+  zh: 'Revit Downgrade：用低版本 Revit 打开高版本文件',
+  hi: 'Revit Downgrade: नई Revit file को पुराने Revit में खोलें',
 };
+
+/** The Open Graph name of each language. */
+const OG_LOCALE: Record<AppLocale, string> = { en: 'en_US', vi: 'vi_VN', zh: 'zh_CN', hi: 'hi_IN' };
 
 /** Handed to the app by the prerender step, which reads the meta of the page it rendered from it. */
 export interface PrerenderContext {
@@ -40,8 +45,7 @@ export function pageUrl(path: string): string {
 export function pageAlternates(path: string): { hreflang: string; href: string }[] {
   const en = pageUrl(localizedPath(path, 'en'));
   return [
-    { hreflang: 'en', href: en },
-    { hreflang: 'vi', href: pageUrl(localizedPath(path, 'vi')) },
+    ...LOCALES.map((locale) => ({ hreflang: locale, href: pageUrl(localizedPath(path, locale)) })),
     { hreflang: 'x-default', href: en },
   ];
 }
@@ -108,9 +112,9 @@ export function applyPageMeta(meta: PageMeta) {
   setMeta('name', 'description', meta.description);
   setMeta('property', 'og:title', meta.title);
   setMeta('property', 'og:description', meta.description);
-  const vi = pathLocale(meta.path) === 'vi';
-  setMeta('property', 'og:locale', vi ? 'vi_VN' : 'en_US');
-  setMeta('property', 'og:image:alt', IMAGE_ALT[vi ? 'vi' : 'en']);
+  const locale = pathLocale(meta.path);
+  setMeta('property', 'og:locale', OG_LOCALE[locale]);
+  setMeta('property', 'og:image:alt', IMAGE_ALT[locale]);
   setArticle(meta.article);
   // A page kept out of search has no address of its own to point to.
   if (meta.noindex) {

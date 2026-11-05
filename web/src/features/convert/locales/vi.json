@@ -7,7 +7,7 @@
       "label": "Số liệu sử dụng",
       "people": "người đã dùng",
       "succeeded": "file hạ thành công",
-      "failed": "file bị lỗi",
+      "failed": "file chưa hạ được",
       "contributed": "file lỗi được gửi để sửa",
       "since": "Đếm từ {date}",
       "help": "Hạ phiên bản file Revit rất khó và cần nhiều dữ liệu thật để làm đúng. Mỗi file lỗi bạn gửi giúp tôi sửa lỗi và cải thiện công cụ liên tục."
@@ -205,7 +205,8 @@
       "sent": "Cảm ơn bạn. Mã báo cáo của bạn là {code}. Hãy nêu mã này nếu bạn muốn xoá file.",
       "failed": "Không gửi được báo cáo ({code}). Vui lòng thử lại.",
       "failed_already_reported": "Báo cáo cho file này đã được gửi.",
-      "failed_expired": "File không còn được giữ nên không thể gửi."
+      "failed_expired": "File không còn được giữ nên không thể gửi.",
+      "known": "Tôi đã có file này, bạn không cần gửi lại."
     },
     "unopenable": {
       "open": "File không mở được trong Revit?",
@@ -282,11 +283,11 @@
         },
         "workshared": {
           "q": "Có hạ được model workshared (central) không?",
-          "a": "Tải lên một bản copy của file central, không phải file local. Hạ xong, mở file bằng Revit bản cũ và kiểm tra các workset trước khi lưu thành central mới. Nếu worksharing không như mong đợi, hãy gửi file ở trang kết quả để tôi xem. Model trên cloud (Autodesk Docs) phải lưu thành file .rvt trên máy trước."
+          "a": "Có. Workset và worksharing được giữ nguyên. Hạ file central như mọi file khác. Model trên cloud (Autodesk Docs) phải lưu thành file .rvt trên máy trước."
         },
         "links": {
-          "q": "Còn model link và family thì sao?",
-          "a": "Revit bản cũ không load được family hay link được model Revit lưu bằng bản mới hơn, nên từng cái cũng phải hạ, về cùng phiên bản với project. Hạ lần lượt từng file, rồi load hoặc reload chúng trong Revit bản cũ."
+          "q": "Còn family và model link thì sao?",
+          "a": "Family đã load trong model được hạ cùng model, không phải làm gì thêm. Model link là file riêng nên hạ riêng, về cùng phiên bản. File family (.rfa) định load sau này cũng vậy."
         }
       },
       "pairItems": {

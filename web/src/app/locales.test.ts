@@ -11,11 +11,34 @@ import sharedVi from '@/shared/locales/vi.json';
 
 import indexHtml from '../../index.html?raw';
 
+const LOCALE_FILES = import.meta.glob<{ default: object }>(
+  ['/src/features/*/locales/*.json', '/src/shared/locales/*.json'],
+  {
+    eager: true,
+  },
+);
+
 function keysOf(value: object, prefix = ''): string[] {
   return Object.entries(value).flatMap(([key, child]) =>
     typeof child === 'object' && child !== null ? keysOf(child, `${prefix}${key}.`) : [`${prefix}${key}`],
   );
 }
+
+describe('every language', () => {
+  const english = Object.keys(LOCALE_FILES).filter((file) => file.endsWith('/en.json'));
+
+  for (const file of english) {
+    for (const code of ['vi', 'zh', 'hi']) {
+      const other = file.replace('/en.json', `/${code}.json`);
+
+      it(`${other} has the keys of en.json`, () => {
+        const translated = LOCALE_FILES[other]?.default;
+        expect(translated).toBeDefined();
+        expect(keysOf(translated ?? {}).toSorted()).toEqual(keysOf(LOCALE_FILES[file]?.default ?? {}).toSorted());
+      });
+    }
+  }
+});
 
 describe('feature locale files', () => {
   it('convert has identical key sets in en and vi', () => {

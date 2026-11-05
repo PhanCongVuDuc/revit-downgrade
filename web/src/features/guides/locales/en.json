@@ -89,7 +89,7 @@
           {
             "heading": "Families and linked models",
             "paragraphs": [
-              "An older Revit also refuses to load a family or link a Revit model saved in a newer release. Convert each family (.rfa) and each linked model to the same version as the project, then load or reload them in the older Revit."
+              "Families already loaded in the project are converted with it. Separate files are not: an older Revit refuses to load a family file (.rfa) or link a Revit model saved in a newer release, so convert each one to the same version as the project, then load or reload it in the older Revit."
             ]
           },
           {

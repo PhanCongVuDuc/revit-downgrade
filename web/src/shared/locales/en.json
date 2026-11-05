@@ -7,7 +7,8 @@
     "guides": "Guides",
     "about": "How it works",
     "source": "Source code",
-    "home": "Revit Downgrade home"
+    "home": "Revit Downgrade home",
+    "checker": "Version checker"
   },
   "notFound": {
     "title": "Page not found",
@@ -21,6 +22,8 @@
     "authorAbout": "an engineer from Vietnam",
     "thanks": "Thanks to {name} for the help and support.",
     "trademark": "Revit is a registered trademark of Autodesk, Inc. Revit Downgrade is not affiliated with or endorsed by Autodesk.",
-    "openSource": "The Revit Downgrade website and server are open source, so you can check exactly how your files are handled: {repo}. The conversion engine itself is closed source."
+    "openSource": "The Revit Downgrade website and server are open source, so you can check exactly how your files are handled: {repo}. The conversion engine itself is closed source.",
+    "privacy": "Privacy",
+    "terms": "Terms of use"
   }
 }

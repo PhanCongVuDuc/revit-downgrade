@@ -48,6 +48,7 @@ fn start_workers(f: &Fixture) {
         f.state.store.clone(),
         f.state.engine.clone(),
         f.state.stats.clone(),
+        f.state.reports.clone(),
     );
 }
 
@@ -387,6 +388,7 @@ async fn job_json_has_no_internal_fields() {
     assert_eq!(
         keys,
         [
+            "already_reported",
             "elapsed_s",
             "error",
             "estimate_s",
@@ -835,6 +837,79 @@ async fn stats_count_outcomes_and_reports() {
         (&v["succeeded"], &v["failed"], &v["contributed"]),
         (&json!(2), &json!(1), &json!(1))
     );
+}
+
+#[tokio::test]
+async fn a_failing_file_sent_again_counts_once_and_is_not_asked_for_again() {
+    let f = setup_with(|c| c.trust_proxy = true);
+    start_workers(&f);
+    let first = run_from(&f, "203.0.113.1", "fail", "failed").await;
+    wait_for_stat(&f, "failed", 1).await;
+    let v = body_json(send(&f, get(&format!("/api/jobs/{first}"))).await).await;
+    assert_eq!(v["already_reported"], false);
+    let resp = send_from(&f, "203.0.113.1", post_report(&first)).await;
+    assert_eq!(resp.status(), StatusCode::CREATED);
+    let code = body_json(resp).await["report_code"].clone();
+    assert!(code.is_string());
+
+    let again = run_from(&f, "203.0.113.2", "fail", "failed").await;
+    // It is there as soon as the job shows as failed.
+    let v = body_json(send(&f, get(&format!("/api/jobs/{again}"))).await).await;
+    assert_eq!(v["already_reported"], true);
+    // Another person's report code is theirs alone.
+    assert_eq!(v["report_code"], Value::Null);
+    let resp = send_from(&f, "203.0.113.2", post_report(&again)).await;
+    assert_eq!(resp.status(), StatusCode::CONFLICT);
+    let v = stats(&f).await;
+    assert_eq!(
+        (&v["failed"], &v["contributed"], &v["people"]),
+        (&json!(1), &json!(1), &json!(2))
+    );
+}
+
+#[tokio::test]
+async fn two_failures_of_one_file_keep_one_report() {
+    let f = setup_with(|c| c.trust_proxy = true);
+    start_workers(&f);
+    let first = run_from(&f, "203.0.113.1", "fail", "failed").await;
+    let second = run_from(&f, "203.0.113.2", "fail", "failed").await;
+    let resp = send_from(&f, "203.0.113.1", post_report(&first)).await;
+    assert_eq!(resp.status(), StatusCode::CREATED);
+    let resp = send_from(&f, "203.0.113.2", post_report(&second)).await;
+    assert_eq!(resp.status(), StatusCode::CONFLICT);
+    let v = stats(&f).await;
+    assert_eq!((&v["failed"], &v["contributed"]), (&json!(1), &json!(1)));
+    let reports = std::fs::read_dir(f.dir.path().join("reports")).unwrap().count();
+    assert_eq!(reports, 1);
+}
+
+#[tokio::test]
+async fn a_refused_file_is_not_a_failure() {
+    let f = setup();
+    start_workers(&f);
+    run_from(&f, "203.0.113.1", "refuse", "failed").await;
+    let v = wait_for_stat(&f, "people", 1).await;
+    assert_eq!(v["failed"], 0);
+}
+
+#[tokio::test]
+async fn a_report_that_is_gone_can_be_sent_again() {
+    let f = setup_with(|c| c.trust_proxy = true);
+    start_workers(&f);
+    let first = run_from(&f, "203.0.113.1", "fail", "failed").await;
+    wait_for_stat(&f, "failed", 1).await;
+    let resp = send_from(&f, "203.0.113.1", post_report(&first)).await;
+    let code = body_json(resp).await["report_code"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    std::fs::remove_dir_all(f.dir.path().join("reports").join(code)).unwrap();
+
+    let again = run_from(&f, "203.0.113.2", "fail", "failed").await;
+    wait_for_stat(&f, "people", 2).await;
+    let resp = send_from(&f, "203.0.113.2", post_report(&again)).await;
+    assert_eq!(resp.status(), StatusCode::CREATED);
+    assert_eq!(stats(&f).await["failed"], 1);
 }
 
 #[tokio::test]

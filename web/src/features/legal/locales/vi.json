@@ -1,0 +1,110 @@
+{
+  "legal": {
+    "updated": "Cập nhật lần cuối: {date}",
+    "privacy": {
+      "title": "Chính sách quyền riêng tư",
+      "pageTitle": "Chính Sách Quyền Riêng Tư {'|'} Revit Downgrade",
+      "description": "Revit Downgrade làm gì với file Revit và dữ liệu của bạn: giữ những gì, trong bao lâu, và ai xem được.",
+      "sections": [
+        {
+          "heading": "Ai vận hành trang này",
+          "paragraphs": [
+            "Revit Downgrade do một người làm và vận hành, Phan Cong Vu Duc. Mọi câu hỏi về dữ liệu của bạn, gửi email tới {email}."
+          ]
+        },
+        {
+          "heading": "File của bạn",
+          "paragraphs": [
+            "File chỉ được gửi lên server khi bạn bấm Hạ phiên bản. File chỉ dùng để chuyển đổi, không bao giờ được chia sẻ hay bán.",
+            "File gốc bị xoá ngay khi hạ xong. File gốc của lần hạ lỗi bị xoá sau 15 phút. File đã hạ bị xoá sau 2 giờ, hoặc khi bạn bấm Xoá ngay. Trang \"Cách hoạt động\" liệt kê mọi trường hợp.",
+            "Công cụ kiểm tra phiên bản đọc file ngay trong trình duyệt. Những file đó không được tải lên."
+          ]
+        },
+        {
+          "heading": "File bạn chọn gửi để xem",
+          "paragraphs": [
+            "Nếu hạ lỗi hoặc file đã hạ không mở được, bạn có thể tick ô đồng ý và gửi file để lỗi được sửa. File khi đó được giữ tối đa 30 ngày, chỉ dùng cho việc này, và xoá sớm hơn nếu bạn yêu cầu. Không có gì được giữ theo cách này nếu bạn không đồng ý."
+          ]
+        },
+        {
+          "heading": "Dữ liệu khác",
+          "paragraphs": [
+            "Địa chỉ mạng của bạn được dùng để áp giới hạn tải lên. Địa chỉ chỉ nằm trong bộ nhớ server, không ghi xuống đĩa, và mất đi trong vòng hai ngày.",
+            "Số liệu sử dụng công khai dựa vào hai hash một chiều, tạo bằng một khoá bí mật giữ trên server. Một hash của địa chỉ mạng, để đếm số người khác nhau, được giữ cùng các số tổng. Hash còn lại của nội dung file, để nhận ra file gửi lại. File hạ được thì hash này không được lưu. File lỗi hoặc không mở được thì hash được lưu, kèm mã báo cáo nếu có, tới khi một lần hạ cho thấy file đã được sửa, có thể là không bao giờ. Các hash không chứa địa chỉ hay file, và không thể dựng lại file từ hash.",
+            "Log server không bao giờ chứa tên file hay nội dung file."
+          ]
+        },
+        {
+          "heading": "Cookie và trình duyệt của bạn",
+          "paragraphs": [
+            "Trang không đặt cookie theo dõi và không có quảng cáo. Trình duyệt của bạn giữ lựa chọn ngôn ngữ và danh sách các lần tải lên chưa xong, để chọn lại đúng file thì tải tiếp được."
+          ]
+        },
+        {
+          "heading": "Cloudflare",
+          "paragraphs": [
+            "Mọi truy cập vào trang đều đi qua Cloudflare, và Cloudflare Web Analytics đếm lượt xem trang. Dịch vụ này không dùng cookie và không theo dõi bạn qua các trang khác. Không công ty nào khác nhận file hay dữ liệu của bạn."
+          ]
+        },
+        {
+          "heading": "Quyền của bạn",
+          "paragraphs": [
+            "Muốn xoá sớm một báo cáo, hoặc hỏi bất cứ điều gì về dữ liệu của bạn, gửi email tới {email} và ghi mã báo cáo nếu có."
+          ]
+        },
+        {
+          "heading": "Thay đổi",
+          "paragraphs": ["Nếu chính sách này thay đổi, bản mới được đăng ở đây với ngày mới."]
+        }
+      ]
+    },
+    "terms": {
+      "title": "Điều khoản sử dụng",
+      "pageTitle": "Điều Khoản Sử Dụng {'|'} Revit Downgrade",
+      "description": "Điều khoản dùng Revit Downgrade: công cụ miễn phí, cung cấp nguyên trạng, file vẫn là của bạn.",
+      "sections": [
+        {
+          "heading": "Dịch vụ",
+          "paragraphs": [
+            "Revit Downgrade là công cụ miễn phí chuyển file Revit về phiên bản Revit cũ hơn. Không cần tài khoản. Dịch vụ có thể thay đổi, bị giới hạn hoặc dừng bất cứ lúc nào. Dùng dịch vụ nghĩa là bạn chấp nhận các điều khoản này."
+          ]
+        },
+        {
+          "heading": "File của bạn",
+          "paragraphs": [
+            "File vẫn là của bạn. Chỉ tải lên file bạn có quyền sử dụng và có quyền chuyển đổi. Trang chỉ dùng file theo chính sách quyền riêng tư."
+          ]
+        },
+        {
+          "heading": "Kết quả",
+          "paragraphs": [
+            "Element mà bản cũ không có chỗ chứa sẽ bị bỏ, và trang kết quả liệt kê chúng. Hãy giữ file gốc, và kiểm tra mọi file đã hạ trong Revit trước khi dùng.",
+            "Công cụ được cung cấp nguyên trạng, không có bảo đảm nào. Trong phạm vi pháp luật cho phép, tác giả không chịu trách nhiệm về mất mát hay thiệt hại do dùng công cụ hoặc do file đã hạ."
+          ]
+        },
+        {
+          "heading": "Sử dụng hợp lý",
+          "paragraphs": [
+            "Có giới hạn về dung lượng file và số lần hạ mỗi giờ. Không tìm cách lách các giới hạn này, phá dịch vụ hay dùng nó để tấn công ai."
+          ]
+        },
+        {
+          "heading": "Mã nguồn mở",
+          "paragraphs": ["Website và server là mã nguồn mở theo giấy phép MIT. Bộ chuyển đổi là mã đóng."]
+        },
+        {
+          "heading": "Nhãn hiệu",
+          "paragraphs": [
+            "Autodesk và Revit là nhãn hiệu đã đăng ký của Autodesk, Inc. Revit Downgrade không liên kết với Autodesk và không được Autodesk bảo trợ."
+          ]
+        },
+        {
+          "heading": "Liên hệ",
+          "paragraphs": [
+            "Câu hỏi về các điều khoản này, gửi email tới {email}. Nếu có thay đổi, bản mới được đăng ở đây với ngày mới."
+          ]
+        }
+      ]
+    }
+  }
+}

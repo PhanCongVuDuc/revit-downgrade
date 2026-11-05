@@ -16,6 +16,11 @@ describe('pickLocale', () => {
     expect(pickLocale('vi-VN', null)).toBe('vi');
   });
 
+  it('picks the browser language when the site has it', () => {
+    expect(pickLocale('zh-CN', null)).toBe('zh');
+    expect(pickLocale('hi-IN', null)).toBe('hi');
+  });
+
   it('picks en for de-DE', () => {
     expect(pickLocale('de-DE', null)).toBe('en');
   });

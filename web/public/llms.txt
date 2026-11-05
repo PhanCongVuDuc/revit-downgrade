@@ -23,6 +23,10 @@ Revit itself cannot save to an older version: a Revit release only opens files f
 - [Downgrade Revit 2024 to Revit 2022](https://revitdowngrade.com/revit-2024-to-2022)
 - [Downgrade Revit 2023 to Revit 2022](https://revitdowngrade.com/revit-2023-to-2022)
 
+## Free tools
+
+- [Revit version checker](https://revitdowngrade.com/revit-version-checker): see which Revit version saved a file, or every file in a folder, in the browser, without uploading anything
+
 ## Guides
 
 - [Can you save a Revit file as an older version?](https://revitdowngrade.com/guides/revit-save-as-older-version)

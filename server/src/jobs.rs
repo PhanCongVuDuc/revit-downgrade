@@ -119,6 +119,10 @@ pub struct Job {
     pub output_size: u64,
     pub cancel: CancellationToken,
     pub report_code: Option<String>,
+    /// A report sent under this engine build, from an earlier job, already holds this same file.
+    pub already_reported: bool,
+    /// Keyed hash of the file, once a failed or finished job has been identified.
+    pub file_id: Option<String>,
     /// True while a report for this job is being written.
     pub reporting: bool,
     /// The original being sent again for a "does not open" report, while it uploads.
@@ -393,6 +397,8 @@ impl JobStore {
             output_size: 0,
             cancel: CancellationToken::new(),
             report_code: None,
+            already_reported: false,
+            file_id: None,
             reporting: false,
             open_report: None,
             seq,
@@ -726,7 +732,7 @@ impl JobStore {
             (_, ReportKind::Failed) => return ReportClaim::NotFailed,
             (_, ReportKind::DoesNotOpen) => return ReportClaim::NotDone,
         }
-        if j.reporting || j.report_code.is_some() {
+        if j.reporting || j.report_code.is_some() || j.already_reported {
             return ReportClaim::AlreadyReported;
         }
         j.reporting = true;
@@ -887,6 +893,28 @@ impl JobStore {
             }
             _ => false,
         }
+    }
+
+    /// Remembers which file the job holds.
+    pub fn set_file_id(&self, id: &JobId, file_id: Option<String>) {
+        if let Some(j) = self.lock().jobs.get_mut(id) {
+            j.file_id = file_id;
+        }
+    }
+
+    /// Records that this job's file is already in a report, so it cannot be reported again.
+    pub fn set_already_reported(&self, id: &JobId) {
+        if let Some(j) = self.lock().jobs.get_mut(id) {
+            j.already_reported = true;
+        }
+    }
+
+    /// True while a worker holds this job.
+    pub fn is_running(&self, id: &JobId) -> bool {
+        self.lock()
+            .jobs
+            .get(id)
+            .is_some_and(|j| j.state == JobState::Running)
     }
 
     /// Forgets the job and deletes its directory.

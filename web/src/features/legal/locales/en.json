@@ -1,0 +1,112 @@
+{
+  "legal": {
+    "updated": "Last updated: {date}",
+    "privacy": {
+      "title": "Privacy policy",
+      "pageTitle": "Privacy Policy {'|'} Revit Downgrade",
+      "description": "What Revit Downgrade does with your Revit files and data: what is kept, for how long, and who can see it.",
+      "sections": [
+        {
+          "heading": "Who runs this site",
+          "paragraphs": [
+            "Revit Downgrade is made and run by one person, Phan Cong Vu Duc. For any question about your data, email {email}."
+          ]
+        },
+        {
+          "heading": "Your files",
+          "paragraphs": [
+            "Your file is sent to the server only when you press Downgrade. It is used only to convert it, and it is never shared or sold.",
+            "Your original is deleted as soon as the conversion succeeds. The original of a failed conversion is deleted after 15 minutes. The converted file is deleted after 2 hours, or when you press Delete now. The page \"How it works\" lists every case.",
+            "The version checker reads files in your browser. Those files are not uploaded."
+          ]
+        },
+        {
+          "heading": "Files you choose to send for review",
+          "paragraphs": [
+            "If a conversion fails or a converted file does not open, you can tick the consent box and send your file so the problem can be fixed. It is then kept for up to 30 days, used only for that, and deleted earlier if you ask. Nothing is kept this way without your consent."
+          ]
+        },
+        {
+          "heading": "Other data",
+          "paragraphs": [
+            "Your network address is used to apply the upload limits. It is held only in the server's memory, is not written to disk, and is gone within two days.",
+            "The public usage totals rely on two one-way hashes made with a secret key kept on the server. One is of your network address, to count different visitors, and it is kept with the totals. The other is of a file's content, to recognise a file sent again. For a file that converts it is not stored. For a file that fails or does not open it is stored, with the code of its report if there is one, until a conversion shows the file is fixed, which may be never. The hashes do not contain the address or the file, and a file cannot be rebuilt from its hash.",
+            "Server logs never contain file names or file content."
+          ]
+        },
+        {
+          "heading": "Cookies and your browser",
+          "paragraphs": [
+            "The site sets no tracking cookies and shows no advertising. Your browser keeps your language choice and a list of your unfinished uploads, so that choosing the same file again can continue its upload."
+          ]
+        },
+        {
+          "heading": "Cloudflare",
+          "paragraphs": [
+            "All traffic to this site passes through Cloudflare, which also counts page views with Cloudflare Web Analytics. That uses no cookies and does not follow you across sites. No other company receives your files or data."
+          ]
+        },
+        {
+          "heading": "Your choices",
+          "paragraphs": [
+            "To have a report deleted early, or to ask anything about your data, email {email} and quote your report code if you have one."
+          ]
+        },
+        {
+          "heading": "Changes",
+          "paragraphs": ["If this policy changes, the new version is published here with a new date."]
+        }
+      ]
+    },
+    "terms": {
+      "title": "Terms of use",
+      "pageTitle": "Terms of Use {'|'} Revit Downgrade",
+      "description": "The terms for using Revit Downgrade: a free tool, provided as it is, with your files remaining yours.",
+      "sections": [
+        {
+          "heading": "The service",
+          "paragraphs": [
+            "Revit Downgrade is a free tool that converts Revit files to an older Revit version. No account is needed. It may change, be limited or stop at any time. By using it you accept these terms."
+          ]
+        },
+        {
+          "heading": "Your files",
+          "paragraphs": [
+            "Your files remain yours. Upload only files you have the right to use and to have converted. The site uses them only as the privacy policy says."
+          ]
+        },
+        {
+          "heading": "The result",
+          "paragraphs": [
+            "Elements the older version has no place for are removed, and the result page lists them. Keep your original file, and check every converted file in Revit before you rely on it.",
+            "The tool is provided as it is, without any warranty. As far as the law allows, its author is not liable for any loss or damage from using it or from a converted file."
+          ]
+        },
+        {
+          "heading": "Fair use",
+          "paragraphs": [
+            "Limits apply to file size and to the number of conversions per hour. Do not try to get around them, disturb the service or use it to attack anyone."
+          ]
+        },
+        {
+          "heading": "Open source",
+          "paragraphs": [
+            "The website and server are open source under the MIT License. The conversion engine is closed source."
+          ]
+        },
+        {
+          "heading": "Trademarks",
+          "paragraphs": [
+            "Autodesk and Revit are registered trademarks of Autodesk, Inc. Revit Downgrade is not affiliated with or endorsed by Autodesk."
+          ]
+        },
+        {
+          "heading": "Contact",
+          "paragraphs": [
+            "For questions about these terms, email {email}. If they change, the new version is published here with a new date."
+          ]
+        }
+      ]
+    }
+  }
+}

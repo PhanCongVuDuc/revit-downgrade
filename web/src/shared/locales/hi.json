@@ -1,0 +1,29 @@
+{
+  "app": {
+    "name": "Revit Downgrade",
+    "language": "भाषा"
+  },
+  "nav": {
+    "guides": "गाइड",
+    "about": "यह कैसे काम करता है",
+    "source": "Source code",
+    "home": "Revit Downgrade होम",
+    "checker": "Version checker"
+  },
+  "notFound": {
+    "title": "Page नहीं मिला",
+    "pageTitle": "Page नहीं मिला {'|'} Revit Downgrade",
+    "body": "इस पते पर कोई page नहीं है। हो सकता है page कहीं और चला गया हो, या link गलत हो।",
+    "home": "Revit file downgrade करें",
+    "guides": "गाइड पढ़ें"
+  },
+  "footer": {
+    "author": "Author",
+    "authorAbout": "वियतनाम से एक engineer",
+    "thanks": "मदद और सहयोग के लिए {name} का धन्यवाद।",
+    "trademark": "Revit is a registered trademark of Autodesk, Inc. Revit Downgrade is not affiliated with or endorsed by Autodesk.",
+    "openSource": "Revit Downgrade की website और server open source हैं, इसलिए आप खुद देख सकते हैं कि आपकी files के साथ ठीक-ठीक क्या होता है: {repo}। Conversion engine खुद closed source है।",
+    "privacy": "Privacy",
+    "terms": "उपयोग की शर्तें"
+  }
+}

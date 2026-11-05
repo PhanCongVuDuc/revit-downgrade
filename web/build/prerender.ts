@@ -32,8 +32,16 @@ interface PrerenderEntry {
 
 const SITE_URL = 'https://revitdowngrade.com';
 
-/** The Vietnamese og:image:alt; IMAGE_ALT in src/shared/seo/pageMeta.ts holds the same text. */
-const IMAGE_ALT_VI = 'Revit Downgrade: mở file Revit mới hơn bằng Revit cũ hơn';
+/** The languages under their own prefix, as src/shared/locale/localePath.ts and src/shared/seo/pageMeta.ts have them. */
+const LANGUAGES = [
+  { code: 'vi', og: 'vi_VN', imageAlt: 'Revit Downgrade: mở file Revit mới hơn bằng Revit cũ hơn' },
+  { code: 'zh', og: 'zh_CN', imageAlt: 'Revit Downgrade：用低版本 Revit 打开高版本文件' },
+  { code: 'hi', og: 'hi_IN', imageAlt: 'Revit Downgrade: नई Revit file को पुराने Revit में खोलें' },
+];
+
+function languageOf(path: string) {
+  return LANGUAGES.find(({ code }) => path === `/${code}` || path.startsWith(`/${code}/`));
+}
 
 function escapeHtml(text: string): string {
   return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
@@ -55,14 +63,14 @@ function replaceOnce(html: string, pattern: RegExp, replacement: string): string
   return html.replace(pattern, () => replacement);
 }
 
-/** The page's address in English and in Vietnamese (/vi prefix), as src/shared/locale/localePath.ts builds them. */
+/** The page's address in every language, as src/shared/locale/localePath.ts builds them. */
 function alternates(path: string): { hreflang: string; href: string }[] {
-  const vi = path === '/vi' || path.startsWith('/vi/');
-  const base = vi ? path.slice(3) || '/' : path;
+  const language = languageOf(path);
+  const base = language ? path.slice(language.code.length + 1) || '/' : path;
   const en = `${SITE_URL}${base}`;
   return [
     { hreflang: 'en', href: en },
-    { hreflang: 'vi', href: `${SITE_URL}${base === '/' ? '/vi' : `/vi${base}`}` },
+    ...LANGUAGES.map(({ code }) => ({ hreflang: code, href: `${SITE_URL}${prefixedPath(base, code)}` })),
     { hreflang: 'x-default', href: en },
   ];
 }
@@ -75,19 +83,19 @@ export function pageHtml(template: string, page: RenderedPage): string {
   const title = escapeHtml(meta.title);
   const description = escapeHtml(meta.description);
   const url = escapeHtml(`${SITE_URL}${meta.path}`);
-  const vi = meta.path === '/vi' || meta.path.startsWith('/vi/');
+  const language = languageOf(meta.path);
   let html = template;
-  if (vi) {
-    html = replaceOnce(html, /<html lang="en">/, '<html lang="vi">');
+  if (language) {
+    html = replaceOnce(html, /<html lang="en">/, `<html lang="${language.code}">`);
     html = replaceOnce(
       html,
       /<meta property="og:locale" content="en_US" \/>/,
-      '<meta property="og:locale" content="vi_VN" />',
+      `<meta property="og:locale" content="${language.og}" />`,
     );
     html = replaceOnce(
       html,
       /<meta property="og:image:alt" content="[^"]*" \/>/,
-      `<meta property="og:image:alt" content="${escapeHtml(IMAGE_ALT_VI)}" />`,
+      `<meta property="og:image:alt" content="${escapeHtml(language.imageAlt)}" />`,
     );
   }
   if (meta.article) {
@@ -142,9 +150,9 @@ export function sitemapXml(pages: { path: string; updated: string }[]): string {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}</urlset>\n`;
 }
 
-/** The Vietnamese address of an English page: / → /vi, /guides → /vi/guides. */
-function viPath(path: string): string {
-  return path === '/' ? '/vi' : `/vi${path}`;
+/** The address of an English page in another language: / → /vi, /guides → /vi/guides. */
+function prefixedPath(path: string, code: string): string {
+  return path === '/' ? `/${code}` : `/${code}${path}`;
 }
 
 /** Where the prerendered file of `path` goes: / is pages/index.html, /guides/x is pages/guides/x.html. */
@@ -187,8 +195,11 @@ export function prerender(): Plugin {
       const entry = (await import(pathToFileURL(join(ssrDir, 'entryPrerender.js')).href)) as PrerenderEntry;
       const template = await readFile(join(outDir, 'index.html'), 'utf8');
       await rm(join(outDir, 'pages'), { recursive: true, force: true });
-      // Every page in English at its address and in Vietnamese under /vi.
-      const pages = entry.SITE_PAGES.flatMap((page) => [page, { ...page, path: viPath(page.path) }]);
+      // Every page in English at its address and in each other language under its code.
+      const pages = entry.SITE_PAGES.flatMap((page) => [
+        page,
+        ...LANGUAGES.map(({ code }) => ({ ...page, path: prefixedPath(page.path, code) })),
+      ]);
       for (const page of pages) {
         const rendered = await entry.render(page.path);
         if (rendered.meta?.path !== page.path) {
@@ -196,7 +207,8 @@ export function prerender(): Plugin {
         }
         await write(pageFile(outDir, page.path), pageHtml(template, rendered));
       }
-      for (const path of [entry.NOT_FOUND_PATH, viPath(entry.NOT_FOUND_PATH)]) {
+      const notFound = entry.NOT_FOUND_PATH;
+      for (const path of [notFound, ...LANGUAGES.map(({ code }) => prefixedPath(notFound, code))]) {
         await write(pageFile(outDir, path), pageHtml(template, await entry.render(path)));
       }
       await write(join(outDir, 'sitemap.xml'), sitemapXml(pages));

@@ -1,0 +1,29 @@
+{
+  "app": {
+    "name": "Revit Downgrade",
+    "language": "语言"
+  },
+  "nav": {
+    "guides": "指南",
+    "about": "工作原理",
+    "source": "源代码",
+    "home": "Revit Downgrade 首页",
+    "checker": "版本查看"
+  },
+  "notFound": {
+    "title": "页面不存在",
+    "pageTitle": "页面不存在 {'|'} Revit Downgrade",
+    "body": "这个地址没有对应的页面。页面可能已经迁移，也可能是链接有误。",
+    "home": "给 Revit 文件降版本",
+    "guides": "查看指南"
+  },
+  "footer": {
+    "author": "作者",
+    "authorAbout": "来自越南的工程师",
+    "thanks": "感谢 {name} 的帮助和支持。",
+    "trademark": "Revit is a registered trademark of Autodesk, Inc. Revit Downgrade is not affiliated with or endorsed by Autodesk.",
+    "openSource": "Revit Downgrade 的网站和服务器是开源的，你可以自己核实文件究竟是怎么处理的：{repo}。转换引擎本身不开源。",
+    "privacy": "隐私政策",
+    "terms": "使用条款"
+  }
+}

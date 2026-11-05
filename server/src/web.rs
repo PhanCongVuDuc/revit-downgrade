@@ -22,6 +22,9 @@ const IMAGE: &str = "public, max-age=604800";
 /// Other files (robots.txt, sitemap.xml, llms.txt): cached for an hour.
 const SHORT: &str = "public, max-age=3600";
 
+/// Languages whose pages live under `/<code>`; English is at the root.
+const PREFIXED_LANGUAGES: [&str; 3] = ["vi", "zh", "hi"];
+
 fn is_image(path: &str) -> bool {
     [".png", ".ico", ".svg", ".jpg", ".webp"]
         .iter()
@@ -147,15 +150,20 @@ async fn html_file(file: &Path, status: StatusCode) -> Option<Response> {
 
 async fn not_found(dir: &Path, path: &str, prerendered: bool) -> Response {
     if prerendered {
-        // A missing Vietnamese page (/vi/...) gets the 404 page in Vietnamese.
-        if (path == "/vi" || path.starts_with("/vi/"))
-            && let Some(resp) = html_file(
-                &dir.join("pages").join("vi").join("404.html"),
-                StatusCode::NOT_FOUND,
-            )
-            .await
-        {
-            return resp;
+        // A missing page under a language prefix (/vi/...) gets the 404 page in that language.
+        for lang in PREFIXED_LANGUAGES {
+            if path
+                .strip_prefix('/')
+                .and_then(|p| p.strip_prefix(lang))
+                .is_some_and(|rest| rest.is_empty() || rest.starts_with('/'))
+                && let Some(resp) = html_file(
+                    &dir.join("pages").join(lang).join("404.html"),
+                    StatusCode::NOT_FOUND,
+                )
+                .await
+            {
+                return resp;
+            }
         }
         if let Some(resp) =
             html_file(&dir.join("pages").join("404.html"), StatusCode::NOT_FOUND).await

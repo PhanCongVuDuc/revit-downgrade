@@ -66,6 +66,7 @@ function status(overrides: Partial<JobStatus>): JobStatus {
     error: null,
     result: null,
     reportCode: null,
+    alreadyReported: false,
     name: 'tower.rvt',
     size: 1000,
     kind: 'rvt',

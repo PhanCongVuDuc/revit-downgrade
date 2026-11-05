@@ -1,0 +1,44 @@
+{
+  "checker": {
+    "title": "Kiểm tra phiên bản file Revit",
+    "pageTitle": "Kiểm Tra Phiên Bản File Revit Miễn Phí {'|'} Revit Downgrade",
+    "description": "Công cụ miễn phí: xem file .rvt, .rfa, .rte, .rft được lưu bằng Revit phiên bản nào mà không cần mở Revit. Kiểm tra cả thư mục và tải danh sách dạng CSV.",
+    "intro": "Xem file được lưu bằng Revit phiên bản nào mà không cần mở Revit. Kiểm tra một file hoặc cả thư mục.",
+    "chooseFiles": "Chọn file",
+    "chooseFolder": "Chọn thư mục",
+    "drop": "hoặc thả vào đây. Tối đa {max} file mỗi lần.",
+    "privacy": "File của bạn không rời khỏi máy: chúng được đọc ngay trong trình duyệt, không có gì được tải lên.",
+    "checking": "Đang kiểm tra…",
+    "nothingFound": "Không thấy file Revit nào. Chỉ kiểm tra file .rvt, .rfa, .rte và .rft.",
+    "leftOut": "Còn {count} file Revit chưa được kiểm tra: mỗi lần tối đa {max} file.",
+    "opensIn": "Revit {year} trở lên",
+    "yes": "Có",
+    "no": "Không",
+    "csv": "Tải CSV",
+    "next": "Cần mở một file trong số này bằng Revit cũ hơn?",
+    "nextLink": "Hạ phiên bản ở đây",
+    "column": {
+      "file": "File",
+      "savedIn": "Lưu bằng",
+      "opensIn": "Mở được bằng",
+      "type": "Loại",
+      "build": "Build",
+      "workshared": "Workshared",
+      "size": "Dung lượng",
+      "status": "Vấn đề"
+    },
+    "problem": {
+      "bad_extension": "Không phải loại file Revit",
+      "too_large": "File quá lớn",
+      "not_ole": "Không phải file Revit, hoặc file bị hỏng",
+      "not_revit": "File không cho biết được lưu bằng Revit nào",
+      "unreadable": "Không đọc được file"
+    },
+    "sections": [
+      {
+        "heading": "Làm sao biết được phiên bản?",
+        "body": "Mỗi file Revit có một khối thông tin nhỏ về Revit đã lưu nó. Trình duyệt chỉ đọc khối đó, nên model lớn cũng chỉ mất một lát và không cần cài Revit."
+      }
+    ]
+  }
+}
