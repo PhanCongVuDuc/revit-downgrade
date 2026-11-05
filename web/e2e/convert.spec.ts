@@ -3,10 +3,10 @@ import { join } from 'node:path';
 
 import { type Page } from '@playwright/test';
 
-import { expect, revitFile, test } from './fixtures';
+import { expect, openApp, revitFile, test } from './fixtures';
 
 async function choose(page: Page, path: string) {
-  await page.goto('/');
+  await openApp(page);
   await page.getByLabel('Revit file', { exact: true }).setInputFiles(path);
 }
 

@@ -1,4 +1,4 @@
-import { expect, revitFile, test } from './fixtures';
+import { expect, openApp, revitFile, test } from './fixtures';
 
 test('upload_resumes_after_network_drop', async ({ page }) => {
   let patches = 0;
@@ -13,7 +13,7 @@ test('upload_resumes_after_network_drop', async ({ page }) => {
     await route.continue();
   });
 
-  await page.goto('/');
+  await openApp(page);
   await page.getByLabel('Revit file', { exact: true }).setInputFiles(revitFile('model_2026.rvt', 2026));
   await page.getByRole('button', { name: 'Downgrade' }).click();
 
@@ -23,7 +23,7 @@ test('upload_resumes_after_network_drop', async ({ page }) => {
 });
 
 test('reopen_tab_shows_result', async ({ page, context }) => {
-  await page.goto('/');
+  await openApp(page);
   await page.getByLabel('Revit file', { exact: true }).setInputFiles(revitFile('model_2026.rvt', 2026));
   await page.getByRole('button', { name: 'Downgrade' }).click();
   await expect(page.getByRole('link', { name: /^Download model_2026_R2025\.rvt/ })).toBeVisible();
@@ -51,7 +51,7 @@ test('reload_mid_upload_then_continue', async ({ page }) => {
   page.on('dialog', (dialog) => void dialog.accept());
 
   const path = revitFile('model_2026.rvt', 2026);
-  await page.goto('/');
+  await openApp(page);
   await page.getByLabel('Revit file', { exact: true }).setInputFiles(path);
   await page.getByRole('button', { name: 'Downgrade' }).click();
   await expect.poll(() => attempts).toBeGreaterThan(0);
@@ -89,14 +89,14 @@ test('second_tab_does_not_touch_first_tab_upload', async ({ page, context }) => 
   });
 
   const path = revitFile('model_2026.rvt', 2026);
-  await page.goto('/');
+  await openApp(page);
   await page.getByLabel('Revit file', { exact: true }).setInputFiles(path);
   await page.getByRole('button', { name: 'Downgrade' }).click();
   await expect.poll(() => patchSeen).toBe(true);
 
   // Tab B opens the start page: the normal card, no word about tab A's upload.
   const second = await context.newPage();
-  await second.goto('/');
+  await openApp(second);
   await expect(second.getByRole('button', { name: 'Add a Revit file' })).toBeVisible();
   await expect(second.getByText(/did not finish|another tab/)).toBeHidden();
 

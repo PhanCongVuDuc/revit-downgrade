@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { expect, test as base } from '@playwright/test';
+import { expect, type Page, test as base } from '@playwright/test';
 import CFB from 'cfb';
 
 function utf16le(text: string): Buffer {
@@ -70,5 +70,14 @@ export const test = base.extend<{ clientIp: string; noPolicyViolations: undefine
     await use({ 'X-Forwarded-For': clientIp });
   },
 });
+
+/**
+ * Opens a page and waits for the app to take it over. The prerendered page already holds the file input, but the app
+ * replaces that page when it mounts, so a file set any earlier is lost with it.
+ */
+export async function openApp(page: Page, path = '/') {
+  await page.goto(path);
+  await page.locator('#app[data-v-app]').waitFor({ state: 'attached' });
+}
 
 export { expect };

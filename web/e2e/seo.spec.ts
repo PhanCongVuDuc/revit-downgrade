@@ -1,7 +1,7 @@
 // What a search engine or link preview gets from the real server before any JavaScript runs.
 import { expect, test } from '@playwright/test';
 
-import { revitFile } from './fixtures';
+import { openApp, revitFile } from './fixtures';
 
 test('each_page_is_served_with_its_own_head_and_content', async ({ request }) => {
   const resp = await request.get('/revit-2026-to-2024', { maxRedirects: 0 });
@@ -136,7 +136,7 @@ test('version_checker_reads_files_without_sending_them', async ({ page }) => {
       sent.push(request.url());
     }
   });
-  await page.goto('/revit-version-checker');
+  await openApp(page, '/revit-version-checker');
   await page
     .getByLabel('Choose files')
     .setInputFiles([revitFile('model_2026.rvt', 2026), revitFile('old_2022.rvt', 2022)]);
