@@ -22,15 +22,15 @@
         },
         "failed": {
           "what": "File gốc của lần chuyển đổi thất bại",
-          "when": "15 phút sau khi thất bại, để bạn chọn có gửi đi xem xét hay không"
+          "when": "Giữ trong báo cáo tối đa 7 ngày để sửa lỗi, hoặc tới khi bạn bấm Xoá file của tôi. Bản sao của file đã được giữ thì ở lại 15 phút, hoặc tới khi bạn bấm Xoá ngay."
         },
         "output": {
           "what": "File đã chuyển đổi và danh sách element bị bỏ",
           "when": "2 giờ sau khi sẵn sàng, hoặc khi bạn bấm Xoá ngay"
         },
         "report": {
-          "what": "File bạn chọn gửi đi xem xét (lần hạ bị lỗi, hoặc file đã hạ không mở được trong Revit)",
-          "when": "Sau 30 ngày hoặc khi bạn yêu cầu, tuỳ cái nào tới trước. Giữ tối đa 20 GB; file cũ nhất bị xoá trước."
+          "what": "Báo cáo (lần hạ bị lỗi, hoặc file bạn gửi vì không mở được trong Revit)",
+          "when": "Sau 7 ngày, hoặc khi bạn xoá hay yêu cầu, tuỳ cái nào tới trước. Giữ tối đa 20 GB; file cũ nhất bị xoá trước. Câu báo lỗi còn trên server 90 ngày sau khi file bị xoá, không kèm tên file."
         },
         "cancelled": {
           "what": "Phiên chuyển đổi bạn đã huỷ",
@@ -40,7 +40,7 @@
     },
     "unopenable": {
       "title": "Khi file đã hạ không mở được trong Revit",
-      "body": "Nếu Revit không mở được file đã hạ, bạn có thể bấm \"File không mở được trong Revit?\" ở màn hình kết quả. Không có gì được gửi nếu bạn không đánh dấu đồng ý và bấm Gửi. Khi đó server giữ file gốc của bạn (chọn lại nếu trang không còn giữ file), một bản sao file đã hạ, nhật ký chuyển đổi và ghi chú của bạn nếu có, thành một báo cáo trong tối đa 30 ngày, chỉ để tìm và sửa lỗi. Báo cáo không có tên file và địa chỉ mạng; bạn nhận một mã báo cáo để nêu khi cần. Lần hạ được báo như vậy được tính là lỗi trong số liệu sử dụng."
+      "body": "Nếu Revit không mở được file đã hạ, bạn có thể bấm \"File không mở được trong Revit?\" ở màn hình kết quả. Không có gì được gửi nếu bạn không đánh dấu đồng ý và bấm Gửi. Khi đó server giữ file gốc của bạn (chọn lại nếu trang không còn giữ file), một bản sao file đã hạ, nhật ký chuyển đổi và ghi chú của bạn nếu có, thành một báo cáo trong tối đa 7 ngày, chỉ để tìm và sửa lỗi. Báo cáo không có tên file và địa chỉ mạng; bạn nhận một mã báo cáo để nêu khi cần. Lần hạ được báo như vậy được tính là lỗi trong số liệu sử dụng."
     },
     "cookies": {
       "title": "Cookie và theo dõi",
@@ -48,7 +48,7 @@
     },
     "stats": {
       "title": "Thống kê sử dụng",
-      "body": "Server giữ các số tổng: số lần hạ xong, số file còn lỗi, số file lỗi được gửi để xem, và số người khác nhau đã hạ file. Mỗi người được nhận ra bằng một hash một chiều có khoá của địa chỉ mạng (địa chỉ IPv6 gom theo mạng /64), nên con số chỉ gần đúng: những người dùng chung mạng tính là một, người đổi mạng có thể bị tính hai lần. Mỗi file được nhận ra bằng một hash một chiều có khoá của nội dung, nên file lỗi gửi lại chỉ tính một lần. Hash của file lỗi hoặc không mở được được giữ tới khi một lần hạ cho thấy file đã được sửa, và không thể dựng lại file từ hash. Bản thân địa chỉ, tên file và nội dung file không bao giờ được lưu cho việc này. File đã hạ mà được báo là không mở được trong Revit sẽ chuyển từ hạ xong sang lỗi. Các số tổng được hiện công khai ở trang chủ."
+      "body": "Server giữ các số tổng: số lần hạ xong, số file còn lỗi, số file đang được giữ chờ fix, số file đã fix, và số người khác nhau đã hạ file. Mỗi người được nhận ra bằng một hash một chiều có khoá của địa chỉ mạng (địa chỉ IPv6 gom theo mạng /64), nên con số chỉ gần đúng: những người dùng chung mạng tính là một, người đổi mạng có thể bị tính hai lần. Mỗi file được nhận ra bằng một hash một chiều có khoá của nội dung, nên file lỗi gửi lại chỉ tính một lần. Hash của file lỗi hoặc không mở được được giữ tới khi một lần hạ hoặc một lần kiểm bằng Revit cho thấy file đã được sửa, và không thể dựng lại file từ hash. Bản thân địa chỉ, tên file và nội dung file không bao giờ được lưu cho việc này. File đã hạ mà được báo là không mở được trong Revit sẽ chuyển từ hạ xong sang lỗi. Các số tổng được hiện công khai ở trang chủ."
     },
     "logs": {
       "title": "Nhật ký máy chủ",

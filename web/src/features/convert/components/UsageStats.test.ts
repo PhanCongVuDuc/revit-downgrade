@@ -12,7 +12,7 @@ vi.mock('../stores/usageStats', () => ({ loadUsageStats: vi.fn() }));
 
 const load = vi.mocked(loadUsageStats);
 
-const TOTALS: UsageStatsData = { since: '2026-10-29', people: 1234, succeeded: 5678, failed: 90, contributed: 12 };
+const TOTALS: UsageStatsData = { since: '2026-10-29', people: 1234, succeeded: 5678, failed: 90, pending: 12, fixed: 34 };
 
 function show(locale: 'en' | 'vi') {
   const i18n = createI18n({ legacy: false, locale, fallbackLocale: 'en', messages: { en, vi: viMessages } });
@@ -24,14 +24,17 @@ afterEach(() => {
 });
 
 describe('UsageStats', () => {
-  it('shows the four totals and the start date in English', async () => {
+  it('shows the five totals and the start date in English', async () => {
     load.mockResolvedValueOnce(TOTALS);
     show('en');
     expect(await screen.findByText('1,234')).toBeInTheDocument();
     expect(screen.getByText('5,678')).toBeInTheDocument();
     expect(screen.getByText('90')).toBeInTheDocument();
     expect(screen.getByText('12')).toBeInTheDocument();
+    expect(screen.getByText('34')).toBeInTheDocument();
     expect(screen.getByText(en.convert.stats.succeeded)).toBeInTheDocument();
+    expect(screen.getByText(en.convert.stats.pending)).toBeInTheDocument();
+    expect(screen.getByText(en.convert.stats.fixed)).toBeInTheDocument();
     expect(screen.getByText(/October 29, 2026/)).toBeInTheDocument();
   });
 

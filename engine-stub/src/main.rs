@@ -11,7 +11,7 @@ use std::process::exit;
 
 const MIN_YEAR: u32 = 2022;
 const MAX_YEAR: u32 = 2027;
-const MODES: [&str; 9] = [
+const MODES: [&str; 10] = [
     "ok",
     "refuse",
     "corrupt",
@@ -21,6 +21,7 @@ const MODES: [&str; 9] = [
     "probe-hang",
     "no-log",
     "empty-output",
+    "path-error",
 ];
 
 #[derive(Parser)]
@@ -119,10 +120,12 @@ fn select(path: &Path, bytes: &[u8]) -> Selection {
         .file_name()
         .map(|n| n.to_string_lossy().to_lowercase())
         .unwrap_or_default();
-    let env_mode = std::env::var("REVIT_DOWNGRADE_STUB_MODE").ok().and_then(|v| {
-        let v = v.to_lowercase();
-        MODES.iter().copied().find(|m| *m == v)
-    });
+    let env_mode = std::env::var("REVIT_DOWNGRADE_STUB_MODE")
+        .ok()
+        .and_then(|v| {
+            let v = v.to_lowercase();
+            MODES.iter().copied().find(|m| *m == v)
+        });
     Selection {
         year: content_year(bytes)
             .or_else(|| name_year(&name))
@@ -230,7 +233,18 @@ fn downgrade(input: &Path, to: u32, out: &Path, log: &Path) {
     match sel.mode {
         "refuse" => fail(3, "Worksharing central files are not supported yet"),
         "corrupt" => fail(4, "The file is corrupt or unreadable"),
-        "fail" => fail(5, "The conversion failed"),
+        "fail" => {
+            // A real conversion leaves its log behind when it fails.
+            let _ = write_log(log, kind, sel.year, to);
+            fail(5, "The conversion failed")
+        }
+        "path-error" => fail(
+            5,
+            &format!(
+                r"Cannot read {}: it is locked. Family in House.rvt. Also missing C:\Users\Some One\Secret Tower.rvt",
+                input.display()
+            ),
+        ),
         "hang" => {
             // Next to the output file: `<out>.pid`.
             let mut pid_file = out.as_os_str().to_owned();

@@ -31,7 +31,7 @@ vi.mock('@/api', async (importOriginal) => {
     getJob: vi.fn(),
     getDropped: vi.fn(),
     deleteJob: vi.fn(),
-    sendReport: vi.fn(),
+    deleteJobReport: vi.fn(),
     uploadFile: vi.fn(),
     getStats: vi.fn().mockResolvedValue(null),
   };
@@ -59,6 +59,8 @@ function status(overrides: Partial<JobStatus>): JobStatus {
     error: null,
     result: null,
     reportCode: null,
+    reportOwned: false,
+    reportDeleted: false,
     alreadyReported: false,
     name: 'tower.rvt',
     size: 1000,
@@ -107,8 +109,8 @@ async function open(path = '/', locale = 'en-US') {
 
 const user = () => userEvent.setup({ delay: null });
 
-async function failedJob(kind: JobErrorKind = 'failed', message = 'x') {
-  mocked.getJob.mockResolvedValue(status({ state: 'failed', error: { kind, message } }));
+async function failedJob(kind: JobErrorKind = 'failed', message = 'x', overrides: Partial<JobStatus> = {}) {
+  mocked.getJob.mockResolvedValue(status({ state: 'failed', error: { kind, message }, ...overrides }));
   return open(`/job/${JOB}`);
 }
 
@@ -142,9 +144,7 @@ describe('conversion card', () => {
     expect(screen.getByText(/^Revit 2026 · Project · /)).toBeInTheDocument();
     expect(screen.getByText('tower.rvt')).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'Revit 2025' })).toBeChecked();
-    expect(
-      screen.getByText('Your file is only sent when you press Downgrade. It is deleted after 2 hours.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText(en.convert.privacy)).toBeInTheDocument();
     expect(mocked.createJob).not.toHaveBeenCalled();
 
     await user().click(screen.getByRole('button', { name: 'Downgrade' }));
@@ -293,39 +293,36 @@ describe('finished job', () => {
 });
 
 describe('failure report', () => {
-  it('consent_unchecked_by_default', async () => {
-    await failedJob();
-    const consent = screen.getByRole('checkbox');
-    expect(consent).not.toBeChecked();
-    expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
-    expect(
-      screen.getByLabelText(/^Let Revit Downgrade keep this file for up to 30 days to find and fix the problem\./),
-    ).toBe(consent);
+  it('deletes a kept file on request and confirms it', async () => {
+    mocked.deleteJobReport.mockResolvedValue(undefined);
+    await failedJob('failed', 'x', { reportCode: 'R-ABC234', reportOwned: true });
+    await user().click(screen.getByRole('button', { name: 'Delete my file' }));
+    await settle();
+    expect(mocked.deleteJobReport).toHaveBeenCalledExactlyOnceWith(JOB);
+    expect(screen.getByText('Your file has been deleted from the server.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Delete my file' })).not.toBeInTheDocument();
   });
 
-  it('report_sent_only_after_tick_and_send', async () => {
-    mocked.sendReport.mockResolvedValue('R-ABC234');
-    await failedJob();
-    await user().click(screen.getByRole('button', { name: 'Send' }));
-    expect(mocked.sendReport).not.toHaveBeenCalled();
-
-    await user().click(screen.getByRole('checkbox'));
-    expect(mocked.sendReport).not.toHaveBeenCalled();
-    await user().click(screen.getByRole('button', { name: 'Send' }));
+  it('points to the author when the job is no longer there', async () => {
+    mocked.deleteJobReport.mockRejectedValue(new ApiError(410, 'expired', 'gone'));
+    await failedJob('failed', 'x', { reportCode: 'R-ABC234', reportOwned: true });
+    await user().click(screen.getByRole('button', { name: 'Delete my file' }));
     await settle();
-    expect(mocked.sendReport).toHaveBeenCalledExactlyOnceWith(JOB);
-    expect(screen.getByText(/R-ABC234/)).toBeInTheDocument();
+    expect(screen.getByText(/can no longer delete/)).toHaveTextContent('R-ABC234');
+  });
+
+  it('lets a file kept only in its job be deleted', async () => {
+    await failedJob('failed', 'x', { reportCode: 'R-ABC234', alreadyReported: true });
+    await user().click(screen.getByRole('button', { name: 'Delete now' }));
+    await settle();
+    expect(mocked.deleteJob).toHaveBeenCalledWith(JOB);
+    expect(screen.getByRole('button', { name: 'Add a Revit file' })).toBeInTheDocument();
+  });
+
+  it('shows the code of a kept file and asks for nothing', async () => {
+    await failedJob('failed', 'x', { reportCode: 'R-ABC234', reportOwned: true });
+    expect(screen.getByText(/kept for up to 7 days/)).toHaveTextContent('R-ABC234');
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
-  });
-
-  it('shows why the report could not be sent', async () => {
-    mocked.sendReport.mockRejectedValue(new ApiError(0, 'network', 'offline'));
-    await failedJob();
-    await user().click(screen.getByRole('checkbox'));
-    await user().click(screen.getByRole('button', { name: 'Send' }));
-    await settle();
-    expect(screen.getByText('The report could not be sent (network). Please try again.')).toBeInTheDocument();
-    expect(screen.getByRole('checkbox')).toBeChecked();
   });
 
   it.each<[JobErrorKind, string]>([

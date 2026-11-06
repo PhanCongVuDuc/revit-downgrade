@@ -41,7 +41,7 @@ vi.mock('@/api', async (importOriginal) => {
     getJob: vi.fn(),
     getDropped: vi.fn(),
     deleteJob: vi.fn(),
-    sendReport: vi.fn(),
+    deleteJobReport: vi.fn(),
     startOpenReport: vi.fn(),
     finishOpenReport: vi.fn(),
     uploadFile: vi.fn(),
@@ -66,6 +66,8 @@ function status(overrides: Partial<JobStatus>): JobStatus {
     error: null,
     result: null,
     reportCode: null,
+    reportOwned: false,
+    reportDeleted: false,
     alreadyReported: false,
     name: 'tower.rvt',
     size: 1000,
@@ -383,35 +385,23 @@ describe('job outcomes', () => {
     expect(store.elapsedS).toBe(4);
   });
 
-  it('shows a failed job with its error kind and sends a report on consent', async () => {
+  it('shows a failed job with its error kind and the report it made', async () => {
     const store = await readyStore();
-    mocked.getJob.mockResolvedValue(status({ state: 'failed', error: { kind: 'corrupt', message: 'bad file' } }));
-    mocked.sendReport.mockResolvedValue('R-ABC123');
+    mocked.getJob.mockResolvedValue(
+      status({
+        state: 'failed',
+        error: { kind: 'corrupt', message: 'bad file' },
+        reportCode: 'R-ABC123',
+        reportOwned: true,
+      }),
+    );
     await store.submit();
     await settle();
     expect(store.phase).toBe('failed');
     expect(store.error).toEqual({ code: 'corrupt', message: 'bad file', retryAfterS: null });
-    await expect(store.consentReport()).resolves.toBe(true);
     expect(store.reportCode).toBe('R-ABC123');
-    await expect(store.consentReport()).resolves.toBe(false);
-    expect(mocked.sendReport).toHaveBeenCalledExactlyOnceWith(JOB);
-  });
-
-  it('consent_report_error_is_exposed', async () => {
-    mocked.getJob.mockResolvedValue(status({ state: 'failed', error: { kind: 'crashed', message: 'boom' } }));
-    const store = useConvertStore();
-    await store.resume(JOB);
-    mocked.sendReport.mockRejectedValueOnce(new ApiError(410, 'expired', 'gone'));
-    await expect(store.consentReport()).resolves.toBe(false);
-    expect(store.reportError).toBe('expired');
-    mocked.sendReport.mockRejectedValueOnce(new ApiError(409, 'already_reported', 'sent'));
-    await expect(store.consentReport()).resolves.toBe(false);
-    expect(store.reportError).toBe('already_reported');
-    mocked.sendReport.mockResolvedValueOnce('R-XYZ789');
-    await expect(store.consentReport()).resolves.toBe(true);
-    expect(store.reportError).toBeNull();
-    expect(store.reportCode).toBe('R-XYZ789');
-    expect(store.phase).toBe('failed');
+    expect(store.reportOwned).toBe(true);
+    expect(store.reportDeleted).toBe(false);
   });
 
   it('dropped_load_error_is_exposed', async () => {
@@ -770,6 +760,103 @@ describe('resume, cancel and delete', () => {
     expect(mocked.deleteJob).toHaveBeenCalledWith(JOB);
     expect(store.phase).toBe('pick');
     expect(store.jobId).toBeNull();
+  });
+
+  describe('deleteReport', () => {
+    it.each([
+      [new ApiError(404, 'not_found', 'gone')],
+      [new ApiError(410, 'expired', 'gone')],
+    ])('still gives the code when a kept job is reopened after it left the server', async (gone) => {
+      const first = await keptJob();
+      first.$reset();
+      mocked.getJob.mockRejectedValue(gone);
+      const store = useConvertStore();
+      await store.resume(JOB);
+      expect(store.phase).toBe('failed');
+      expect(store.reportCode).toBe('R-ABC123');
+      expect(store.reportDeletion).toBe('gone');
+    });
+
+    it('does not bring back a report deleted from here', async () => {
+      const first = await keptJob();
+      await first.deleteReport();
+      first.$reset();
+      mocked.getJob.mockRejectedValue(new ApiError(410, 'expired', 'gone'));
+      const store = useConvertStore();
+      await store.resume(JOB);
+      expect(store.phase).toBe('error');
+      expect(store.error?.code).toBe('expired');
+    });
+
+    it('shows a deleted report as deleted when the job is reopened', async () => {
+      mocked.getJob.mockResolvedValue(
+        status({
+          state: 'failed',
+          error: { kind: 'failed', message: 'x' },
+          reportCode: 'R-ABC123',
+          reportOwned: true,
+          reportDeleted: true,
+        }),
+      );
+      const store = useConvertStore();
+      await store.resume(JOB);
+      expect(store.reportDeleted).toBe(true);
+    });
+
+    async function keptJob() {
+      mocked.getJob.mockResolvedValue(
+        status({
+          state: 'failed',
+          error: { kind: 'failed', message: 'x' },
+          reportCode: 'R-ABC123',
+          reportOwned: true,
+        }),
+      );
+      const store = useConvertStore();
+      await store.resume(JOB);
+      return store;
+    }
+
+    it('deletes once and says so only after the server has', async () => {
+      const store = await keptJob();
+      mocked.deleteJobReport.mockResolvedValue(undefined);
+      const deleting = store.deleteReport();
+      expect(store.reportDeletion).toBe('deleting');
+      expect(store.reportDeleted).toBe(false);
+      await deleting;
+      expect(store.reportDeleted).toBe(true);
+      await store.deleteReport();
+      expect(mocked.deleteJobReport).toHaveBeenCalledExactlyOnceWith(JOB);
+      expect(store.phase).toBe('failed');
+    });
+
+    it.each([
+      [new ApiError(404, 'not_found', 'gone'), 'gone'],
+      [new ApiError(410, 'expired', 'gone'), 'gone'],
+      [new ApiError(500, 'report_delete_failed', 'locked'), 'failed'],
+      [new ApiError(0, 'network', 'offline'), 'failed'],
+    ])('never claims the file is deleted after %s', async (cause, want) => {
+      const store = await keptJob();
+      mocked.deleteJobReport.mockRejectedValueOnce(cause);
+      await store.deleteReport();
+      expect(store.reportDeletion).toBe(want);
+      expect(store.reportDeleted).toBe(false);
+    });
+
+    it('leaves a report this job did not make alone', async () => {
+      mocked.getJob.mockResolvedValue(
+        status({
+          state: 'failed',
+          error: { kind: 'failed', message: 'x' },
+          reportCode: 'R-ABC123',
+          alreadyReported: true,
+        }),
+      );
+      const store = useConvertStore();
+      await store.resume(JOB);
+      await store.deleteReport();
+      expect(mocked.deleteJobReport).not.toHaveBeenCalled();
+    });
   });
 
   it('exposes the result and the download URL of a done job', async () => {

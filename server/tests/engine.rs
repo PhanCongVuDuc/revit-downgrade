@@ -1,8 +1,8 @@
 mod common;
 
+use common::{process_alive, stub_path, wait_for_pid, write_marker};
 use revit_downgrade_server::engine::{DowngradeRequest, Engine, EngineError};
 use revit_downgrade_server::model::{ErrorKind, FileKind};
-use common::{process_alive, stub_path, wait_for_pid, write_marker};
 use std::time::{Duration, Instant};
 use tokio_util::sync::CancellationToken;
 
@@ -70,7 +70,10 @@ async fn corrupt_and_fail_map_to_kinds() {
         )
         .await
         .unwrap_err();
-    assert!(matches!(err, EngineError::Corrupt));
+    assert!(
+        matches!(&err, EngineError::Corrupt(m) if m == "The file is corrupt or unreadable"),
+        "{err:?}"
+    );
     assert_eq!(err.kind(), Some(ErrorKind::Corrupt));
 
     let input = write_marker(dir.path(), "rvt", "fail", Some(2026));
@@ -81,7 +84,10 @@ async fn corrupt_and_fail_map_to_kinds() {
         )
         .await
         .unwrap_err();
-    assert!(matches!(err, EngineError::Failed));
+    assert!(
+        matches!(&err, EngineError::Failed(m) if m == "The conversion failed"),
+        "{err:?}"
+    );
     assert_eq!(err.kind(), Some(ErrorKind::Failed));
 }
 
@@ -153,7 +159,7 @@ async fn crash_maps_to_crashed() {
         )
         .await
         .unwrap_err();
-    assert!(matches!(err, EngineError::Crashed(_)), "{err:?}");
+    assert!(matches!(err, EngineError::Crashed(..)), "{err:?}");
     assert_eq!(err.kind(), Some(ErrorKind::Crashed));
 }
 

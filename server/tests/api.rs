@@ -49,6 +49,8 @@ fn start_workers(f: &Fixture) {
         f.state.engine.clone(),
         f.state.stats.clone(),
         f.state.reports.clone(),
+        f.state.errors.clone(),
+        f.state.engine_version.clone(),
     );
 }
 
@@ -397,6 +399,8 @@ async fn job_json_has_no_internal_fields() {
             "name",
             "position",
             "report_code",
+            "report_deleted",
+            "report_owned",
             "result",
             "size",
             "state",
@@ -505,16 +509,32 @@ fn prerendered_web() -> tempfile::TempDir {
     std::fs::write(web.path().join("index.html"), "<html>shell</html>").unwrap();
     std::fs::write(web.path().join("robots.txt"), "User-agent: *").unwrap();
     std::fs::write(web.path().join("og-image.png"), "png").unwrap();
-    std::fs::write(web.path().join("assets").join("index-abc.js"), "console.log(1)").unwrap();
+    std::fs::write(
+        web.path().join("assets").join("index-abc.js"),
+        "console.log(1)",
+    )
+    .unwrap();
     std::fs::write(pages.join("index.html"), "<html>home</html>").unwrap();
     std::fs::write(pages.join("revit-2026-to-2024.html"), "<html>pair</html>").unwrap();
     std::fs::write(pages.join("guides.html"), "<html>guides</html>").unwrap();
-    std::fs::write(pages.join("guides").join("compat.html"), "<html>guide</html>").unwrap();
+    std::fs::write(
+        pages.join("guides").join("compat.html"),
+        "<html>guide</html>",
+    )
+    .unwrap();
     std::fs::write(pages.join("404.html"), "<html>not found</html>").unwrap();
     std::fs::create_dir_all(pages.join("vi")).unwrap();
     std::fs::write(pages.join("vi.html"), "<html>trang chu</html>").unwrap();
-    std::fs::write(pages.join("vi").join("guides.html"), "<html>huong dan</html>").unwrap();
-    std::fs::write(pages.join("vi").join("404.html"), "<html>khong tim thay</html>").unwrap();
+    std::fs::write(
+        pages.join("vi").join("guides.html"),
+        "<html>huong dan</html>",
+    )
+    .unwrap();
+    std::fs::write(
+        pages.join("vi").join("404.html"),
+        "<html>khong tim thay</html>",
+    )
+    .unwrap();
     web
 }
 
@@ -568,7 +588,11 @@ async fn unknown_vietnamese_addresses_get_the_vietnamese_404_page() {
     for uri in ["/vi/no-such-page", "/vi/guides/nope", "/vi/404"] {
         let resp = send(&f, get(uri)).await;
         assert_eq!(resp.status(), StatusCode::NOT_FOUND, "{uri}");
-        assert_eq!(body_bytes(resp).await, b"<html>khong tim thay</html>", "{uri}");
+        assert_eq!(
+            body_bytes(resp).await,
+            b"<html>khong tim thay</html>",
+            "{uri}"
+        );
     }
 }
 
@@ -744,15 +768,6 @@ async fn responses_carry_security_headers() {
     }
 }
 
-fn post_report(id: &str) -> Request<Body> {
-    Request::builder()
-        .method(Method::POST)
-        .uri(format!("/api/jobs/{id}/report"))
-        .header("content-type", "application/json")
-        .body(Body::from(r#"{"consent":true}"#))
-        .unwrap()
-}
-
 /// Sends a request as the given client behind the (trusted) proxy.
 async fn send_from(f: &Fixture, client: &str, mut req: Request<Body>) -> axum::response::Response {
     req.headers_mut()
@@ -807,80 +822,97 @@ async fn stats_new_server_is_zero_and_cacheable() {
     let since = f.state.clock.now().format("%Y-%m-%d").to_string();
     assert_eq!(
         body_json(resp).await,
-        json!({"since": since, "people": 0, "succeeded": 0, "failed": 0, "contributed": 0})
+        json!({"since": since, "people": 0, "succeeded": 0, "failed": 0, "pending": 0, "fixed": 0})
     );
 }
 
 #[tokio::test]
-async fn stats_count_outcomes_and_reports() {
+async fn stats_count_outcomes_and_kept_files() {
     let f = setup();
     start_workers(&f);
     run_from(&f, "203.0.113.1", "ok", "done").await;
-    let done = run_from(&f, "203.0.113.1", "ok", "done").await;
-    let failed = run_from(&f, "203.0.113.1", "fail", "failed").await;
+    run_from(&f, "203.0.113.1", "ok", "done").await;
+    run_from(&f, "203.0.113.1", "fail", "failed").await;
     wait_for_stat(&f, "succeeded", 2).await;
     let v = wait_for_stat(&f, "failed", 1).await;
-    assert_eq!(v["contributed"], 0);
+    assert_eq!((&v["pending"], &v["fixed"]), (&json!(1), &json!(0)));
     assert_eq!(v["people"], 1);
-
-    let resp = send(&f, post_report(&failed)).await;
-    assert_eq!(resp.status(), StatusCode::CREATED);
-    assert_eq!(stats(&f).await["contributed"], 1);
-
-    // Refused reports are not contributions.
-    let resp = send(&f, post_report(&failed)).await;
-    assert_eq!(resp.status(), StatusCode::CONFLICT);
-    let resp = send(&f, post_report(&done)).await;
-    assert_eq!(resp.status(), StatusCode::CONFLICT);
-    let v = stats(&f).await;
-    assert_eq!(
-        (&v["succeeded"], &v["failed"], &v["contributed"]),
-        (&json!(2), &json!(1), &json!(1))
-    );
+    assert!(v.get("contributed").is_none());
 }
 
 #[tokio::test]
-async fn a_failing_file_sent_again_counts_once_and_is_not_asked_for_again() {
+async fn a_failed_job_shows_the_report_it_made() {
+    let f = setup();
+    start_workers(&f);
+    let id = run_from(&f, "203.0.113.1", "fail", "failed").await;
+    let v = body_json(send(&f, get(&format!("/api/jobs/{id}"))).await).await;
+    let code = v["report_code"].as_str().unwrap();
+    assert!(code.starts_with("R-") && code.len() == 8, "{code}");
+    assert_eq!(v["report_owned"], true);
+    assert_eq!(v["report_deleted"], false);
+    assert_eq!(v["already_reported"], false);
+    assert!(f.dir.path().join("reports").join(code).is_dir());
+}
+
+#[tokio::test]
+async fn a_failing_file_sent_again_counts_once_and_shows_the_same_report() {
     let f = setup_with(|c| c.trust_proxy = true);
     start_workers(&f);
     let first = run_from(&f, "203.0.113.1", "fail", "failed").await;
-    wait_for_stat(&f, "failed", 1).await;
     let v = body_json(send(&f, get(&format!("/api/jobs/{first}"))).await).await;
-    assert_eq!(v["already_reported"], false);
-    let resp = send_from(&f, "203.0.113.1", post_report(&first)).await;
-    assert_eq!(resp.status(), StatusCode::CREATED);
-    let code = body_json(resp).await["report_code"].clone();
+    let code = v["report_code"].clone();
     assert!(code.is_string());
 
     let again = run_from(&f, "203.0.113.2", "fail", "failed").await;
     // It is there as soon as the job shows as failed.
     let v = body_json(send(&f, get(&format!("/api/jobs/{again}"))).await).await;
     assert_eq!(v["already_reported"], true);
-    // Another person's report code is theirs alone.
-    assert_eq!(v["report_code"], Value::Null);
-    let resp = send_from(&f, "203.0.113.2", post_report(&again)).await;
-    assert_eq!(resp.status(), StatusCode::CONFLICT);
+    assert_eq!(v["report_owned"], false);
+    assert_eq!(v["report_code"], code);
     let v = stats(&f).await;
     assert_eq!(
-        (&v["failed"], &v["contributed"], &v["people"]),
+        (&v["failed"], &v["pending"], &v["people"]),
         (&json!(1), &json!(1), &json!(2))
     );
+    let reports = std::fs::read_dir(f.dir.path().join("reports"))
+        .unwrap()
+        .count();
+    assert_eq!(reports, 1);
 }
 
 #[tokio::test]
-async fn two_failures_of_one_file_keep_one_report() {
+async fn a_report_that_is_gone_is_made_again() {
     let f = setup_with(|c| c.trust_proxy = true);
     start_workers(&f);
     let first = run_from(&f, "203.0.113.1", "fail", "failed").await;
-    let second = run_from(&f, "203.0.113.2", "fail", "failed").await;
-    let resp = send_from(&f, "203.0.113.1", post_report(&first)).await;
-    assert_eq!(resp.status(), StatusCode::CREATED);
-    let resp = send_from(&f, "203.0.113.2", post_report(&second)).await;
-    assert_eq!(resp.status(), StatusCode::CONFLICT);
+    let v = body_json(send(&f, get(&format!("/api/jobs/{first}"))).await).await;
+    let code = v["report_code"].as_str().unwrap().to_string();
+    std::fs::remove_dir_all(f.dir.path().join("reports").join(&code)).unwrap();
+
+    let again = run_from(&f, "203.0.113.2", "fail", "failed").await;
+    let v = body_json(send(&f, get(&format!("/api/jobs/{again}"))).await).await;
+    assert_eq!(v["report_owned"], true);
+    assert_ne!(v["report_code"], json!(code));
     let v = stats(&f).await;
-    assert_eq!((&v["failed"], &v["contributed"]), (&json!(1), &json!(1)));
-    let reports = std::fs::read_dir(f.dir.path().join("reports")).unwrap().count();
-    assert_eq!(reports, 1);
+    assert_eq!((&v["failed"], &v["pending"]), (&json!(1), &json!(1)));
+}
+
+#[tokio::test]
+async fn posting_a_report_is_gone() {
+    let f = setup();
+    start_workers(&f);
+    let id = run_from(&f, "203.0.113.1", "fail", "failed").await;
+    let resp = send(
+        &f,
+        Request::builder()
+            .method(Method::POST)
+            .uri(format!("/api/jobs/{id}/report"))
+            .header("content-type", "application/json")
+            .body(Body::from(r#"{"consent":true}"#))
+            .unwrap(),
+    )
+    .await;
+    assert_eq!(resp.status(), StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]
@@ -890,26 +922,6 @@ async fn a_refused_file_is_not_a_failure() {
     run_from(&f, "203.0.113.1", "refuse", "failed").await;
     let v = wait_for_stat(&f, "people", 1).await;
     assert_eq!(v["failed"], 0);
-}
-
-#[tokio::test]
-async fn a_report_that_is_gone_can_be_sent_again() {
-    let f = setup_with(|c| c.trust_proxy = true);
-    start_workers(&f);
-    let first = run_from(&f, "203.0.113.1", "fail", "failed").await;
-    wait_for_stat(&f, "failed", 1).await;
-    let resp = send_from(&f, "203.0.113.1", post_report(&first)).await;
-    let code = body_json(resp).await["report_code"]
-        .as_str()
-        .unwrap()
-        .to_string();
-    std::fs::remove_dir_all(f.dir.path().join("reports").join(code)).unwrap();
-
-    let again = run_from(&f, "203.0.113.2", "fail", "failed").await;
-    wait_for_stat(&f, "people", 2).await;
-    let resp = send_from(&f, "203.0.113.2", post_report(&again)).await;
-    assert_eq!(resp.status(), StatusCode::CREATED);
-    assert_eq!(stats(&f).await["failed"], 1);
 }
 
 #[tokio::test]
@@ -939,19 +951,17 @@ async fn stats_skip_cancelled_job() {
 async fn stats_people_by_forwarded_address() {
     let f = setup_with(|c| c.trust_proxy = true);
     start_workers(&f);
-    // IPv4 A converts 2 files, IPv4 B 1 file (it fails and is reported), and two addresses of
-    // one IPv6 /64 network convert one file each.
+    // IPv4 A converts 2 files, IPv4 B 1 file (it fails), and two addresses of one IPv6 /64 network
+    // convert one file each.
     run_from(&f, "203.0.113.1", "ok", "done").await;
     run_from(&f, "203.0.113.1", "ok", "done").await;
-    let failed = run_from(&f, "203.0.113.2", "fail", "failed").await;
+    run_from(&f, "203.0.113.2", "fail", "failed").await;
     run_from(&f, "2001:db8:1:2::1", "ok", "done").await;
     run_from(&f, "2001:db8:1:2::2", "ok", "done").await;
     wait_for_stat(&f, "failed", 1).await;
-    let resp = send_from(&f, "203.0.113.2", post_report(&failed)).await;
-    assert_eq!(resp.status(), StatusCode::CREATED);
     let v = wait_for_stat(&f, "succeeded", 4).await;
     assert_eq!(
-        (&v["people"], &v["failed"], &v["contributed"]),
+        (&v["people"], &v["failed"], &v["pending"]),
         (&json!(3), &json!(1), &json!(1))
     );
     let text = std::fs::read_to_string(f.dir.path().join("stats").join("stats.json")).unwrap();
@@ -987,12 +997,10 @@ async fn stats_survive_restarts() {
     let f = setup_with(|c| c.trust_proxy = true);
     start_workers(&f);
     run_from(&f, "203.0.113.1", "ok", "done").await;
-    let failed = run_from(&f, "203.0.113.2", "fail", "failed").await;
+    run_from(&f, "203.0.113.2", "fail", "failed").await;
     wait_for_stat(&f, "failed", 1).await;
-    let resp = send(&f, post_report(&failed)).await;
-    assert_eq!(resp.status(), StatusCode::CREATED);
     let before = wait_for_stat(&f, "succeeded", 1).await;
-    assert_eq!(before["contributed"], 1);
+    assert_eq!(before["pending"], 1);
     assert_eq!(before["people"], 2);
 
     // Restart three times on the same data directory, the way the server starts.
@@ -1009,7 +1017,7 @@ async fn stats_survive_restarts() {
     run_from(&f, "203.0.113.1", "ok", "done").await;
     let after = wait_for_stat(&f, "succeeded", 2).await;
     assert_eq!(after["failed"], before["failed"]);
-    assert_eq!(after["contributed"], before["contributed"]);
+    assert_eq!(after["pending"], before["pending"]);
     assert_eq!(after["people"], before["people"]);
     assert_eq!(after["since"], before["since"]);
 }
@@ -1112,7 +1120,7 @@ async fn open_report_full_flow_makes_a_report_and_moves_the_counts() {
     let (id, data) = done_from(&f, client).await;
     let before = wait_for_stat(&f, "succeeded", 1).await;
     assert_eq!(
-        (&before["failed"], &before["contributed"]),
+        (&before["failed"], &before["pending"]),
         (&json!(0), &json!(0))
     );
 
@@ -1182,7 +1190,7 @@ async fn open_report_full_flow_makes_a_report_and_moves_the_counts() {
         (
             &after["succeeded"],
             &after["failed"],
-            &after["contributed"],
+            &after["pending"],
             &after["people"]
         ),
         (&json!(0), &json!(1), &json!(1), &before["people"])
@@ -1282,7 +1290,8 @@ async fn open_report_start_refusals() {
     .await;
     assert_eq!(resp.status(), StatusCode::OK);
     assert_eq!(job_of(&f, &id).open_report.unwrap().note, None);
-    assert!(report_codes(&f).is_empty());
+    // Only the failed job's own report: none of the refusals made one.
+    assert_eq!(report_codes(&f).len(), 1);
 }
 
 #[tokio::test]
@@ -1422,7 +1431,7 @@ async fn open_report_finish_refusals() {
     );
     assert!(job_of(&f, &id).open_report.is_none());
     assert!(!path.exists());
-    assert_eq!(stats(&f).await["contributed"], 0);
+    assert_eq!(stats(&f).await["pending"], 0);
     let resp = send_from(
         &f,
         client,
@@ -1444,7 +1453,7 @@ async fn open_report_finish_refusals() {
     );
     assert!(job_of(&f, &id).open_report.is_some());
     assert!(path.is_file());
-    assert_eq!(stats(&f).await["contributed"], 0);
+    assert_eq!(stats(&f).await["pending"], 0);
     std::fs::remove_file(&reports).unwrap();
 
     let (a, b) = tokio::join!(
@@ -1457,7 +1466,7 @@ async fn open_report_finish_refusals() {
     assert_eq!(report_codes(&f).len(), 1);
     let v = stats(&f).await;
     assert_eq!(
-        (&v["succeeded"], &v["failed"], &v["contributed"]),
+        (&v["succeeded"], &v["failed"], &v["pending"]),
         (&json!(0), &json!(1), &json!(1))
     );
 
@@ -1510,7 +1519,7 @@ async fn open_report_input_lost_at_finish_reopens_the_upload() {
     );
     assert!(job_of(&f, &id).open_report.is_none());
     assert!(report_codes(&f).is_empty());
-    assert_eq!(stats(&f).await["contributed"], 0);
+    assert_eq!(stats(&f).await["pending"], 0);
 
     // The retry starts from offset 0 and makes the report.
     open_and_send().await;
@@ -1539,7 +1548,7 @@ async fn open_report_finish_on_an_expired_job_is_410() {
     let resp = send_from(&f, client, finish_open_report(&id)).await;
     assert_eq!(error_code(resp).await, (StatusCode::GONE, json!("expired")));
     assert!(report_codes(&f).is_empty());
-    assert_eq!(stats(&f).await["contributed"], 0);
+    assert_eq!(stats(&f).await["pending"], 0);
 }
 
 #[tokio::test]
@@ -1688,10 +1697,10 @@ async fn open_report_counts_survive_a_restart() {
         (
             &after["succeeded"],
             &after["failed"],
-            &after["contributed"],
+            &after["pending"],
             &after["people"]
         ),
-        (&json!(0), &json!(2), &json!(1), &before["people"])
+        (&json!(0), &json!(2), &json!(2), &before["people"])
     );
 
     let Fixture { dir, .. } = f;
@@ -1759,4 +1768,224 @@ async fn refused_open_reports_leave_the_counts_alone() {
     assert_eq!(resp.status(), StatusCode::GONE);
     assert_eq!(stats(&f).await, reported);
     assert_eq!(report_codes(&f).len(), 1);
+}
+
+// Deleting a kept file.
+
+fn report_uri(id: &str) -> String {
+    format!("/api/jobs/{id}/report")
+}
+
+async fn job_json(f: &Fixture, id: &str) -> Value {
+    body_json(send(f, get(&format!("/api/jobs/{id}"))).await).await
+}
+
+/// The report of a failed job and its directory.
+async fn report_of(f: &Fixture, id: &str) -> (String, std::path::PathBuf) {
+    let code = job_json(f, id).await["report_code"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let dir = f.dir.path().join("reports").join(&code);
+    (code, dir)
+}
+
+/// Keeps a report from being deleted while the returned file is open.
+fn lock_report(dir: &std::path::Path) -> std::fs::File {
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+        std::fs::OpenOptions::new()
+            .read(true)
+            .share_mode(0)
+            .open(dir.join("input.rvt"))
+            .unwrap()
+    }
+    #[cfg(not(windows))]
+    {
+        // A file in the place of the directory cannot be removed as one.
+        std::fs::remove_dir_all(dir).unwrap();
+        std::fs::write(dir, b"").unwrap();
+        std::fs::File::open(dir).unwrap()
+    }
+}
+
+#[tokio::test]
+async fn deleting_a_report_removes_it_and_lowers_pending_only() {
+    let f = setup();
+    start_workers(&f);
+    let id = run_from(&f, "203.0.113.1", "fail", "failed").await;
+    let (_, dir) = report_of(&f, &id).await;
+    assert!(dir.is_dir());
+    let resp = send(&f, delete(&report_uri(&id))).await;
+    assert_eq!(resp.status(), StatusCode::NO_CONTENT);
+    assert!(!dir.exists());
+    let v = stats(&f).await;
+    assert_eq!(
+        (&v["failed"], &v["pending"], &v["fixed"]),
+        (&json!(1), &json!(0), &json!(0))
+    );
+    let v = job_json(&f, &id).await;
+    assert_eq!(v["report_deleted"], true);
+    assert_eq!(v["state"], "failed");
+
+    // A second tab gets the same answer, and nothing moves.
+    let resp = send(&f, delete(&report_uri(&id))).await;
+    assert_eq!(resp.status(), StatusCode::NO_CONTENT);
+    assert_eq!(stats(&f).await["pending"], 0);
+}
+
+#[tokio::test]
+async fn a_fixed_marker_is_counted_before_the_user_deletes_the_report() {
+    let f = setup();
+    start_workers(&f);
+    let id = run_from(&f, "203.0.113.1", "fail", "failed").await;
+    let (_, dir) = report_of(&f, &id).await;
+    std::fs::write(dir.join("FIXED.md"), b"opened in Revit").unwrap();
+    let resp = send(&f, delete(&report_uri(&id))).await;
+    assert_eq!(resp.status(), StatusCode::NO_CONTENT);
+    assert!(!dir.exists());
+    let v = stats(&f).await;
+    assert_eq!(
+        (&v["failed"], &v["pending"], &v["fixed"]),
+        (&json!(0), &json!(0), &json!(1))
+    );
+}
+
+#[tokio::test]
+async fn deleting_a_report_that_is_already_gone_succeeds() {
+    let f = setup();
+    start_workers(&f);
+    let id = run_from(&f, "203.0.113.1", "fail", "failed").await;
+    let (_, dir) = report_of(&f, &id).await;
+    std::fs::remove_dir_all(&dir).unwrap();
+    let resp = send(&f, delete(&report_uri(&id))).await;
+    assert_eq!(resp.status(), StatusCode::NO_CONTENT);
+    assert_eq!(stats(&f).await["pending"], 0);
+    assert_eq!(job_json(&f, &id).await["report_deleted"], true);
+}
+
+#[tokio::test]
+async fn deleting_a_report_of_an_unknown_or_expired_job_is_refused() {
+    let f = setup();
+    start_workers(&f);
+    let resp = send(&f, delete(&report_uri("zz"))).await;
+    assert_eq!(
+        error_code(resp).await,
+        (StatusCode::NOT_FOUND, json!("not_found"))
+    );
+    let resp = send(&f, delete(&report_uri(&"0".repeat(32)))).await;
+    assert_eq!(
+        error_code(resp).await,
+        (StatusCode::NOT_FOUND, json!("not_found"))
+    );
+
+    let id = run_from(&f, "203.0.113.1", "fail", "failed").await;
+    let (_, dir) = report_of(&f, &id).await;
+    let now = f.state.clock.now();
+    f.state.store.expire(&id.parse().unwrap(), now);
+    let resp = send(&f, delete(&report_uri(&id))).await;
+    assert_eq!(error_code(resp).await, (StatusCode::GONE, json!("expired")));
+    assert!(dir.is_dir());
+    assert_eq!(stats(&f).await["pending"], 1);
+}
+
+#[tokio::test]
+async fn only_the_job_that_made_a_report_can_delete_it() {
+    let f = setup_with(|c| c.trust_proxy = true);
+    start_workers(&f);
+    let first = run_from(&f, "203.0.113.1", "fail", "failed").await;
+    let second = run_from(&f, "203.0.113.2", "fail", "failed").await;
+    let refused = run_from(&f, "203.0.113.3", "refuse", "failed").await;
+    let (_, dir) = report_of(&f, &first).await;
+    for id in [&second, &refused] {
+        let resp = send(&f, delete(&report_uri(id))).await;
+        assert_eq!(
+            error_code(resp).await,
+            (StatusCode::CONFLICT, json!("not_report_owner"))
+        );
+    }
+    assert!(dir.is_dir());
+    assert_eq!(stats(&f).await["pending"], 1);
+}
+
+#[tokio::test]
+async fn a_report_that_cannot_be_deleted_changes_nothing() {
+    let f = setup();
+    start_workers(&f);
+    let id = run_from(&f, "203.0.113.1", "fail", "failed").await;
+    let (_, dir) = report_of(&f, &id).await;
+    let lock = lock_report(&dir);
+    let resp = send(&f, delete(&report_uri(&id))).await;
+    assert_eq!(
+        error_code(resp).await,
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            json!("report_delete_failed")
+        )
+    );
+    assert_eq!(stats(&f).await["pending"], 1);
+    assert_eq!(job_json(&f, &id).await["report_deleted"], false);
+
+    // The same through the job: it stays, and the visitor can try again.
+    let resp = send(&f, delete(&format!("/api/jobs/{id}"))).await;
+    assert_eq!(
+        error_code(resp).await,
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            json!("report_delete_failed")
+        )
+    );
+    assert_eq!(job_json(&f, &id).await["state"], "failed");
+    drop(lock);
+}
+
+#[tokio::test]
+async fn deleting_a_failed_job_deletes_its_own_report() {
+    let f = setup();
+    start_workers(&f);
+    let id = run_from(&f, "203.0.113.1", "fail", "failed").await;
+    let (_, dir) = report_of(&f, &id).await;
+    let resp = send(&f, delete(&format!("/api/jobs/{id}"))).await;
+    assert_eq!(resp.status(), StatusCode::NO_CONTENT);
+    assert!(!dir.exists());
+    let v = stats(&f).await;
+    assert_eq!((&v["failed"], &v["pending"]), (&json!(1), &json!(0)));
+}
+
+#[tokio::test]
+async fn deleting_a_job_leaves_the_report_of_another_job() {
+    let f = setup_with(|c| c.trust_proxy = true);
+    start_workers(&f);
+    let first = run_from(&f, "203.0.113.1", "fail", "failed").await;
+    let second = run_from(&f, "203.0.113.2", "fail", "failed").await;
+    let (_, dir) = report_of(&f, &first).await;
+    let resp = send(&f, delete(&format!("/api/jobs/{second}"))).await;
+    assert_eq!(resp.status(), StatusCode::NO_CONTENT);
+    assert!(dir.is_dir());
+    assert_eq!(stats(&f).await["pending"], 1);
+    assert_eq!(
+        send(&f, get(&format!("/api/jobs/{second}"))).await.status(),
+        StatusCode::NOT_FOUND
+    );
+}
+
+#[tokio::test]
+async fn a_report_of_1_gib_is_deleted_within_2_seconds() {
+    let f = setup();
+    start_workers(&f);
+    let id = run_from(&f, "203.0.113.1", "fail", "failed").await;
+    let (_, dir) = report_of(&f, &id).await;
+    let file = std::fs::File::options()
+        .write(true)
+        .open(dir.join("input.rvt"))
+        .unwrap();
+    file.set_len(1 << 30).unwrap();
+    drop(file);
+    let started = std::time::Instant::now();
+    let resp = send(&f, delete(&report_uri(&id))).await;
+    let took = started.elapsed();
+    assert_eq!(resp.status(), StatusCode::NO_CONTENT);
+    assert!(took < Duration::from_secs(2), "took {took:?}");
+    assert!(!dir.exists());
 }

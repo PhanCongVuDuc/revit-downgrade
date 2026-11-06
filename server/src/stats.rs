@@ -1,13 +1,22 @@
 //! Usage statistics: running totals kept in `<data>/stats/` across restarts.
 //!
-//! `stats.json` holds the start date, the succeeded, failed and reported conversion counts, one
-//! keyed hash per client network address, and one keyed hash per file that still fails. `key`
-//! holds the secret for those hashes. No address, file name or file content is ever stored here.
+//! `stats.json` holds the start date, the succeeded, failed, reported and fixed counts, one keyed
+//! hash per client network address, one keyed hash per file that still fails, and the reports
+//! being tracked. `key` holds the secret for those hashes. No address, file name or file content
+//! is ever stored here.
 //!
 //! `failed` counts files, not attempts: sending a failing file again changes nothing, and the
-//! file leaves the count once it converts. A success later reported as not opening in Revit moves
-//! to the failures, and only a newer engine can take such a file out again, because the same
-//! engine would report the same success.
+//! file leaves the count once it converts or is marked fixed. A success later reported as not
+//! opening in Revit moves to the failures, and only a newer engine can take such a file out
+//! again, because the same engine would report the same success.
+//!
+//! `pending` is not stored: it is the number of different files with an open tracked report, so
+//! a file with two reports counts once and it can never go above `failed`. A tracked report lives
+//! until its directory is gone, so that a `FIXED.md` is never counted twice. `fixed` does not
+//! depend on the directory.
+//!
+//! `contributed` is no longer public. It stays in the file, and the version stays 1, so that the
+//! previous release can still read the statistics after a rollback.
 
 use crate::jobs::rate_key;
 use chrono::{DateTime, NaiveDate, Utc};
@@ -40,9 +49,21 @@ struct FailedFile {
     /// It converted, but was reported as not opening in Revit.
     #[serde(default)]
     unopenable: bool,
-    /// The report holding this file, sent while `engine` was running.
+    /// The report holding this file, made while `engine` was running.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     report: Option<String>,
+}
+
+/// A report the statistics follow. It never holds a file name.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+struct TrackedReport {
+    /// The file it holds, or `None` when the file could not be identified: such a report counts
+    /// as a file of its own.
+    file: Option<String>,
+    /// The file still fails and this report waits for a fix.
+    open: bool,
+    /// A `FIXED.md` was counted, for this report or for another report of its file.
+    fixed: bool,
 }
 
 /// The public totals.
@@ -52,11 +73,12 @@ pub struct Snapshot {
     pub people: u64,
     pub succeeded: u64,
     pub failed: u64,
-    pub contributed: u64,
+    pub pending: u64,
+    pub fixed: u64,
 }
 
-/// `stats.json` as read from disk. Every field is required except `failed_files`, which older
-/// files do not have; unknown fields are ignored.
+/// `stats.json` as read from disk. Every field is required except those older files do not have;
+/// unknown fields are ignored.
 #[derive(Deserialize)]
 struct StatsFile {
     version: u32,
@@ -67,6 +89,10 @@ struct StatsFile {
     people: Vec<String>,
     #[serde(default)]
     failed_files: HashMap<String, FailedFile>,
+    #[serde(default)]
+    fixed: u64,
+    #[serde(default)]
+    reports: HashMap<String, TrackedReport>,
 }
 
 /// `stats.json` as written: borrows the in-memory totals instead of copying the people set.
@@ -79,6 +105,8 @@ struct StatsFileOut<'a> {
     contributed: u64,
     people: &'a HashSet<String>,
     failed_files: &'a HashMap<String, FailedFile>,
+    fixed: u64,
+    reports: &'a HashMap<String, TrackedReport>,
 }
 
 struct Totals {
@@ -88,6 +116,8 @@ struct Totals {
     contributed: u64,
     people: HashSet<String>,
     failed_files: HashMap<String, FailedFile>,
+    fixed: u64,
+    reports: HashMap<String, TrackedReport>,
 }
 
 struct Available {
@@ -146,6 +176,11 @@ impl Stats {
         self
     }
 
+    /// What identifies the running engine build.
+    pub fn engine_build(&self) -> &str {
+        &self.engine
+    }
+
     /// The stored identity of a file: a keyed hash of its content, or `None` while the statistics
     /// are unavailable. Reads the whole file, so call it off the async threads.
     pub fn file_id(&self, path: &Path) -> io::Result<Option<String>> {
@@ -157,7 +192,8 @@ impl Stats {
     }
 
     /// Counts a finished conversion and the client it came from. A file that was failing leaves
-    /// the failures, if this success proves it: see `FailedFile`.
+    /// the failures, if this success proves it: see `FailedFile`. Its reports stop waiting for a
+    /// fix, but stay tracked until they are gone.
     pub fn record_success(&self, ip: IpAddr, file: Option<&str>, target: u16) {
         let engine = &self.engine;
         self.change(|a| {
@@ -172,13 +208,14 @@ impl Stats {
             if cleared {
                 a.totals.failed_files.remove(file);
                 a.totals.failed = a.totals.failed.saturating_sub(1);
+                close_reports_of(&mut a.totals, file);
             }
         });
     }
 
-    /// The report that already holds this file, if it was sent while this engine build was
-    /// running: sending it again would add nothing. After a release a file that still fails can
-    /// be sent again.
+    /// The report that already holds this file, if it was made while this engine build was
+    /// running and still waits for a fix: keeping the file again would add nothing. After a
+    /// release a file that still fails is kept again.
     pub fn known_report(&self, file: &str) -> Option<String> {
         match &*self.lock() {
             State::Available(a) => a
@@ -186,44 +223,61 @@ impl Stats {
                 .failed_files
                 .get(file)
                 .filter(|f| f.engine == self.engine)
-                .and_then(|f| f.report.clone()),
+                .and_then(|f| f.report.clone())
+                .filter(|code| a.totals.reports.get(code).is_some_and(|r| r.open)),
             State::Unavailable => None,
         }
+    }
+
+    /// The reports of this file that wait for a fix, whatever engine build made them, sorted.
+    pub fn open_reports_of(&self, file: &str) -> Vec<String> {
+        match &*self.lock() {
+            State::Available(a) => open_reports(&a.totals, file),
+            State::Unavailable => Vec::new(),
+        }
+    }
+
+    /// The tracked reports as `(code, fixed)`, sorted by code.
+    pub fn tracked_reports(&self) -> Vec<(String, bool)> {
+        let g = self.lock();
+        let State::Available(a) = &*g else {
+            return Vec::new();
+        };
+        let mut all: Vec<_> = a
+            .totals
+            .reports
+            .iter()
+            .map(|(code, r)| (code.clone(), r.fixed))
+            .collect();
+        all.sort();
+        all
     }
 
     /// Counts a failed conversion and the client it came from. A file already counted as failing
     /// is not counted again. A newer engine build forgets the file's report.
     pub fn record_failure(&self, ip: IpAddr, file: Option<&str>, target: u16) {
         let engine = &self.engine;
+        self.change(|a| count_failure(a, engine, ip, file, target));
+    }
+
+    /// Counts a failed conversion as `record_failure` does, and tracks the new report that keeps
+    /// its file, in place of `replaced` when it takes over from reports of an older build.
+    pub fn record_failure_kept(
+        &self,
+        ip: IpAddr,
+        file: Option<&str>,
+        target: u16,
+        code: &str,
+        replaced: &[String],
+    ) {
+        let engine = &self.engine;
         self.change(|a| {
-            a.totals.people.insert(person_id(&a.key, ip));
-            let Some(file) = file else {
-                a.totals.failed += 1;
-                return;
-            };
-            match a.totals.failed_files.get_mut(file) {
-                Some(f) => {
-                    f.target = f.target.max(target);
-                    if f.engine != *engine {
-                        f.engine = engine.clone();
-                        f.report = None;
-                        // A new engine has not been shown to make a file that does not open.
-                        f.unopenable = false;
-                    }
-                }
-                None => {
-                    a.totals.failed += 1;
-                    a.totals.failed_files.insert(
-                        file.to_string(),
-                        FailedFile {
-                            target,
-                            engine: engine.clone(),
-                            unopenable: false,
-                            report: None,
-                        },
-                    );
-                }
+            count_failure(a, engine, ip, file, target);
+            a.totals.contributed += 1;
+            for old in replaced {
+                a.totals.reports.remove(old);
             }
+            track(&mut a.totals, file, code);
         });
     }
 
@@ -232,16 +286,6 @@ impl Stats {
     pub fn record_rejected(&self, ip: IpAddr) {
         self.change(|a| {
             a.totals.people.insert(person_id(&a.key, ip));
-        });
-    }
-
-    /// Counts one saved failure report and remembers it for the file.
-    pub fn record_contribution(&self, file: Option<&str>, code: &str) {
-        self.change(|a| {
-            a.totals.contributed += 1;
-            if let Some(f) = file.and_then(|file| a.totals.failed_files.get_mut(file)) {
-                f.report = Some(code.to_string());
-            }
         });
     }
 
@@ -255,13 +299,14 @@ impl Stats {
             a.totals.contributed += 1;
             let Some(file) = file else {
                 a.totals.failed += 1;
+                track(&mut a.totals, None, code);
                 return;
             };
             let entry = FailedFile {
                 target,
                 engine: engine.clone(),
                 unopenable: true,
-                report: Some(code.to_string()),
+                report: None,
             };
             match a.totals.failed_files.get_mut(file) {
                 Some(f) => {
@@ -273,6 +318,50 @@ impl Stats {
                     a.totals.failed += 1;
                     a.totals.failed_files.insert(file.to_string(), entry);
                 }
+            }
+            track(&mut a.totals, Some(file), code);
+        });
+    }
+
+    /// Counts a `FIXED.md` found on a tracked report, once. A file still counted as failing leaves
+    /// the failures, whichever of its reports got the marker. All its reports count as fixed, so
+    /// a marker on another of them adds nothing. An unknown report changes nothing.
+    pub fn mark_fixed(&self, code: &str) {
+        self.change(|a| {
+            let t = &mut a.totals;
+            let Some(report) = t.reports.get(code).filter(|r| !r.fixed).cloned() else {
+                return;
+            };
+            let was_failing = match &report.file {
+                Some(file) => t.failed_files.remove(file).is_some(),
+                None => report.open,
+            };
+            if was_failing {
+                t.failed = t.failed.saturating_sub(1);
+            }
+            t.fixed += 1;
+            for (other, r) in &mut t.reports {
+                if other == code || (report.file.is_some() && r.file == report.file) {
+                    r.open = false;
+                    r.fixed = true;
+                }
+            }
+        });
+    }
+
+    /// Stops tracking a report whose directory is gone. What it counted for `failed` and `fixed`
+    /// stays; only `pending` can change.
+    pub fn forget_report(&self, code: &str) {
+        self.change(|a| {
+            let Some(file) = a.totals.reports.remove(code).and_then(|r| r.file) else {
+                return;
+            };
+            // Another report that still waits for a fix keeps holding the file.
+            let next = open_reports(&a.totals, &file).into_iter().next();
+            if let Some(f) = a.totals.failed_files.get_mut(&file)
+                && f.report.as_deref() == Some(code)
+            {
+                f.report = next;
             }
         });
     }
@@ -312,6 +401,82 @@ impl Stats {
     }
 }
 
+/// See `Stats::record_failure`.
+fn count_failure(a: &mut Available, engine: &str, ip: IpAddr, file: Option<&str>, target: u16) {
+    a.totals.people.insert(person_id(&a.key, ip));
+    let Some(file) = file else {
+        a.totals.failed += 1;
+        return;
+    };
+    match a.totals.failed_files.get_mut(file) {
+        Some(f) => {
+            f.target = f.target.max(target);
+            if f.engine != engine {
+                f.engine = engine.to_string();
+                f.report = None;
+                // A new engine has not been shown to make a file that does not open.
+                f.unopenable = false;
+            }
+        }
+        None => {
+            a.totals.failed += 1;
+            a.totals.failed_files.insert(
+                file.to_string(),
+                FailedFile {
+                    target,
+                    engine: engine.to_string(),
+                    unopenable: false,
+                    report: None,
+                },
+            );
+        }
+    }
+}
+
+/// Starts tracking a report that waits for a fix, and names it as the file's report.
+fn track(t: &mut Totals, file: Option<&str>, code: &str) {
+    t.reports.insert(
+        code.to_string(),
+        TrackedReport {
+            file: file.map(str::to_string),
+            open: true,
+            fixed: false,
+        },
+    );
+    if let Some(f) = file.and_then(|file| t.failed_files.get_mut(file)) {
+        f.report = Some(code.to_string());
+    }
+}
+
+fn open_reports(t: &Totals, file: &str) -> Vec<String> {
+    let mut codes: Vec<String> = t
+        .reports
+        .iter()
+        .filter(|(_, r)| r.open && r.file.as_deref() == Some(file))
+        .map(|(code, _)| code.clone())
+        .collect();
+    codes.sort();
+    codes
+}
+
+/// The reports of a file that left the failures no longer wait for a fix.
+fn close_reports_of(t: &mut Totals, file: &str) {
+    for r in t.reports.values_mut() {
+        if r.file.as_deref() == Some(file) {
+            r.open = false;
+        }
+    }
+}
+
+/// The different files with a report waiting for a fix. A report without a file is its own file.
+fn pending(t: &Totals) -> u64 {
+    let open = t.reports.iter().filter(|(_, r)| r.open);
+    let files: HashSet<&str> = open
+        .map(|(code, r)| r.file.as_deref().unwrap_or(code))
+        .collect();
+    files.len() as u64
+}
+
 fn snapshot_of(state: &State) -> Option<Snapshot> {
     match state {
         State::Available(a) => Some(Snapshot {
@@ -319,7 +484,8 @@ fn snapshot_of(state: &State) -> Option<Snapshot> {
             people: a.totals.people.len() as u64,
             succeeded: a.totals.succeeded,
             failed: a.totals.failed,
-            contributed: a.totals.contributed,
+            pending: pending(&a.totals),
+            fixed: a.totals.fixed,
         }),
         State::Unavailable => None,
     }
@@ -352,6 +518,8 @@ fn load(dir: &Path, now: DateTime<Utc>) -> Result<Available, String> {
                 contributed: 0,
                 people: HashSet::new(),
                 failed_files: HashMap::new(),
+                fixed: 0,
+                reports: HashMap::new(),
             };
             let dirty = match write_totals(dir, &fresh) {
                 Ok(()) => false,
@@ -439,6 +607,8 @@ fn parse_totals(bytes: &[u8]) -> Result<Totals, String> {
         contributed: file.contributed,
         people: file.people.into_iter().collect(),
         failed_files: file.failed_files,
+        fixed: file.fixed,
+        reports: file.reports,
     })
 }
 
@@ -451,6 +621,8 @@ fn write_totals(dir: &Path, t: &Totals) -> io::Result<()> {
         contributed: t.contributed,
         people: &t.people,
         failed_files: &t.failed_files,
+        fixed: t.fixed,
+        reports: &t.reports,
     };
     let bytes = serde_json::to_vec(&out).map_err(io::Error::other)?;
     write_atomic(&dir.join(STATS_FILE), &bytes)
@@ -494,7 +666,7 @@ fn person_id(key: &[u8; KEY_BYTES], ip: IpAddr) -> String {
 
 /// What identifies an engine build: the hash of its program. The engine's version number does not
 /// change between releases, its program does. Never fails: an engine that cannot be read counts
-/// as one unknown build, so reports are simply not offered again until it can.
+/// as one unknown build, so a file is simply not kept again until it can.
 pub fn engine_build(path: &Path) -> String {
     file_id(&[0; KEY_BYTES], path).unwrap_or_else(|e| {
         tracing::warn!(error = ?e.kind(), "could not read the engine program");
@@ -571,7 +743,18 @@ mod tests {
 
     fn counts(s: &Stats) -> (u64, u64, u64, u64) {
         let snap = s.snapshot().expect("statistics available");
-        (snap.people, snap.succeeded, snap.failed, snap.contributed)
+        let contributed = match &*s.lock() {
+            State::Available(a) => a.totals.contributed,
+            State::Unavailable => panic!("statistics unavailable"),
+        };
+        (snap.people, snap.succeeded, snap.failed, contributed)
+    }
+
+    /// `(failed, pending, fixed)`.
+    fn tally(s: &Stats) -> (u64, u64, u64) {
+        let snap = s.snapshot().expect("statistics available");
+        assert!(snap.pending <= snap.failed, "{snap:?}");
+        (snap.failed, snap.pending, snap.fixed)
     }
 
     const VALID: &str = r#"{"version":1,"since":"2026-10-01","succeeded":4,"failed":2,"contributed":1,"people":["00112233445566778899aabbccddeeff"]}"#;
@@ -594,7 +777,8 @@ mod tests {
                 people: 0,
                 succeeded: 0,
                 failed: 0,
-                contributed: 0,
+                pending: 0,
+                fixed: 0,
             })
         );
         assert!(stats_file(dir.path()).is_file());
@@ -608,8 +792,7 @@ mod tests {
             let s = open(dir.path());
             s.record_success(ip("203.0.113.7"), None, 2024);
             s.record_success(ip("203.0.113.7"), None, 2024);
-            s.record_failure(ip("203.0.113.7"), None, 2024);
-            s.record_contribution(None, "R-AAAAAA");
+            s.record_failure_kept(ip("203.0.113.7"), None, 2024, "R-AAAAAA", &[]);
         }
         let s = Stats::open(dir.path().join("stats"), day(30));
         let snap = s.snapshot().unwrap();
@@ -664,7 +847,7 @@ mod tests {
             let s = open(dir.path());
             assert_eq!(s.snapshot(), None, "{bad}");
             s.record_success(ip("203.0.113.7"), None, 2024);
-            s.record_contribution(None, "R-AAAAAA");
+            s.record_failure_kept(ip("203.0.113.7"), None, 2024, "R-AAAAAA", &[]);
             assert_eq!(s.snapshot(), None);
             assert_eq!(
                 std::fs::read(stats_file(dir.path())).unwrap(),
@@ -742,8 +925,8 @@ mod tests {
         let blocker = dir.path().join("stats").join("stats.json.tmp");
         std::fs::create_dir(&blocker).unwrap();
         s.record_success(ip("203.0.113.7"), None, 2024);
-        s.record_contribution(None, "R-AAAAAA");
-        assert_eq!(counts(&s), (1, 1, 0, 1));
+        s.record_failure_kept(ip("203.0.113.7"), None, 2024, "R-AAAAAA", &[]);
+        assert_eq!(counts(&s), (1, 1, 1, 1));
         let on_disk = std::fs::read_to_string(stats_file(dir.path())).unwrap();
         assert!(on_disk.contains(r#""succeeded":0"#), "{on_disk}");
 
@@ -751,7 +934,7 @@ mod tests {
         s.record_failure(ip("198.51.100.4"), None, 2024);
         drop(s);
         let s = open(dir.path());
-        assert_eq!(counts(&s), (2, 1, 1, 1));
+        assert_eq!(counts(&s), (2, 1, 2, 1));
     }
 
     #[test]
@@ -881,8 +1064,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         {
             let s = open_on(dir.path(), "a");
-            s.record_failure(ip(CLIENT), Some(FILE), 2024);
-            s.record_contribution(Some(FILE), "R-AAAAAA");
+            s.record_failure_kept(ip(CLIENT), Some(FILE), 2024, "R-AAAAAA", &[]);
             assert_eq!(s.known_report(FILE).as_deref(), Some("R-AAAAAA"));
         }
         // After a release the same file may be sent again, and is still one failure.
@@ -978,6 +1160,307 @@ mod tests {
         assert_eq!(open(dir.path()).snapshot(), None);
     }
 
+    const OTHER: &str = "ffeeddccbbaa99887766554433221100";
+
+    fn kept(s: &Stats, file: Option<&str>, code: &str) {
+        s.record_failure_kept(ip(CLIENT), file, 2024, code, &[]);
+    }
+
+    #[test]
+    fn first_failure_with_a_report_is_failed_and_pending() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        kept(&s, Some(FILE), "R-AAAAAA");
+        assert_eq!(tally(&s), (1, 1, 0));
+        assert_eq!(counts(&s).3, 1, "a kept report still adds to contributed");
+    }
+
+    #[test]
+    fn first_failure_without_a_report_is_only_failed() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        s.record_failure(ip(CLIENT), Some(FILE), 2024);
+        assert_eq!(tally(&s), (1, 0, 0));
+    }
+
+    #[test]
+    fn a_failing_file_with_a_new_report_after_a_deletion_is_pending_again() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        kept(&s, Some(FILE), "R-AAAAAA");
+        s.forget_report("R-AAAAAA");
+        assert_eq!(tally(&s), (1, 0, 0));
+        assert_eq!(s.known_report(FILE), None);
+        kept(&s, Some(FILE), "R-BBBBBB");
+        assert_eq!(tally(&s), (1, 1, 0));
+    }
+
+    #[test]
+    fn a_report_replaced_on_a_new_build_changes_no_number() {
+        let dir = tempfile::tempdir().unwrap();
+        kept(&open_on(dir.path(), "a"), Some(FILE), "R-AAAAAA");
+        let s = open_on(dir.path(), "b");
+        assert_eq!(s.known_report(FILE), None, "another build");
+        let replaced = s.open_reports_of(FILE);
+        assert_eq!(replaced, ["R-AAAAAA"], "whatever the build");
+        s.record_failure_kept(ip(CLIENT), Some(FILE), 2024, "R-BBBBBB", &replaced);
+        assert_eq!(tally(&s), (1, 1, 0));
+        assert_eq!(s.known_report(FILE).as_deref(), Some("R-BBBBBB"));
+        let codes: Vec<_> = s.tracked_reports().into_iter().map(|(c, _)| c).collect();
+        assert_eq!(codes, ["R-BBBBBB"]);
+    }
+
+    #[test]
+    fn forgetting_an_open_report_lowers_pending_only() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        kept(&s, Some(FILE), "R-AAAAAA");
+        kept(&s, None, "R-BBBBBB");
+        assert_eq!(tally(&s), (2, 2, 0));
+        s.forget_report("R-AAAAAA");
+        s.forget_report("R-BBBBBB");
+        assert_eq!(tally(&s), (2, 0, 0));
+        assert!(s.tracked_reports().is_empty());
+    }
+
+    #[test]
+    fn another_open_report_keeps_holding_the_file_when_one_goes() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        kept(&s, Some(FILE), "R-AAAAAA");
+        s.record_unopenable(Some(FILE), 2024, "R-BBBBBB");
+        s.forget_report("R-BBBBBB");
+        assert_eq!(s.known_report(FILE).as_deref(), Some("R-AAAAAA"));
+        assert_eq!(tally(&s), (1, 1, 0));
+    }
+
+    #[test]
+    fn a_new_build_replaces_every_open_report_of_the_file() {
+        let dir = tempfile::tempdir().unwrap();
+        {
+            let s = open_on(dir.path(), "a");
+            kept(&s, Some(FILE), "R-AAAAAA");
+            s.record_unopenable(Some(FILE), 2024, "R-BBBBBB");
+        }
+        let s = open_on(dir.path(), "b");
+        let replaced = s.open_reports_of(FILE);
+        assert_eq!(replaced, ["R-AAAAAA", "R-BBBBBB"]);
+        s.record_failure_kept(ip(CLIENT), Some(FILE), 2024, "R-CCCCCC", &replaced);
+        assert_eq!(tally(&s), (1, 1, 0));
+        assert_eq!(s.open_reports_of(FILE), ["R-CCCCCC"]);
+    }
+
+    #[test]
+    fn forgetting_a_report_no_longer_pending_changes_no_number() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        kept(&s, Some(FILE), "R-AAAAAA");
+        s.mark_fixed("R-AAAAAA");
+        kept(&s, Some(OTHER), "R-BBBBBB");
+        s.record_success(ip(CLIENT), Some(OTHER), 2024);
+        let before = tally(&s);
+        s.forget_report("R-AAAAAA");
+        s.forget_report("R-BBBBBB");
+        assert_eq!(tally(&s), before);
+        assert_eq!(before, (0, 0, 1));
+    }
+
+    #[test]
+    fn fixed_marker_on_a_pending_report_moves_the_file_to_fixed() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        kept(&s, Some(FILE), "R-AAAAAA");
+        s.mark_fixed("R-AAAAAA");
+        assert_eq!(tally(&s), (0, 0, 1));
+    }
+
+    #[test]
+    fn mark_fixed_counts_once_and_ignores_unknown_reports() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        kept(&s, Some(FILE), "R-AAAAAA");
+        s.mark_fixed("R-AAAAAA");
+        s.mark_fixed("R-AAAAAA");
+        s.mark_fixed("R-OLDONE");
+        assert_eq!(tally(&s), (0, 0, 1));
+        assert_eq!(s.tracked_reports(), [("R-AAAAAA".to_string(), true)]);
+    }
+
+    #[test]
+    fn fixed_marker_after_the_file_left_the_failures_only_adds_fixed() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        kept(&s, Some(FILE), "R-AAAAAA");
+        s.record_success(ip(CLIENT), Some(FILE), 2024);
+        assert_eq!(tally(&s), (0, 0, 0));
+        s.mark_fixed("R-AAAAAA");
+        assert_eq!(tally(&s), (0, 0, 1));
+    }
+
+    #[test]
+    fn a_success_on_a_pending_file_closes_its_report() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        kept(&s, Some(FILE), "R-AAAAAA");
+        s.record_success(ip(CLIENT), Some(FILE), 2024);
+        assert_eq!(tally(&s), (0, 0, 0));
+        assert!(s.open_reports_of(FILE).is_empty());
+        assert_eq!(s.known_report(FILE), None);
+    }
+
+    #[test]
+    fn a_success_that_proves_nothing_leaves_the_report_open() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        s.record_failure_kept(ip(CLIENT), Some(FILE), 2023, "R-AAAAAA", &[]);
+        s.record_success(ip(CLIENT), Some(FILE), 2025);
+        assert_eq!(tally(&s), (1, 1, 0));
+    }
+
+    #[test]
+    fn a_success_on_a_failing_file_without_a_report_lowers_failed() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        s.record_failure(ip(CLIENT), Some(FILE), 2024);
+        s.record_success(ip(CLIENT), Some(FILE), 2024);
+        assert_eq!(tally(&s), (0, 0, 0));
+    }
+
+    #[test]
+    fn unopenable_rows_of_the_table() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        // Not counted as failing yet.
+        s.record_unopenable(Some(FILE), 2024, "R-AAAAAA");
+        assert_eq!(tally(&s), (1, 1, 0));
+        // Failing, no pending report.
+        s.record_failure(ip(CLIENT), Some(OTHER), 2024);
+        assert_eq!(tally(&s), (2, 1, 0));
+        s.record_unopenable(Some(OTHER), 2024, "R-BBBBBB");
+        assert_eq!(tally(&s), (2, 2, 0));
+        // Already pending: a second report of one file still counts once.
+        s.record_unopenable(Some(OTHER), 2024, "R-CCCCCC");
+        assert_eq!(tally(&s), (2, 2, 0));
+    }
+
+    #[test]
+    fn a_file_with_two_reports_is_pending_once_and_fixed_once() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        kept(&s, Some(FILE), "R-AAAAAA");
+        s.record_unopenable(Some(FILE), 2024, "R-BBBBBB");
+        assert_eq!(tally(&s), (1, 1, 0));
+        s.mark_fixed("R-BBBBBB");
+        assert_eq!(tally(&s), (0, 0, 1));
+        s.mark_fixed("R-AAAAAA");
+        assert_eq!(tally(&s), (0, 0, 1), "the file was already counted");
+    }
+
+    #[test]
+    fn two_reports_without_a_file_are_two_files() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        kept(&s, None, "R-AAAAAA");
+        kept(&s, None, "R-BBBBBB");
+        assert_eq!(tally(&s), (2, 2, 0));
+        s.mark_fixed("R-AAAAAA");
+        assert_eq!(tally(&s), (1, 1, 1));
+        s.mark_fixed("R-BBBBBB");
+        assert_eq!(tally(&s), (0, 0, 2));
+    }
+
+    #[test]
+    fn a_fixed_file_that_fails_again_is_a_new_failure() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        kept(&s, Some(FILE), "R-AAAAAA");
+        s.mark_fixed("R-AAAAAA");
+        assert_eq!(s.known_report(FILE), None, "a fixed report holds nothing");
+        assert!(s.open_reports_of(FILE).is_empty());
+        kept(&s, Some(FILE), "R-BBBBBB");
+        assert_eq!(tally(&s), (1, 1, 1));
+    }
+
+    #[test]
+    fn fixed_marker_on_a_closed_report_while_the_file_fails_again() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        kept(&s, Some(FILE), "R-AAAAAA");
+        s.record_success(ip(CLIENT), Some(FILE), 2024);
+        kept(&s, Some(FILE), "R-BBBBBB");
+        assert_eq!(tally(&s), (1, 1, 0));
+        s.mark_fixed("R-AAAAAA");
+        assert_eq!(tally(&s), (0, 0, 1));
+        s.mark_fixed("R-BBBBBB");
+        assert_eq!(tally(&s), (0, 0, 1), "one fix of one file");
+    }
+
+    #[test]
+    fn known_report_names_only_an_open_report() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        kept(&s, Some(FILE), "R-AAAAAA");
+        assert_eq!(s.known_report(FILE).as_deref(), Some("R-AAAAAA"));
+        s.record_success(ip(CLIENT), Some(FILE), 2024);
+        s.record_failure(ip(CLIENT), Some(FILE), 2024);
+        assert_eq!(s.known_report(FILE), None);
+        assert!(s.open_reports_of(FILE).is_empty());
+    }
+
+    #[test]
+    fn a_file_without_the_new_fields_still_loads_and_counts_nothing_pending() {
+        let dir = tempfile::tempdir().unwrap();
+        let old = VALID.replace(
+            r#""people":"#,
+            &format!(
+                r#""failed_files":{{"{FILE}":{{"target":2024,"engine":"a","report":"R-LEGACY"}}}},"people":"#
+            ),
+        );
+        seed(dir.path(), &old);
+        let s = open_on(dir.path(), "a");
+        assert_eq!(tally(&s), (2, 0, 0));
+        assert_eq!(s.known_report(FILE), None, "a report that is not tracked");
+    }
+
+    #[test]
+    fn the_written_file_stays_readable_by_the_previous_release() {
+        let dir = tempfile::tempdir().unwrap();
+        let s = open_on(dir.path(), "a");
+        kept(&s, Some(FILE), "R-AAAAAA");
+        s.mark_fixed("R-AAAAAA");
+        kept(&s, None, "R-BBBBBB");
+        let v: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(stats_file(dir.path())).unwrap()).unwrap();
+        assert_eq!(v["version"], 1);
+        assert_eq!(v["contributed"], 2);
+        assert_eq!(v["fixed"], 1);
+        assert_eq!(v["reports"]["R-BBBBBB"]["file"], serde_json::Value::Null);
+        assert_eq!(v["reports"]["R-BBBBBB"]["open"], true);
+        assert_eq!(v["reports"]["R-AAAAAA"]["fixed"], true);
+    }
+
+    #[test]
+    fn tracked_reports_survive_a_reopen() {
+        let dir = tempfile::tempdir().unwrap();
+        {
+            let s = open_on(dir.path(), "a");
+            kept(&s, Some(FILE), "R-AAAAAA");
+            kept(&s, Some(OTHER), "R-BBBBBB");
+            s.mark_fixed("R-BBBBBB");
+        }
+        let s = open_on(dir.path(), "a");
+        assert_eq!(tally(&s), (1, 1, 1));
+        assert_eq!(s.known_report(FILE).as_deref(), Some("R-AAAAAA"));
+        s.mark_fixed("R-BBBBBB");
+        assert_eq!(tally(&s), (1, 1, 1));
+    }
+
+    #[test]
+    fn engine_build_is_what_the_statistics_use() {
+        let dir = tempfile::tempdir().unwrap();
+        assert_eq!(open_on(dir.path(), "abc").engine_build(), "abc");
+    }
+
     /// Scale check: `cargo test -p revit-downgrade-server --release -- --ignored stats_perf`.
     #[test]
     #[ignore = "slow; run in release"]
@@ -999,7 +1482,7 @@ mod tests {
         }
 
         let started = std::time::Instant::now();
-        s.record_contribution(None, "R-AAAAAA");
+        s.record_unopenable(None, 2024, "R-AAAAAA");
         let write = started.elapsed();
         drop(s);
 
@@ -1008,7 +1491,7 @@ mod tests {
         let read = started.elapsed();
         let size = std::fs::metadata(stats_file(dir.path())).unwrap().len();
         println!("{PEOPLE} people, {size} bytes: write {write:?}, open {read:?}");
-        assert_eq!(counts(&s), (PEOPLE as u64, 0, 0, 1));
+        assert_eq!(counts(&s), (PEOPLE as u64, 0, 1, 1));
         assert!(
             write < std::time::Duration::from_secs(1),
             "write took {write:?}"

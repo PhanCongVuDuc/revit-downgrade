@@ -1,23 +1,24 @@
 {
   "convert": {
     "title": "Revit file को पुराने version में downgrade करें",
-    "lead": "नया model पुराने Revit में खोलें। मुफ़्त। आपकी file 2 घंटे बाद delete हो जाती है।",
+    "lead": "नया model पुराने Revit में खोलें। मुफ़्त। Convert की गई file 2 घंटे बाद delete हो जाती है।",
     "versions": "Revit 2027 · 2026 · 2025 · 2024 · 2023 → Revit 2022 तक",
     "stats": {
       "label": "अब तक का उपयोग",
       "people": "लोगों ने इस्तेमाल किया",
       "succeeded": "files downgrade हुईं",
       "failed": "files अब भी fail हो रही हैं",
-      "contributed": "fail हुई files ठीक करने के लिए भेजी गईं",
+      "pending": "files fix होने का इंतज़ार कर रही हैं",
+      "fixed": "files fix हो गईं",
       "since": "{date} से गिनती",
-      "help": "Revit files को downgrade करना मुश्किल काम है और इसे सही करने के लिए बहुत सारा असली data चाहिए। आपकी भेजी हर fail file मुझे bugs ठीक करने और tool को लगातार बेहतर बनाने में मदद करती है।"
+      "help": "Revit files को downgrade करना मुश्किल काम है और इसे सही करने के लिए बहुत सारा असली data चाहिए। यहाँ रखी गई हर fail file मुझे bugs ठीक करने और tool को लगातार बेहतर बनाने में मदद करती है।"
     },
     "pageTitle": "Revit files online downgrade करें (2027 → 2022), मुफ़्त {'|'} Revit Downgrade",
     "description": "मुफ़्त online Revit downgrade: Revit 2027 से 2023 तक की file (.rvt, .rfa, .rte, .rft) को पुराने version में खोलें, Revit 2022 तक। कुछ install नहीं करना।",
     "pairPage": {
       "title": "Revit {from} को Revit {to} में downgrade करें",
       "pageTitle": "Revit {from} को {to} में online downgrade करें, मुफ़्त {'|'} Revit Downgrade",
-      "description": "Revit {from} की file (.rvt, .rfa, .rte, .rft) को convert करें ताकि वह Revit {to} में खुले। मुफ़्त, कुछ install नहीं करना, files 2 घंटे बाद delete हो जाती हैं।",
+      "description": "Revit {from} की file (.rvt, .rfa, .rte, .rft) को convert करें ताकि वह Revit {to} में खुले। मुफ़्त, कुछ install नहीं करना, convert की गई files 2 घंटे बाद delete हो जाती हैं।",
       "details": {
         "title": "Revit {from} को Revit {to} में downgrade करने के बारे में",
         "why": "Revit {to} उस file को नहीं खोल सकता जो Revit {from} में save हुई हो: Revit का कोई भी release सिर्फ़ अपने version और उससे पुराने versions की files खोलता है। Revit Downgrade file को Revit {to} format में दोबारा लिखता है, इसलिए वह Revit {to} में एक सामान्य, editable Revit file की तरह खुलती है, बीच में IFC या कोई और export नहीं होता।",
@@ -106,7 +107,7 @@
         },
         "deleted": {
           "title": "2 घंटे बाद delete",
-          "body": "किसी के साथ share नहीं की जाती। ज़्यादा समय तक तभी रखी जाती है जब आप fail हुई file को ठीक करने में मदद के लिए भेजना चुनें।"
+          "body": "किसी के साथ share नहीं की जाती। Convert न हो पाई file समस्या ठीक करने के लिए ज़्यादा से ज़्यादा 7 दिन रखी जाती है, और आप उसे delete कर सकते हैं।"
         },
         "openSource": {
           "title": "Open source web app",
@@ -149,8 +150,8 @@
     },
     "downgrade": "Downgrade",
     "continueUpload": "Upload जारी रखें",
-    "privacy": "आपकी file तभी भेजी जाती है जब आप Downgrade दबाते हैं। वह 2 घंटे बाद delete हो जाती है।",
-    "privacyContinue": "जब तक आप \"Upload जारी रखें\" नहीं दबाते, आगे कुछ नहीं भेजा जाता। File 2 घंटे बाद delete हो जाती है।",
+    "privacy": "आपकी file तभी भेजी जाती है जब आप Downgrade दबाते हैं। Downgrade हुई file 2 घंटे बाद delete हो जाती है। Downgrade fail होने पर file समस्या ठीक करने के लिए ज़्यादा से ज़्यादा 7 दिन रखी जाती है, और आप उसे delete कर सकते हैं।",
+    "privacyContinue": "जब तक आप \"Upload जारी रखें\" नहीं दबाते, आगे कुछ नहीं भेजा जाता। Downgrade हुई file 2 घंटे बाद delete हो जाती है। Downgrade fail होने पर file समस्या ठीक करने के लिए ज़्यादा से ज़्यादा 7 दिन रखी जाती है, और आप उसे delete कर सकते हैं।",
     "chooseAnother": "दूसरी file चुनें",
     "convertAnother": "दूसरी file convert करें",
     "cancel": "Cancel करें और file delete करें",
@@ -200,18 +201,18 @@
       "unknown": "Conversion fail हो गया। समस्या log कर ली गई है।"
     },
     "report": {
-      "consent": "Revit Downgrade को यह file ज़्यादा से ज़्यादा 30 दिन तक रखने दें ताकि समस्या ढूँढकर ठीक की जा सके। इसका इस्तेमाल सिर्फ़ tool ठीक करने के लिए होता है, यह किसी के साथ share नहीं की जाती, और 30 दिन बाद या आपके कहने पर delete हो जाती है (आपको बताने के लिए एक code मिलेगा)।",
-      "send": "भेजें",
-      "sent": "धन्यवाद। आपका report code {code} है। File delete करवाने के लिए कहते समय यह code बताएँ।",
-      "failed": "Report नहीं भेजी जा सकी ({code})। कृपया फिर से कोशिश करें।",
-      "failed_already_reported": "इस file की report पहले ही भेजी जा चुकी है।",
-      "failed_expired": "यह file अब रखी नहीं गई है, इसलिए भेजी नहीं जा सकती।",
-      "known": "यह file मेरे पास पहले से है, इसलिए इसे दोबारा भेजने की ज़रूरत नहीं है।"
+      "kept": "आपकी file समस्या ठीक करने के लिए ज़्यादा से ज़्यादा 7 दिन रखी जाती है। आपका report code {code} है।",
+      "known": "बिल्कुल यही file पहले से रखी हुई है, इसलिए आपकी file दोबारा save नहीं की गई। उसका report code {code} है।",
+      "delete": "मेरी file delete करें",
+      "deleting": "Delete हो रही है…",
+      "deleted": "आपकी file server से delete हो गई है।",
+      "deleteGone": "यह page अब file delete नहीं कर सकता। File delete करवाने के लिए {email} पर email करें और code {code} बताएँ।",
+      "deleteFailed": "File अभी delete नहीं हो सकी। फिर कोशिश करें, या {email} पर email करें और code {code} बताएँ।"
     },
     "unopenable": {
       "open": "File Revit में नहीं खुल रही?",
       "intro": "अगर Revit convert की गई file को खोलने से मना करे, तो उसे मुझे भेजें ताकि मैं समस्या ढूँढकर ठीक कर सकूँ।",
-      "consent": "Original file, convert की गई file और conversion log भेजें। इन्हें tool ठीक करने के लिए ज़्यादा से ज़्यादा 30 दिन तक रखा जाता है, किसी के साथ share नहीं किया जाता, और 30 दिन बाद या आपके कहने पर delete कर दिया जाता है (आपको बताने के लिए एक code मिलेगा)।",
+      "consent": "Original file, convert की गई file और conversion log भेजें। इन्हें tool ठीक करने के लिए ज़्यादा से ज़्यादा 7 दिन तक रखा जाता है, किसी के साथ share नहीं किया जाता, और 7 दिन बाद या आपके कहने पर delete कर दिया जाता है (आपको बताने के लिए एक code मिलेगा)।",
       "note": "Revit क्या कहता है? (optional)",
       "pick": "इस page पर अब आपकी original file नहीं है। वही file चुनें जो आपने convert की थी:",
       "send": "भेजें",
@@ -278,7 +279,7 @@
         },
         "safe": {
           "q": "क्या मेरी file सुरक्षित है?",
-          "a": "आपकी original file conversion पूरा होते ही delete हो जाती है, और convert की गई file 2 घंटे बाद। Files कभी किसी के साथ share नहीं की जातीं। कोई file ज़्यादा समय तक तभी रखी जाती है जब आप fail हुए conversion को ठीक करने में मदद के लिए उसे भेजना चुनें। Files संभालने वाला website और server का code open source है; conversion engine खुद closed source है।",
+          "a": "आपकी original file conversion पूरा होते ही delete हो जाती है, और convert की गई file 2 घंटे बाद। Files कभी किसी के साथ share नहीं की जातीं। अगर conversion fail हो जाए, तो file समस्या ठीक करने के लिए ज़्यादा से ज़्यादा 7 दिन रखी जाती है, आपको कुछ tick नहीं करना पड़ता, और आप \"मेरी file delete करें\" से उसे तुरंत delete कर सकते हैं। उसके बाद server सिर्फ़ error message रखता है, file नहीं। Files संभालने वाला website और server का code open source है; conversion engine खुद closed source है।",
           "more": "Files के साथ क्या होता है"
         },
         "workshared": {

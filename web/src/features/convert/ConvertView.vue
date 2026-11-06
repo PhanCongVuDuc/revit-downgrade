@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, useTemplateRef, watch } from 'vue';
+import { computed, nextTick, onMounted, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -29,7 +29,6 @@ const lp = useLocalePath();
 const store = useConvertStore();
 const route = useRoute();
 const router = useRouter();
-const sending = ref(false);
 const card = useTemplateRef<HTMLElement>('card');
 
 /** On a pair's page (/revit-2026-to-2024) the heading names it and its target is picked when the file allows. */
@@ -141,15 +140,6 @@ watch(
   },
 );
 
-async function send() {
-  sending.value = true;
-  try {
-    await store.consentReport();
-  } finally {
-    sending.value = false;
-  }
-}
-
 // The address follows the job: /job/<id> while there is one, / otherwise.
 watch(
   () => store.jobId,
@@ -246,10 +236,11 @@ onMounted(() => {
         :kind="store.error.code"
         :message="store.error.message"
         :report-code="store.reportCode"
-        :already-reported="store.alreadyReported"
-        :report-error="store.reportError"
-        :sending="sending"
-        @send="send"
+        :report-owned="store.reportOwned"
+        :report-deleted="store.reportDeleted"
+        :report-deletion="store.reportDeletion"
+        @delete-report="store.deleteReport"
+        @delete-now="store.deleteNow"
         @choose-another="store.cancel"
       />
       <ErrorPanel

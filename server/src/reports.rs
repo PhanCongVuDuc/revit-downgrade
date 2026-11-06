@@ -1,33 +1,42 @@
-//! Reports: files that users agreed to share, kept for 30 days within a size cap.
+//! Reports: files kept to fix what went wrong, for 7 days within a size cap.
 //!
 //! A report is one of two types, named by `report_type` in its `meta.json`:
 //!
-//! - `failed`: a failed conversion. The directory holds `input.<ext>`, `log.jsonl` (when
-//!   present) and `meta.json`. Reports written before `report_type` existed are of this type.
+//! - `failed`: a failed conversion, kept without the user doing anything. The directory holds
+//!   `input.<ext>`, `log.jsonl` (when present) and `meta.json`. Reports written before
+//!   `report_type` existed are of this type.
 //! - `does_not_open`: a converted file the user could not open in Revit. The directory holds the
 //!   original sent again as `input.<ext>`, a copy of the converted file as `output.<ext>` and of
 //!   `log.jsonl` (each when still present), and `meta.json`.
 //!
 //! The metadata never contains the original file name or the uploader's address. Nothing in the
 //! HTTP API reads reports back.
+//!
+//! Marking a report fixed is done by hand: a `FIXED.md` in its directory, placed after the file
+//! was opened in Revit. `Reports::retain` counts it, before anything is deleted.
 
 use crate::jobs::Job;
+use crate::model::ErrorKind;
 use crate::stats::Stats;
 use chrono::{DateTime, Duration, SecondsFormat, Utc};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, MutexGuard};
 
 const GIB: u64 = 1024 * 1024 * 1024;
 const CODE_ALPHABET: &[u8; 32] = b"0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 const CODE_LEN: usize = 6;
+const FIXED_MARKER: &str = "FIXED.md";
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Reports {
     dir: PathBuf,
     max_bytes: u64,
     ttl: Duration,
+    /// See `Reports::exclusive`.
+    creating: Mutex<()>,
 }
 
 /// `report_type` of a failed conversion; also what a `meta.json` without the field means.
@@ -70,9 +79,9 @@ fn write_meta(dir: &Path, meta: &Meta) -> io::Result<()> {
 }
 
 impl Reports {
-    /// Reports under `dir`: 20 GiB in total, 30 days each.
+    /// Reports under `dir`: 20 GiB in total, 7 days each.
     pub fn new(dir: PathBuf) -> Reports {
-        Reports::with_limits(dir, 20 * GIB, Duration::days(30))
+        Reports::with_limits(dir, 20 * GIB, Duration::days(7))
     }
 
     pub fn with_limits(dir: PathBuf, max_bytes: u64, ttl: Duration) -> Reports {
@@ -80,6 +89,7 @@ impl Reports {
             dir,
             max_bytes,
             ttl,
+            creating: Mutex::new(()),
         }
     }
 
@@ -87,26 +97,61 @@ impl Reports {
         &self.dir
     }
 
-    /// True while a report sent under this engine build holds this file.
-    pub fn holds(&self, stats: &Stats, file: &str) -> bool {
-        stats
-            .known_report(file)
-            .is_some_and(|code| self.dir.join(code).is_dir())
+    /// Held while deciding whether a file needs a report, making it and counting it: jobs of one
+    /// file can fail at the same moment, and the file is kept once. Moving a file is a rename, so
+    /// this is short, but it touches the disk: call it off the async threads.
+    pub fn exclusive(&self) -> MutexGuard<'_, ()> {
+        self.creating.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    /// The report made under this engine build that holds this file, if it is still there.
+    pub fn holding(&self, stats: &Stats, file: &str) -> Option<String> {
+        stats.known_report(file).filter(|code| self.exists(code))
+    }
+
+    /// True while the report's directory is there.
+    pub fn exists(&self, code: &str) -> bool {
+        self.dir.join(code).is_dir()
+    }
+
+    /// True when the report has been marked fixed.
+    pub fn has_fixed_marker(&self, code: &str) -> bool {
+        self.dir.join(code).join(FIXED_MARKER).is_file()
+    }
+
+    /// Deletes a report. One that is already gone counts as deleted.
+    pub fn remove(&self, code: &str) -> io::Result<()> {
+        match fs::remove_dir_all(self.dir.join(code)) {
+            Err(e) if e.kind() != io::ErrorKind::NotFound => Err(e),
+            _ => Ok(()),
+        }
     }
 
     /// Moves the failed job's input (and log, if any) into a new report and returns its code.
+    /// `kind` is passed in because a report is made before the job shows its error.
     pub fn create(
         &self,
         job: &Job,
         input_path: &Path,
         log_path: &Path,
         engine_version: &str,
+        kind: ErrorKind,
         now: DateTime<Utc>,
     ) -> io::Result<String> {
         fs::create_dir_all(&self.dir)?;
         let (code, dir) = self.new_dir()?;
-        let result = self.fill(&dir, job, input_path, log_path, engine_version, now);
+        let result = self.fill(&dir, job, input_path, log_path, engine_version, kind, now);
         if result.is_err() {
+            // What was already moved goes back: the job holds it until it expires.
+            let input = dir.join(format!("input.{}", job.kind.ext()));
+            for (moved, back) in [
+                (input.as_path(), input_path),
+                (&dir.join("log.jsonl"), log_path),
+            ] {
+                if moved.exists() && !back.exists() {
+                    let _ = move_file(moved, back);
+                }
+            }
             let _ = fs::remove_dir_all(&dir);
         }
         result.map(|()| code)
@@ -185,6 +230,7 @@ impl Reports {
         Err(io::Error::other("no free report code"))
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn fill(
         &self,
         dir: &Path,
@@ -192,6 +238,7 @@ impl Reports {
         input_path: &Path,
         log_path: &Path,
         engine_version: &str,
+        kind: ErrorKind,
         now: DateTime<Utc>,
     ) -> io::Result<()> {
         let ext = job.kind.ext();
@@ -202,21 +249,15 @@ impl Reports {
             Err(e) if e.kind() == io::ErrorKind::NotFound => {}
             Err(e) => return Err(e),
         }
-        let error_kind = job
-            .error
-            .as_ref()
-            .and_then(|e| serde_json::to_value(e.kind).ok())
-            .and_then(|v| v.as_str().map(str::to_string))
-            .unwrap_or_else(|| "unknown".into());
         let meta = Meta {
             report_type: Some(REPORT_FAILED.into()),
             engine_version: engine_version.to_string(),
-            error_kind: Some(error_kind),
-            failed_at: Some(rfc3339(job.finished_at.unwrap_or(now))),
+            error_kind: Some(kind.as_str().to_string()),
+            failed_at: Some(rfc3339(now)),
             kind: ext.to_string(),
             size,
-            year: None,
-            target: None,
+            year: Some(job.year),
+            target: Some(job.target),
             done_at: None,
             reported_at: None,
             note: None,
@@ -224,8 +265,27 @@ impl Reports {
         write_meta(dir, &meta)
     }
 
-    /// Deletes reports older than the time limit, then the oldest ones until the total fits.
-    pub fn enforce(&self, now: DateTime<Utc>) {
+    /// One retention pass over the reports, in this order: counts every new `FIXED.md` of a tracked
+    /// report, deletes what is too old or over the size cap, then stops tracking the reports that
+    /// are gone, however they went. Reports not tracked (older ones, or made while the statistics
+    /// were unavailable) are only deleted.
+    pub fn retain(&self, stats: &Stats, now: DateTime<Utc>) {
+        for (code, fixed) in stats.tracked_reports() {
+            if !fixed && self.has_fixed_marker(&code) {
+                stats.mark_fixed(&code);
+            }
+        }
+        self.enforce(now);
+        for (code, _) in stats.tracked_reports() {
+            if !self.exists(&code) {
+                stats.forget_report(&code);
+            }
+        }
+    }
+
+    /// Deletes reports older than the time limit, then the oldest ones until the total fits. Only
+    /// `retain` calls this: anything else could delete a `FIXED.md` that was not counted yet.
+    fn enforce(&self, now: DateTime<Utc>) {
         let Ok(entries) = fs::read_dir(&self.dir) else {
             return;
         };
@@ -366,16 +426,11 @@ mod tests {
     }
 
     #[test]
-    fn reports_older_than_30_days_removed() {
+    fn reports_older_than_7_days_removed() {
         let d = tempfile::tempdir().unwrap();
         let r = Reports::new(d.path().to_path_buf());
-        fake_report(
-            &r,
-            "R-STALE0",
-            Duration::days(30) + Duration::seconds(1),
-            10,
-        );
-        fake_report(&r, "R-EDGE00", Duration::days(30), 10);
+        fake_report(&r, "R-STALE0", Duration::days(7) + Duration::seconds(1), 10);
+        fake_report(&r, "R-EDGE00", Duration::days(7), 10);
         fake_report(&r, "R-FRESH0", Duration::days(1), 10);
         r.enforce(now());
         assert!(!exists(&r, "R-STALE0"));
@@ -389,7 +444,7 @@ mod tests {
         let r = Reports::new(d.path().to_path_buf());
         fs::create_dir_all(d.path().join("R-NOMETA")).unwrap();
         // The directory was just made, so a far-future "now" makes it old.
-        r.enforce(Utc::now() + Duration::days(31));
+        r.enforce(Utc::now() + Duration::days(8));
         assert!(!exists(&r, "R-NOMETA"));
     }
 
@@ -409,7 +464,6 @@ mod tests {
         fs::write(store.log_path(&job), b"{}\n").unwrap();
         store.mark_uploaded(&job.id);
         store.take_next().unwrap();
-        store.finish(&job.id, Err((ErrorKind::Corrupt, "bad".into())));
         let job = store.get(&job.id).unwrap();
         (store, job)
     }
@@ -425,6 +479,7 @@ mod tests {
                 &store.input_path(&job),
                 &store.log_path(&job),
                 "engine 1.2.3",
+                ErrorKind::Corrupt,
                 store_now(),
             )
             .unwrap();
@@ -443,13 +498,18 @@ mod tests {
                 "failed_at",
                 "kind",
                 "report_type",
-                "size"
+                "size",
+                "target",
+                "year"
             ]
         );
         assert_eq!(v["report_type"], "failed");
         assert_eq!(v["engine_version"], "engine 1.2.3");
         assert_eq!(v["error_kind"], "corrupt");
+        assert_eq!(v["failed_at"], "2027-01-15T08:00:00Z");
         assert_eq!(v["size"], 5);
+        assert_eq!(v["year"], 2026);
+        assert_eq!(v["target"], 2025);
         assert_eq!(
             fs::read(r.dir().join(&code).join("input.rvt")).unwrap(),
             b"12345"
@@ -487,6 +547,7 @@ mod tests {
                 &store.input_path(&job),
                 &store.log_path(&job),
                 "e",
+                ErrorKind::Failed,
                 now(),
             )
             .unwrap();
@@ -506,6 +567,7 @@ mod tests {
                 &store.input_path(&job),
                 &store.log_path(&job),
                 "e",
+                ErrorKind::Failed,
                 now(),
             )
             .unwrap_err();
@@ -680,9 +742,9 @@ mod tests {
         let code = unopenable(&r, &store, &job, &report_input, None).unwrap();
         // The directory was made just now, years after reported_at: only meta.json gives the age.
         let reported = now() + Duration::minutes(40);
-        r.enforce(reported + Duration::days(29));
+        r.enforce(reported + Duration::days(6));
         assert!(exists(&r, &code));
-        r.enforce(reported + Duration::days(31));
+        r.enforce(reported + Duration::days(8));
         assert!(!exists(&r, &code));
     }
 
@@ -690,10 +752,74 @@ mod tests {
     fn old_failure_report_without_type_keeps_its_age() {
         let d = tempfile::tempdir().unwrap();
         let r = Reports::new(d.path().to_path_buf());
-        fake_report(&r, "R-OLDFMT", Duration::days(31), 10);
-        fake_report(&r, "R-NEWFMT", Duration::days(29), 10);
+        fake_report(&r, "R-OLDFMT", Duration::days(8), 10);
+        fake_report(&r, "R-NEWFMT", Duration::days(6), 10);
         r.enforce(now());
         assert!(!exists(&r, "R-OLDFMT"));
         assert!(exists(&r, "R-NEWFMT"));
+    }
+
+    #[test]
+    fn remove_deletes_a_report_and_a_missing_one_is_fine() {
+        let d = tempfile::tempdir().unwrap();
+        let r = Reports::new(d.path().to_path_buf());
+        fake_report(&r, "R-AAAAAA", Duration::days(1), 10);
+        assert!(r.exists("R-AAAAAA"));
+        r.remove("R-AAAAAA").unwrap();
+        assert!(!r.exists("R-AAAAAA"));
+        r.remove("R-AAAAAA").unwrap();
+    }
+
+    #[test]
+    fn remove_reports_what_it_could_not_delete() {
+        let d = tempfile::tempdir().unwrap();
+        let r = Reports::new(d.path().to_path_buf());
+        // A file in the place of the directory cannot be removed as one.
+        fs::write(d.path().join("R-AAAAAA"), b"").unwrap();
+        assert!(r.remove("R-AAAAAA").is_err());
+    }
+
+    #[test]
+    fn the_fixed_marker_is_a_file_in_the_report() {
+        let d = tempfile::tempdir().unwrap();
+        let r = Reports::new(d.path().to_path_buf());
+        fake_report(&r, "R-AAAAAA", Duration::days(1), 10);
+        assert!(!r.has_fixed_marker("R-AAAAAA"));
+        fs::write(d.path().join("R-AAAAAA").join("FIXED.md"), b"ok").unwrap();
+        assert!(r.has_fixed_marker("R-AAAAAA"));
+        assert!(!r.has_fixed_marker("R-MISSNG"));
+    }
+
+    fn tracked(d: &Path, r: &Reports, code: &str, age: Duration) -> Stats {
+        let stats = Stats::open(d.join("stats"), now());
+        fake_report(r, code, age, 10);
+        stats.record_failure_kept("203.0.113.7".parse().unwrap(), None, 2024, code, &[]);
+        stats
+    }
+
+    #[test]
+    fn retain_counts_a_marker_before_the_report_is_deleted() {
+        let d = tempfile::tempdir().unwrap();
+        let r = Reports::new(d.path().join("reports"));
+        let stats = tracked(d.path(), &r, "R-AAAAAA", Duration::days(8));
+        fs::write(r.dir().join("R-AAAAAA").join("FIXED.md"), b"ok").unwrap();
+        r.retain(&stats, now());
+        assert!(!exists(&r, "R-AAAAAA"));
+        let snap = stats.snapshot().unwrap();
+        assert_eq!((snap.failed, snap.pending, snap.fixed), (0, 0, 1));
+        assert!(stats.tracked_reports().is_empty());
+    }
+
+    #[test]
+    fn retain_forgets_a_report_gone_by_hand_or_by_age() {
+        let d = tempfile::tempdir().unwrap();
+        let r = Reports::new(d.path().join("reports"));
+        let stats = tracked(d.path(), &r, "R-AAAAAA", Duration::days(8));
+        fake_report(&r, "R-BBBBBB", Duration::days(1), 10);
+        stats.record_failure_kept("203.0.113.7".parse().unwrap(), None, 2024, "R-BBBBBB", &[]);
+        fs::remove_dir_all(r.dir().join("R-BBBBBB")).unwrap();
+        r.retain(&stats, now());
+        let snap = stats.snapshot().unwrap();
+        assert_eq!((snap.failed, snap.pending, snap.fixed), (2, 0, 0));
     }
 }

@@ -3,6 +3,7 @@ export {
   ApiError,
   createJob,
   deleteJob,
+  deleteReport as deleteJobReport,
   finishOpenReport,
   getDropped,
   getInfo,
@@ -10,7 +11,6 @@ export {
   getStats,
   jobFileUrl,
   jobUploadUrl,
-  sendReport,
   startOpenReport,
 } from './client';
 export type * from './types';

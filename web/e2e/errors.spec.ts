@@ -22,19 +22,16 @@ test('corrupt_file_is_reported', async ({ page }) => {
   ).toBeVisible();
 });
 
-test('failed_offers_report_default_unticked', async ({ page }) => {
+test('failed_file_is_kept_and_can_be_deleted', async ({ page }) => {
   await convert(page, revitFile('x_fail_2026.rvt', 2026, 'fail'));
   await expect(
     page.getByRole('alert').filter({ hasText: 'The conversion failed. The problem has been logged.' }),
   ).toBeVisible();
 
-  const consent = page.getByRole('checkbox');
-  await expect(consent).not.toBeChecked();
-  const send = page.getByRole('button', { name: 'Send' });
-  await expect(send).toBeDisabled();
+  await expect(page.getByText(/kept for up to 7 days.*R-[0-9A-Z]{6}\./)).toBeVisible();
+  await expect(page.getByRole('checkbox')).toHaveCount(0);
 
-  await consent.check();
-  await expect(send).toBeEnabled();
-  await send.click();
-  await expect(page.getByText(/Your report code is R-[0-9A-Z]{6}\./)).toBeVisible();
+  await page.getByRole('button', { name: 'Delete my file' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Your file has been deleted from the server.' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Delete my file' })).toHaveCount(0);
 });

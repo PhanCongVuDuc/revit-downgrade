@@ -16,21 +16,21 @@
           "heading": "Your files",
           "paragraphs": [
             "Your file is sent to the server only when you press Downgrade. It is used only to convert it, and it is never shared or sold.",
-            "Your original is deleted as soon as the conversion succeeds. The original of a failed conversion is deleted after 15 minutes. The converted file is deleted after 2 hours, or when you press Delete now. The page \"How it works\" lists every case.",
+            "Your original is deleted as soon as the conversion succeeds. The original of a failed conversion is kept for up to 7 days, as the next section says. The converted file is deleted after 2 hours, or when you press Delete now. The page \"How it works\" lists every case.",
             "The version checker reads files in your browser. Those files are not uploaded."
           ]
         },
         {
-          "heading": "Files you choose to send for review",
+          "heading": "Files kept to fix a problem",
           "paragraphs": [
-            "If a conversion fails or a converted file does not open, you can tick the consent box and send your file so the problem can be fixed. It is then kept for up to 30 days, used only for that, and deleted earlier if you ask. Nothing is kept this way without your consent."
+            "If a conversion fails, your file and its log are kept for up to 7 days so the problem can be fixed, without you ticking anything; the page says so before you upload. They are used only for that. Press Delete my file on the error screen to delete them at once; once that page is gone, email your report code. After the file is deleted the server keeps the error message for 90 days, without the file name, any path or your address. If a converted file does not open, nothing is sent unless you tick the consent box and press Send; those files are also kept for up to 7 days."
           ]
         },
         {
           "heading": "Other data",
           "paragraphs": [
             "Your network address is used to apply the upload limits. It is held only in the server's memory, is not written to disk, and is gone within two days.",
-            "The public usage totals rely on two one-way hashes made with a secret key kept on the server. One is of your network address, to count different visitors, and it is kept with the totals. The other is of a file's content, to recognise a file sent again. For a file that converts it is not stored. For a file that fails or does not open it is stored, with the code of its report if there is one, until a conversion shows the file is fixed, which may be never. The hashes do not contain the address or the file, and a file cannot be rebuilt from its hash.",
+            "The public usage totals rely on two one-way hashes made with a secret key kept on the server. One is of your network address, to count different visitors, and it is kept with the totals. The other is of a file's content, to recognise a file sent again. For a file that converts it is not stored. For a file that fails or does not open it is stored, with the code of its report if there is one, until a conversion or a check in Revit shows the file is fixed, which may be never. The hashes do not contain the address or the file, and a file cannot be rebuilt from its hash.",
             "Server logs never contain file names or file content."
           ]
         },

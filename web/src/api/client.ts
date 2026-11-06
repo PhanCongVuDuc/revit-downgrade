@@ -125,6 +125,8 @@ interface WireJob {
   error: { kind: JobErrorKind; message: string } | null;
   result: { file_name: string; size: number; dropped_count: number } | null;
   report_code: string | null;
+  report_owned: boolean;
+  report_deleted: boolean;
   already_reported: boolean;
   name: string;
   size: number;
@@ -146,6 +148,8 @@ export async function getJob(id: string): Promise<JobStatus> {
       ? { fileName: wire.result.file_name, size: wire.result.size, droppedCount: wire.result.dropped_count }
       : null,
     reportCode: wire.report_code,
+    reportOwned: wire.report_owned,
+    reportDeleted: wire.report_deleted,
     alreadyReported: wire.already_reported,
     name: wire.name,
     size: wire.size,
@@ -176,10 +180,9 @@ export async function deleteJob(id: string): Promise<void> {
   await request('DELETE', jobPath(id));
 }
 
-/** Sends the failed job's input for review, with the user's consent; resolves to the report code. */
-export async function sendReport(id: string): Promise<string> {
-  const wire = await requestJson<{ report_code: string }>('POST', jobPath(id, '/report'), { consent: true });
-  return wire.report_code;
+/** Deletes the report the failed job made, with the file in it. A report already gone is fine. */
+export async function deleteReport(id: string): Promise<void> {
+  await request('DELETE', jobPath(id, '/report'));
 }
 
 /**
@@ -198,7 +201,7 @@ export async function finishOpenReport(id: string): Promise<string> {
   return wire.report_code;
 }
 
-const STATS_COUNTS = ['people', 'succeeded', 'failed', 'contributed'] as const;
+const STATS_COUNTS = ['people', 'succeeded', 'failed', 'pending', 'fixed'] as const;
 
 function isCount(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0;
@@ -215,11 +218,11 @@ export async function getStats(): Promise<UsageStats | null> {
     if (typeof since !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(since)) {
       return null;
     }
-    const [people, succeeded, failed, contributed] = STATS_COUNTS.map((key) => wire[key]);
-    if (!isCount(people) || !isCount(succeeded) || !isCount(failed) || !isCount(contributed)) {
+    const [people, succeeded, failed, pending, fixed] = STATS_COUNTS.map((key) => wire[key]);
+    if (!isCount(people) || !isCount(succeeded) || !isCount(failed) || !isCount(pending) || !isCount(fixed)) {
       return null;
     }
-    return { since, people, succeeded, failed, contributed };
+    return { since, people, succeeded, failed, pending, fixed };
   } catch {
     return null;
   }

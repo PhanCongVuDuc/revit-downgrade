@@ -1,10 +1,12 @@
 //! Background workers that run queued jobs through the conversion engine.
 
 use crate::engine::{DowngradeRequest, Engine, EngineError, public_message};
+use crate::errors::{ErrorLine, ErrorLog, clean_message};
 use crate::jobs::{Job, JobStore};
 use crate::model::{ErrorKind, time_limit};
 use crate::reports::Reports;
 use crate::stats::Stats;
+use chrono::SubsecRound;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::task::JoinHandle;
@@ -12,13 +14,16 @@ use tokio::task::JoinHandle;
 const MIB: u64 = 1 << 20;
 
 /// Starts `n` workers; each takes queued jobs one at a time, forever. Every job that ends done
-/// or failed is counted in `stats`.
+/// or failed is counted in `stats`; a failed conversion is also kept in `reports` and written to
+/// `errors`.
 pub fn spawn_workers(
     n: usize,
     store: Arc<JobStore>,
     engine: Arc<Engine>,
     stats: Arc<Stats>,
     reports: Arc<Reports>,
+    errors: Arc<ErrorLog>,
+    engine_version: Arc<String>,
 ) -> Vec<JoinHandle<()>> {
     (0..n)
         .map(|_| {
@@ -27,6 +32,8 @@ pub fn spawn_workers(
             let counts = Counts {
                 stats: stats.clone(),
                 reports: reports.clone(),
+                errors: errors.clone(),
+                engine_version: engine_version.clone(),
             };
             tokio::spawn(async move {
                 loop {
@@ -43,6 +50,7 @@ pub fn spawn_workers(
                             ErrorKind::Crashed,
                             "The conversion engine stopped unexpectedly.".into(),
                             None,
+                            None,
                         )
                         .await;
                     }
@@ -52,11 +60,22 @@ pub fn spawn_workers(
         .collect()
 }
 
-/// What a finished job is counted in.
+/// What a finished job is counted and kept in.
 #[derive(Clone)]
 struct Counts {
     stats: Arc<Stats>,
     reports: Arc<Reports>,
+    errors: Arc<ErrorLog>,
+    engine_version: Arc<String>,
+}
+
+/// Where a failed job's file ended up.
+#[derive(Default)]
+struct Kept {
+    /// The report holding the file.
+    code: Option<String>,
+    /// This job made that report; otherwise an earlier job's report already holds the same file.
+    owned: bool,
 }
 
 async fn run_job(store: Arc<JobStore>, engine: Arc<Engine>, counts: Counts, job: Job) {
@@ -88,6 +107,7 @@ async fn run_job_inner(store: &JobStore, engine: &Engine, counts: &Counts, job: 
             ErrorKind::Mismatch,
             "The file is not what the browser reported.".into(),
             None,
+            None,
         )
         .await;
     }
@@ -98,6 +118,7 @@ async fn run_job_inner(store: &JobStore, engine: &Engine, counts: &Counts, job: 
             job,
             ErrorKind::Refused,
             "This conversion is not supported for this file.".into(),
+            None,
             None,
         )
         .await;
@@ -122,6 +143,7 @@ async fn run_job_inner(store: &JobStore, engine: &Engine, counts: &Counts, job: 
                     ErrorKind::Failed,
                     "The conversion failed.".into(),
                     Some(0),
+                    None,
                 )
                 .await;
             }
@@ -149,18 +171,21 @@ async fn finish_error(store: &JobStore, counts: &Counts, job: &Job, e: EngineErr
         return;
     };
     let exit_code = e.exit_code();
+    let detail = e.detail();
     let message = match e {
         EngineError::Refused(m) => public_message(&m, store.data_dir()),
-        EngineError::Corrupt => "The file could not be read.".into(),
-        EngineError::Crashed(_) => "The conversion engine stopped unexpectedly.".into(),
+        EngineError::Corrupt(_) => "The file could not be read.".into(),
+        EngineError::Crashed(..) => "The conversion engine stopped unexpectedly.".into(),
         EngineError::TimedOut => "The conversion took too long and was stopped.".into(),
         _ => "The conversion failed.".into(),
     };
-    fail(store, counts, job, kind, message, exit_code).await;
+    fail(store, counts, job, kind, message, exit_code, detail).await;
 }
 
-/// Shared failure exit: logs the failure, drops any partial output, keeps input and log, marks
-/// the job failed. The log line names the job, never the file or the engine's message.
+/// Shared failure exit: drops any partial output, keeps the file of a conversion that went wrong
+/// in a report, writes the error log, logs the failure and marks the job failed. `message` is what
+/// the user reads, `detail` what the engine really said. The log line names the job and its
+/// report, never the file or the engine's message.
 async fn fail(
     store: &JobStore,
     counts: &Counts,
@@ -168,15 +193,8 @@ async fn fail(
     kind: ErrorKind,
     message: String,
     exit_code: Option<i32>,
+    detail: Option<String>,
 ) {
-    tracing::warn!(
-        job_id = %job.id,
-        kind = kind.as_str(),
-        exit_code,
-        size_mib = job.size.div_ceil(MIB),
-        steps = steps(job),
-        "conversion failed"
-    );
     remove_file(&store.output_path(job));
     // A target the file cannot go to, or a file that is not what the browser said, is not a
     // conversion that went wrong.
@@ -186,28 +204,143 @@ async fn fail(
     } else {
         None
     };
-    // All of this comes before the job shows as failed: the page stops asking once it does, and
-    // a report sent right away finds the file already counted.
-    if file
-        .as_deref()
-        .is_some_and(|f| counts.reports.holds(&counts.stats, f))
-    {
-        store.set_already_reported(&job.id);
-    }
     if !store.is_running(&job.id) {
         return;
     }
-    if conversion_failed {
-        let (stats, ip, target) = (counts.stats.clone(), job.ip, job.target);
-        count(job, move || {
-            stats.record_failure(ip, file.as_deref(), target);
-        })
-        .await;
+    // All of this comes before the job shows as failed: the page stops asking once it does, and
+    // it shows the report's code right away.
+    let kept = if conversion_failed {
+        let kept = keep_file(store, counts, job, kind, file).await;
+        write_error(store, counts, job, kind, exit_code, detail, &kept).await;
+        kept
     } else {
         let (stats, ip) = (counts.stats.clone(), job.ip);
         count(job, move || stats.record_rejected(ip)).await;
+        Kept::default()
+    };
+    tracing::warn!(
+        job_id = %job.id,
+        kind = kind.as_str(),
+        exit_code,
+        size_mib = job.size.div_ceil(MIB),
+        steps = steps(job),
+        report = kept.code.as_deref(),
+        "conversion failed"
+    );
+    if let Some(code) = &kept.code {
+        store.set_report_code(&job.id, code.clone());
+        if kept.owned {
+            store.set_report_owned(&job.id);
+        } else {
+            store.set_already_reported(&job.id);
+        }
     }
-    store.finish(&job.id, Err((kind, message)));
+    if !store.finish(&job.id, Err((kind, message))) && kept.owned {
+        // Cancelled at the last moment: nobody asked to keep a job they cancelled.
+        discard_report(counts, job, kept.code).await;
+    }
+}
+
+/// Counts a failed conversion and keeps its file, unless a report made under this engine build
+/// already holds it. A report of an older build is replaced, the new one first so that the file
+/// is never without one. When no report can be made the failure is still counted, and the file
+/// stays in the job until the job expires.
+async fn keep_file(
+    store: &JobStore,
+    counts: &Counts,
+    job: &Job,
+    kind: ErrorKind,
+    file: Option<String>,
+) -> Kept {
+    let (stats, reports) = (counts.stats.clone(), counts.reports.clone());
+    let version = counts.engine_version.clone();
+    let (input, log, now) = (store.input_path(job), store.log_path(job), store.now());
+    let owner = job.clone();
+    let keep = move || {
+        let file = file.as_deref();
+        let (ip, target) = (owner.ip, owner.target);
+        let kept = {
+            let _creating = reports.exclusive();
+            // A `FIXED.md` not counted yet comes first: the report is about to be replaced, or
+            // this is a fixed file failing again.
+            let open = file.map_or_else(Vec::new, |f| stats.open_reports_of(f));
+            if let Some(marked) = open.iter().find(|code| reports.has_fixed_marker(code)) {
+                stats.mark_fixed(marked);
+            }
+            if let Some(code) = file.and_then(|f| reports.holding(&stats, f)) {
+                stats.record_failure(ip, file, target);
+                Kept {
+                    code: Some(code),
+                    owned: false,
+                }
+            } else {
+                let replaced = file.map_or_else(Vec::new, |f| stats.open_reports_of(f));
+                match reports.create(&owner, &input, &log, &version, kind, now) {
+                    Ok(code) => {
+                        stats.record_failure_kept(ip, file, target, &code, &replaced);
+                        for old in &replaced {
+                            if let Err(e) = reports.remove(old) {
+                                tracing::warn!(error = ?e.kind(), "could not remove a replaced report");
+                            }
+                        }
+                        Kept {
+                            code: Some(code),
+                            owned: true,
+                        }
+                    }
+                    Err(e) => {
+                        tracing::warn!(job_id = %owner.id, error = ?e.kind(), "could not keep a failed file");
+                        stats.record_failure(ip, file, target);
+                        Kept::default()
+                    }
+                }
+            }
+        };
+        if kept.owned {
+            reports.retain(&stats, now);
+        }
+        kept
+    };
+    count(job, keep).await.unwrap_or_default()
+}
+
+/// Adds the failure to the error log, with what the engine said made safe to keep.
+async fn write_error(
+    store: &JobStore,
+    counts: &Counts,
+    job: &Job,
+    kind: ErrorKind,
+    exit_code: Option<i32>,
+    detail: Option<String>,
+    kept: &Kept,
+) {
+    let message = detail.map(|d| clean_message(&d, store.data_dir(), &job.name));
+    let line = ErrorLine {
+        at: store.now().trunc_subsecs(0),
+        report: kept.code.clone(),
+        kind: kind.as_str().to_string(),
+        message,
+        exit_code,
+        engine_version: counts.engine_version.to_string(),
+        engine_build: counts.stats.engine_build().to_string(),
+        file_kind: job.kind.ext().to_string(),
+        year: job.year,
+        target: job.target,
+    };
+    let errors = counts.errors.clone();
+    count(job, move || errors.append(&line)).await;
+}
+
+/// Removes the report of a job cancelled once it had already failed: the failure stays counted and
+/// logged, as for a file deleted right after it failed.
+async fn discard_report(counts: &Counts, job: &Job, code: Option<String>) {
+    let Some(code) = code else { return };
+    let (stats, reports) = (counts.stats.clone(), counts.reports.clone());
+    count(job, move || match reports.remove(&code) {
+        Ok(()) => stats.forget_report(&code),
+        Err(e) => tracing::warn!(error = ?e.kind(), "could not remove a report"),
+    })
+    .await;
 }
 
 /// Which file this job holds, kept on the job for a later report. `None` when it cannot be read:

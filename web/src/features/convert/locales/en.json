@@ -1,23 +1,24 @@
 {
   "convert": {
     "title": "Downgrade a Revit file to an older version",
-    "lead": "Open a newer model in an older Revit. Free. Your file is deleted after 2 hours.",
+    "lead": "Open a newer model in an older Revit. Free. Converted files are deleted after 2 hours.",
     "versions": "Revit 2027 · 2026 · 2025 · 2024 · 2023 → down to Revit 2022",
     "stats": {
       "label": "Usage so far",
       "people": "people have used it",
       "succeeded": "files downgraded",
       "failed": "files still failing",
-      "contributed": "failed files sent to help fix them",
+      "pending": "files waiting for a fix",
+      "fixed": "files fixed",
       "since": "Counted since {date}",
-      "help": "Downgrading Revit files is hard and takes a lot of real data to get right. Every failed file you send helps me fix bugs and keep improving the tool."
+      "help": "Downgrading Revit files is hard and takes a lot of real data to get right. Every failed file kept here helps me fix bugs and keep improving the tool."
     },
     "pageTitle": "Downgrade Revit Files Online (2027 → 2022), Free {'|'} Revit Downgrade",
     "description": "Free online Revit downgrade: open a Revit 2027 to 2023 file (.rvt, .rfa, .rte, .rft) in an older Revit, down to 2022. Nothing to install.",
     "pairPage": {
       "title": "Downgrade Revit {from} to Revit {to}",
       "pageTitle": "Downgrade Revit {from} to {to} Online, Free {'|'} Revit Downgrade",
-      "description": "Convert a Revit {from} file (.rvt, .rfa, .rte, .rft) so it opens in Revit {to}. Free, nothing to install, files are deleted after 2 hours.",
+      "description": "Convert a Revit {from} file (.rvt, .rfa, .rte, .rft) so it opens in Revit {to}. Free, nothing to install, converted files are deleted after 2 hours.",
       "details": {
         "title": "About downgrading Revit {from} to Revit {to}",
         "why": "Revit {to} cannot open a file saved in Revit {from}: a Revit release only opens files from its own version and older ones. Revit Downgrade rewrites the file in the Revit {to} format, so it opens in Revit {to} as a normal, editable Revit file, with no IFC or other export in between.",
@@ -106,7 +107,7 @@
         },
         "deleted": {
           "title": "Deleted after 2 hours",
-          "body": "Never shared. Kept longer only if you choose to send a failed file to help fix it."
+          "body": "Never shared. A file that fails to convert is kept for up to 7 days to fix the problem, and you can delete it."
         },
         "openSource": {
           "title": "Open source web app",
@@ -149,8 +150,8 @@
     },
     "downgrade": "Downgrade",
     "continueUpload": "Continue upload",
-    "privacy": "Your file is only sent when you press Downgrade. It is deleted after 2 hours.",
-    "privacyContinue": "Nothing more is sent until you press Continue upload. The file is deleted after 2 hours.",
+    "privacy": "Your file is only sent when you press Downgrade. A downgraded file is deleted after 2 hours. If the downgrade fails, the file is kept for up to 7 days to fix the problem, and you can delete it.",
+    "privacyContinue": "Nothing more is sent until you press Continue upload. A downgraded file is deleted after 2 hours. If the downgrade fails, the file is kept for up to 7 days to fix the problem, and you can delete it.",
     "chooseAnother": "Choose another file",
     "convertAnother": "Convert another file",
     "cancel": "Cancel and delete file",
@@ -200,18 +201,18 @@
       "unknown": "The conversion failed. The problem has been logged."
     },
     "report": {
-      "consent": "Let Revit Downgrade keep this file for up to 30 days to find and fix the problem. It is used only to fix the tool, never shared, and deleted after 30 days or when you ask (you will get a code to quote).",
-      "send": "Send",
-      "sent": "Thank you. Your report code is {code}. Quote it if you ask for the file to be deleted.",
-      "failed": "The report could not be sent ({code}). Please try again.",
-      "failed_already_reported": "A report for this file was already sent.",
-      "failed_expired": "The file is no longer kept, so it cannot be sent.",
-      "known": "I already have this file, so there is no need to send it again."
+      "kept": "Your file is kept for up to 7 days so the problem can be fixed. Your report code is {code}.",
+      "known": "An identical file is already being kept, so yours was not stored again. Its report code is {code}.",
+      "delete": "Delete my file",
+      "deleting": "Deleting…",
+      "deleted": "Your file has been deleted from the server.",
+      "deleteGone": "This page can no longer delete the file. To have it deleted, email {email} and quote the code {code}.",
+      "deleteFailed": "The file could not be deleted yet. Try again, or email {email} and quote the code {code}."
     },
     "unopenable": {
       "open": "File doesn't open in Revit?",
       "intro": "If Revit refuses the converted file, send it to me so I can find and fix the problem.",
-      "consent": "Send the original file, the converted file and the conversion log. They are kept for up to 30 days to fix the tool, never shared, and deleted after 30 days or when you ask (you will get a code to quote).",
+      "consent": "Send the original file, the converted file and the conversion log. They are kept for up to 7 days to fix the tool, never shared, and deleted after 7 days or when you ask (you will get a code to quote).",
       "note": "What does Revit say? (optional)",
       "pick": "This page no longer holds your original file. Choose the same file you converted:",
       "send": "Send",
@@ -278,7 +279,7 @@
         },
         "safe": {
           "q": "Is my file safe?",
-          "a": "Your original file is deleted as soon as the conversion finishes, and the converted file after 2 hours. Files are never shared. A file is kept longer only if you choose to send it in to help fix a failed conversion. The website and server code that handles files is open source; the conversion engine itself is closed source.",
+          "a": "Your original file is deleted as soon as the conversion finishes, and the converted file after 2 hours. Files are never shared. If a conversion fails, the file is kept for up to 7 days to fix the problem, without you ticking anything, and you can delete it at once with Delete my file. After that the server keeps only the error message, not the file. The website and server code that handles files is open source; the conversion engine itself is closed source.",
           "more": "How files are handled"
         },
         "workshared": {

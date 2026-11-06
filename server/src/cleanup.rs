@@ -1,9 +1,11 @@
 //! Retention: periodic removal of expired jobs, abandoned uploads and old reports.
 
 use crate::clock::Clock;
+use crate::errors::ErrorLog;
 use crate::jobs::JobStore;
 use crate::model::JobState;
 use crate::reports::Reports;
+use crate::stats::Stats;
 use chrono::{DateTime, Utc};
 use std::io;
 use std::path::Path;
@@ -25,7 +27,13 @@ pub fn wipe_jobs_dir(data: &Path) -> io::Result<()> {
 
 /// One retention pass. Queued and running jobs are never touched. Every decision is made by
 /// the store under its lock, so a job that changed state since the snapshot is left alone.
-pub fn sweep(store: &JobStore, reports: &Reports, now: DateTime<Utc>) {
+pub fn sweep(
+    store: &JobStore,
+    reports: &Reports,
+    stats: &Stats,
+    errors: &ErrorLog,
+    now: DateTime<Utc>,
+) {
     for job in store.snapshot() {
         match job.state {
             JobState::WaitingUpload => {
@@ -48,7 +56,8 @@ pub fn sweep(store: &JobStore, reports: &Reports, now: DateTime<Utc>) {
     }
     store.prune_history(now);
     remove_orphans(store);
-    reports.enforce(now);
+    reports.retain(stats, now);
+    errors.prune(now);
 }
 
 /// Retries deletions that failed earlier: directories of unknown or expired jobs.
@@ -84,6 +93,8 @@ fn remove_path(path: &Path) {
 pub fn spawn_cleanup(
     store: Arc<JobStore>,
     reports: Arc<Reports>,
+    stats: Arc<Stats>,
+    errors: Arc<ErrorLog>,
     clock: Arc<dyn Clock>,
 ) -> JoinHandle<()> {
     tokio::spawn(async move {
@@ -91,8 +102,14 @@ pub fn spawn_cleanup(
         tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
         loop {
             tick.tick().await;
-            let (store, reports, now) = (store.clone(), reports.clone(), clock.now());
-            if tokio::task::spawn_blocking(move || sweep(&store, &reports, now))
+            let (store, reports, stats, errors, now) = (
+                store.clone(),
+                reports.clone(),
+                stats.clone(),
+                errors.clone(),
+                clock.now(),
+            );
+            if tokio::task::spawn_blocking(move || sweep(&store, &reports, &stats, &errors, now))
                 .await
                 .is_err()
             {
@@ -106,7 +123,6 @@ pub fn spawn_cleanup(
 mod tests {
     use super::*;
     use crate::clock::ManualClock;
-    use crate::stats::Stats;
 
     #[test]
     fn startup_and_sweeps_leave_statistics_alone() {
@@ -115,7 +131,6 @@ mod tests {
         let now = DateTime::from_timestamp(1_800_000_000, 0).unwrap();
         let stats = Stats::open(data.join("stats"), now);
         stats.record_success("203.0.113.7".parse().unwrap(), None, 2024);
-        stats.record_contribution(None, "R-AAAAAA");
         let stats_file = data.join("stats").join("stats.json");
         let key_file = data.join("stats").join("key");
         let (before_stats, before_key) = (
@@ -123,7 +138,7 @@ mod tests {
             std::fs::read(&key_file).unwrap(),
         );
 
-        // A report over the size cap, so `Reports::enforce` has something to remove.
+        // A report over the size cap, so that the sweep has something to remove.
         let report = data.join("reports").join("R-OLD");
         std::fs::create_dir_all(&report).unwrap();
         std::fs::write(report.join("input.rvt"), vec![0u8; 64]).unwrap();
@@ -132,8 +147,9 @@ mod tests {
         wipe_jobs_dir(data).unwrap();
         let store = JobStore::new(data.to_path_buf(), Arc::new(ManualClock::new(now)));
         let later = now + chrono::Duration::days(60);
-        sweep(&store, &reports, now);
-        sweep(&store, &reports, later);
+        let errors = ErrorLog::new(data.join("errors"));
+        sweep(&store, &reports, &stats, &errors, now);
+        sweep(&store, &reports, &stats, &errors, later);
         wipe_jobs_dir(data).unwrap();
 
         assert!(!report.exists());

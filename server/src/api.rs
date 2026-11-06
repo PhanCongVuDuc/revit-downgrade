@@ -14,7 +14,7 @@ use axum::extract::rejection::JsonRejection;
 use axum::extract::{ConnectInfo, Path, State};
 use axum::http::{HeaderMap, HeaderValue, StatusCode, header};
 use axum::response::{IntoResponse, Response};
-use axum::routing::{any, get, post};
+use axum::routing::{any, delete, get, post};
 use chrono::SecondsFormat;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -35,7 +35,10 @@ pub fn routes() -> Router<AppState> {
         .route("/api/jobs/{id}", get(get_job).delete(delete_job))
         .route("/api/jobs/{id}/file", get(download_file))
         .route("/api/jobs/{id}/dropped", get(dropped))
-        .route("/api/jobs/{id}/report", post(report_job))
+        .route(
+            "/api/jobs/{id}/report",
+            delete(delete_report).fallback(api_not_found),
+        )
         .route("/api/jobs/{id}/open-report", post(open_report_start))
         .route(
             "/api/jobs/{id}/open-report/finish",
@@ -199,6 +202,9 @@ struct JobOut {
     error: Option<ErrorOut>,
     result: Option<ResultOut>,
     report_code: Option<String>,
+    /// This job's failure made the report, so it can delete it.
+    report_owned: bool,
+    report_deleted: bool,
     already_reported: bool,
     /// The job id is the capability: its holder sees the request it made, to resume an upload.
     name: String,
@@ -254,6 +260,8 @@ async fn get_job(
             }),
             result,
             report_code: job.report_code.clone(),
+            report_owned: job.report_owned,
+            report_deleted: job.report_deleted,
             already_reported: job.already_reported,
             name: job.name.clone(),
             size: job.size,
@@ -365,6 +373,14 @@ async fn delete_job(
     Path(raw): Path<String>,
 ) -> Result<StatusCode, ApiError> {
     let id: JobId = raw.parse().map_err(|_| not_found())?;
+    // A failed job's own report goes with it, before the job: when that cannot be done the visitor
+    // still has the job to try again from.
+    if let Some(job) = s.store.get(&id)
+        && job.state == JobState::Failed
+        && job.report_owned
+    {
+        remove_report(&s, &job).await?;
+    }
     // The decision is made atomically by the store; a running job is removed by its worker
     // once the engine has let go of the files.
     match s.store.cancel(&id) {
@@ -375,79 +391,55 @@ async fn delete_job(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// Opt-in failure report: moves the failed job's input and log to the reports directory.
-async fn report_job(
+/// Deletes the report this job's failure made. The job id is the only proof needed, as for
+/// everything else on a job, and a report code alone proves nothing.
+async fn delete_report(
     State(s): State<AppState>,
     Path(raw): Path<String>,
-    body: Result<Json<serde_json::Value>, JsonRejection>,
-) -> Result<Response, ApiError> {
-    let consent =
-        matches!(&body, Ok(Json(v)) if v.get("consent") == Some(&serde_json::Value::Bool(true)));
-    if !consent {
-        return Err(consent_required());
+) -> Result<StatusCode, ApiError> {
+    let job = load_job(&s, &raw)?;
+    if job.state == JobState::Expired {
+        return Err(expired());
     }
-    let id: JobId = raw.parse().map_err(|_| not_found())?;
-    // The claim is atomic: of two concurrent requests only one proceeds.
-    let job = match s.store.claim_report(&id, ReportKind::Failed) {
-        ReportClaim::Claimed(job) => *job,
-        ReportClaim::NotFound => return Err(not_found()),
-        ReportClaim::Expired => return Err(expired()),
-        ReportClaim::NotFailed | ReportClaim::NotDone => {
-            return Err(ApiError::new(
-                StatusCode::CONFLICT,
-                "not_failed",
-                "Only a failed conversion can be reported.",
-            ));
+    if !job.report_owned {
+        return Err(ApiError::new(
+            StatusCode::CONFLICT,
+            "not_report_owner",
+            "This job did not make that report.",
+        ));
+    }
+    remove_report(&s, &job).await?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// Removes the job's report and stops tracking it. A report that is already gone is fine; one
+/// that stays changes no number.
+async fn remove_report(s: &AppState, job: &Job) -> Result<(), ApiError> {
+    let Some(code) = job.report_code.clone().filter(|_| !job.report_deleted) else {
+        return Ok(());
+    };
+    let (reports, stats) = (s.reports.clone(), s.stats.clone());
+    let removed = tokio::task::spawn_blocking(move || {
+        // A `FIXED.md` the sweep has not seen yet would go with the report.
+        if reports.has_fixed_marker(&code) {
+            stats.mark_fixed(&code);
         }
-        ReportClaim::AlreadyReported => return Err(already_reported()),
-    };
-    // Two jobs of one file can fail before either is reported; the file is kept only once.
-    if job
-        .file_id
-        .as_deref()
-        .is_some_and(|f| s.reports.holds(&s.stats, f))
-    {
-        s.store.set_already_reported(&job.id);
-        s.store.release_report(&job.id);
-        return Err(already_reported());
+        reports.remove(&code)?;
+        stats.forget_report(&code);
+        Ok::<(), std::io::Error>(())
+    })
+    .await
+    .unwrap_or_else(|_| Err(std::io::Error::other("report task panicked")));
+    if let Err(e) = removed {
+        tracing::warn!(job_id = %job.id, error = ?e.kind(), "could not delete a report");
+        return Err(ApiError::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "report_delete_failed",
+            "The file could not be deleted.",
+        ));
     }
-    let input = s.store.input_path(&job);
-    let log = s.store.log_path(&job);
-    let (reports, stats, version, now) = (
-        s.reports.clone(),
-        s.stats.clone(),
-        s.engine_version.clone(),
-        s.clock.now(),
-    );
-    let made = {
-        let job = job.clone();
-        tokio::task::spawn_blocking(move || {
-            let made = reports.create(&job, &input, &log, &version, now);
-            if let Ok(code) = &made {
-                stats.record_contribution(job.file_id.as_deref(), code);
-                reports.enforce(now);
-            }
-            made
-        })
-        .await
-        .unwrap_or_else(|_| Err(std::io::Error::other("report task panicked")))
-    };
-    let code = match made {
-        Ok(code) => code,
-        Err(e) => {
-            s.store.release_report(&job.id);
-            return Err(if e.kind() == std::io::ErrorKind::NotFound {
-                expired()
-            } else {
-                internal()
-            });
-        }
-    };
-    if !s.store.set_report_code(&job.id, code.clone()) {
-        // The job vanished while the report was being written; the report itself is kept.
-        tracing::warn!("report written for a job that no longer exists");
-    }
-    Ok((StatusCode::CREATED, Json(json!({ "report_code": code }))).into_response())
+    s.store.set_report_deleted(&job.id);
+    Ok(())
 }
 
 fn consent_required() -> ApiError {
@@ -624,7 +616,7 @@ async fn finish_open_report(s: &AppState, raw: &str) -> Result<Response, ApiErro
             );
             if let Ok(code) = &made {
                 stats.record_unopenable(job.file_id.as_deref(), job.target, code);
-                reports.enforce(now);
+                reports.retain(&stats, now);
             }
             made
         })
@@ -675,14 +667,6 @@ fn storage_error() -> ApiError {
         StatusCode::INSUFFICIENT_STORAGE,
         "storage_error",
         "Could not save the report. Try again.",
-    )
-}
-
-fn internal() -> ApiError {
-    ApiError::new(
-        StatusCode::INTERNAL_SERVER_ERROR,
-        "internal",
-        "Could not save the report.",
     )
 }
 

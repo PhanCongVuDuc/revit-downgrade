@@ -16,21 +16,21 @@
           "heading": "आपकी files",
           "paragraphs": [
             "आपकी file server पर तभी भेजी जाती है जब आप Downgrade दबाते हैं। उसका इस्तेमाल सिर्फ़ उसे convert करने के लिए होता है, और वह कभी share नहीं की जाती और न बेची जाती है।",
-            "आपकी original file conversion सफल होते ही delete हो जाती है। Fail हुए conversion की original file 15 मिनट बाद delete हो जाती है। Convert की गई file 2 घंटे बाद delete हो जाती है, या जब आप \"अभी delete करें\" दबाएँ। \"यह कैसे काम करता है\" page पर हर स्थिति दी गई है।",
+            "आपकी original file conversion सफल होते ही delete हो जाती है। Fail हुए conversion की original file ज़्यादा से ज़्यादा 7 दिन रखी जाती है, जैसा अगले section में लिखा है। Convert की गई file 2 घंटे बाद delete हो जाती है, या जब आप \"अभी delete करें\" दबाएँ। \"यह कैसे काम करता है\" page पर हर स्थिति दी गई है।",
             "Version checker files को आपके browser में पढ़ता है। वे files upload नहीं होतीं।"
           ]
         },
         {
-          "heading": "वे files जो आप review के लिए भेजना चुनते हैं",
+          "heading": "समस्या ठीक करने के लिए रखी गई files",
           "paragraphs": [
-            "अगर conversion fail हो जाए या convert की गई file न खुले, तो आप consent box पर tick करके अपनी file भेज सकते हैं ताकि समस्या ठीक की जा सके। तब वह ज़्यादा से ज़्यादा 30 दिन तक रखी जाती है, उसका इस्तेमाल सिर्फ़ इसी काम के लिए होता है, और आपके कहने पर पहले delete कर दी जाती है। आपकी सहमति के बिना इस तरह कुछ नहीं रखा जाता।"
+            "अगर conversion fail हो जाए, तो आपकी file और उसका log समस्या ठीक करने के लिए ज़्यादा से ज़्यादा 7 दिन रखे जाते हैं, आपको कुछ tick नहीं करना पड़ता; upload से पहले page यह बताता है। उनका इस्तेमाल सिर्फ़ इसी काम के लिए होता है। Error screen पर \"मेरी file delete करें\" दबाकर उन्हें तुरंत delete करें; वह page न रहने पर अपना report code email करें। File delete होने के बाद server error message 90 दिन तक रखता है, file के नाम, path या आपके address के बिना। अगर convert की गई file न खुले, तो जब तक आप consent box पर tick करके \"भेजें\" नहीं दबाते, कुछ नहीं भेजा जाता; वे files भी ज़्यादा से ज़्यादा 7 दिन रखी जाती हैं।"
           ]
         },
         {
           "heading": "दूसरा data",
           "paragraphs": [
             "आपका network address upload limits लागू करने के लिए इस्तेमाल होता है। यह सिर्फ़ server की memory में रखा जाता है, disk पर नहीं लिखा जाता, और दो दिन के अंदर हट जाता है।",
-            "Public usage totals दो one-way hashes पर निर्भर हैं, जो server पर रखी एक secret key से बनते हैं। एक आपके network address का होता है, ताकि अलग-अलग visitors गिने जा सकें, और यह totals के साथ रखा जाता है। दूसरा file के content का होता है, ताकि दोबारा भेजी गई file पहचानी जा सके। जो file convert हो जाती है, उसके लिए यह store नहीं किया जाता। जो file fail होती है या नहीं खुलती, उसके लिए यह, report हो तो उसके code के साथ, तब तक store रहता है जब तक कोई conversion यह न दिखा दे कि file ठीक हो गई है, और हो सकता है ऐसा कभी न हो। Hashes में न address होता है, न file, और hash से file दोबारा नहीं बनाई जा सकती।",
+            "Public usage totals दो one-way hashes पर निर्भर हैं, जो server पर रखी एक secret key से बनते हैं। एक आपके network address का होता है, ताकि अलग-अलग visitors गिने जा सकें, और यह totals के साथ रखा जाता है। दूसरा file के content का होता है, ताकि दोबारा भेजी गई file पहचानी जा सके। जो file convert हो जाती है, उसके लिए यह store नहीं किया जाता। जो file fail होती है या नहीं खुलती, उसके लिए यह, report हो तो उसके code के साथ, तब तक store रहता है जब तक कोई conversion या Revit में जाँच यह न दिखा दे कि file ठीक हो गई है, और हो सकता है ऐसा कभी न हो। Hashes में न address होता है, न file, और hash से file दोबारा नहीं बनाई जा सकती।",
             "Server logs में कभी file के नाम या file का content नहीं होता।"
           ]
         },

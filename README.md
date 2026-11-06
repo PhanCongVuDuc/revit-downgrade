@@ -17,8 +17,8 @@ This repository is public so you can check for yourself what happens to your fil
 - No tracking cookies and no advertising. Page views are counted with Cloudflare Web Analytics, which uses no cookies
   and does not follow you across sites.
 - File names are never written to the server logs.
-- The server keeps public usage totals, shown on the home page: conversions that finished, conversions that failed,
-  files sent for review, and the number of different visitors who converted a file. A converted file reported as not
+- The server keeps public usage totals, shown on the home page: conversions that finished, files that still fail,
+  failing files kept and waiting for a fix, files fixed, and the number of different visitors who converted a file. A converted file reported as not
   opening in Revit moves from finished to failed. A visitor is recognised by a
   one-way, keyed hash of their network address (IPv6 grouped by /64), so that number is approximate. The address itself,
   file names and file contents are never stored for this. The totals are also served at `/api/stats`.
@@ -31,14 +31,16 @@ How long files stay on the server:
 | The converted file | 2 hours, then deleted |
 | A cancelled upload | Deleted right away |
 | An upload you leave unfinished | Deleted after 1 hour |
-| A file that failed to convert | 15 minutes, unless you choose to send it to us |
+| A file that failed to convert | Up to 7 days, or until you delete it |
 
-If a conversion fails, you can choose to send the file so we can fix the problem. It is kept for up to 30 days and only
-used for that. To have it deleted sooner, email us with the report code.
+If a conversion fails, the file and its log are kept for up to 7 days so we can fix the problem, without you ticking
+anything, and only used for that. The page says so before you upload. Press **Delete my file** on the error screen to
+delete them at once. Once that page is gone, email us with the report code. After the file is deleted the server keeps
+the error message for 90 days, without the file name, any path or your address.
 
 If the converted file does not open in Revit, press **File doesn't open in Revit?** on the result, within the 2 hours the
 converted file is kept. Nothing is sent unless you tick the consent box and press **Send**. Then the server keeps, as one
-report for up to 30 days: your original file (you choose it again if the page no longer holds it), a copy of the
+report for up to 7 days: your original file (you choose it again if the page no longer holds it), a copy of the
 converted file, the conversion log and your note, if you wrote one. The report holds no file name and no network
 address, and you get a report code to quote.
 
@@ -70,13 +72,20 @@ Then open http://127.0.0.1:8080. With Docker: `docker compose -f deploy/docker-c
 
 ### Reports
 
-Reports live in `<data>/reports/R-XXXXXX/`, at most 20 GiB in total, each for 30 days. The `report_type` field of
+Reports live in `<data>/reports/R-XXXXXX/`, at most 20 GiB in total, each for 7 days. The `report_type` field of
 `meta.json` tells the two kinds apart (`kind` is the file extension):
 
 | `report_type` | What happened | Files |
 | --- | --- | --- |
-| `failed` | The conversion failed | `input.<ext>`, `log.jsonl` (when there is one), `meta.json` with `error_kind` and `failed_at` |
+| `failed` | The conversion failed; the report is made without the user doing anything | `input.<ext>`, `log.jsonl` (when there is one), `meta.json` with `error_kind`, `failed_at`, `year` and `target` |
 | `does_not_open` | The conversion finished, but the user could not open the result in Revit | `input.<ext>` (the original, sent again), `output.<ext>` (a copy of the converted file), `log.jsonl`, `meta.json` with `year`, `target`, `done_at`, `reported_at` and the optional `note` |
+
+Put a `FIXED.md` in a report once its file opens in the target Revit. The next sweep, within a minute, counts the file as
+fixed. Only reports the server tracks count, and each counts once.
+
+`<data>/errors/errors.jsonl` keeps one line per failed conversion for 90 days: the time, the report code, the error kind,
+what the engine said, the exit code, the engine version and build, the file kind and the two years. It holds no file name,
+path or address, and it outlives the report.
 
 Reports written before `report_type` existed have no such field and are `failed` reports.
 

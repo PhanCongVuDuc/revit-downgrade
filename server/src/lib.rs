@@ -3,6 +3,7 @@ pub mod cleanup;
 pub mod clock;
 pub mod config;
 pub mod engine;
+pub mod errors;
 pub mod jobs;
 pub mod model;
 pub mod reports;
@@ -28,6 +29,7 @@ pub struct AppState {
     pub clock: Arc<dyn clock::Clock>,
     pub reports: Arc<reports::Reports>,
     pub stats: Arc<stats::Stats>,
+    pub errors: Arc<errors::ErrorLog>,
     /// First line of the engine's `--version`, read once at startup.
     pub engine_version: Arc<String>,
 }

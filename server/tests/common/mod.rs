@@ -114,6 +114,9 @@ pub fn test_state(
             data_dir.join("reports"),
         )),
         stats,
+        errors: Arc::new(revit_downgrade_server::errors::ErrorLog::new(
+            data_dir.join("errors"),
+        )),
         engine_version: Arc::new("engine-stub 0.1.0".to_string()),
     }
 }

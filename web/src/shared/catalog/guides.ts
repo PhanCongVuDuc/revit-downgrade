@@ -11,7 +11,7 @@ export interface Guide {
 
 export const GUIDES: readonly [Guide, ...Guide[]] = [
   { slug: 'revit-save-as-older-version', key: 'saveAsOlder', published: '2026-10-28', updated: '2026-11-03' },
-  { slug: 'open-newer-revit-file-in-older-revit', key: 'openInOlder', published: '2026-10-28', updated: '2026-11-05' },
+  { slug: 'open-newer-revit-file-in-older-revit', key: 'openInOlder', published: '2026-10-28', updated: '2026-11-06' },
   { slug: 'revit-version-compatibility', key: 'compatibility', published: '2026-10-28', updated: '2026-11-04' },
   { slug: 'what-changes-when-downgrading-revit', key: 'whatChanges', published: '2026-10-28', updated: '2026-11-04' },
 ];

@@ -18,8 +18,11 @@ export interface UsageStats {
   since: string;
   people: number;
   succeeded: number;
+  /** Files still failing, whether or not they are kept. */
   failed: number;
-  contributed: number;
+  /** Failing files that are kept and wait for a fix. */
+  pending: number;
+  fixed: number;
 }
 
 export interface CreateJobRequest {
@@ -49,6 +52,10 @@ export interface JobStatus {
   error: { kind: JobErrorKind; message: string } | null;
   result: { fileName: string; size: number; droppedCount: number } | null;
   reportCode: string | null;
+  /** This job's failure made the report, so it can delete it. */
+  reportOwned: boolean;
+  /** The report this job owned was deleted. */
+  reportDeleted: boolean;
   /** An earlier report already holds this same file. */
   alreadyReported: boolean;
   /** What the job was created with; the job id is the capability that reveals them. */

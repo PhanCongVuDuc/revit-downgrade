@@ -41,4 +41,4 @@ export function pairFromKey(key: string): Pair | undefined {
 }
 
 /** Date the pair pages and the home page last changed in substance (ISO yyyy-mm-dd), for the sitemap. */
-export const CONVERT_PAGES_UPDATED = '2026-11-05';
+export const CONVERT_PAGES_UPDATED = '2026-11-06';

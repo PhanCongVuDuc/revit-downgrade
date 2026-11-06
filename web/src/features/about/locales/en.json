@@ -22,15 +22,15 @@
         },
         "failed": {
           "what": "The original of a failed conversion",
-          "when": "15 minutes after the failure, so you can choose to send it for review"
+          "when": "Kept in a report for up to 7 days to fix the problem, or until you press Delete my file. A copy of a file that is already kept stays 15 minutes, or until you press Delete now."
         },
         "output": {
           "what": "The converted file and the list of removed elements",
           "when": "2 hours after they are ready, or when you press Delete now"
         },
         "report": {
-          "what": "Files you chose to send for review (a failed conversion, or one that does not open in Revit)",
-          "when": "After 30 days or when you ask, whichever comes first. At most 20 GB are kept; the oldest go first."
+          "what": "Reports (a failed conversion, or a file you sent because it does not open in Revit)",
+          "when": "After 7 days, or when you delete it or ask, whichever comes first. At most 20 GB are kept; the oldest go first. The error message stays on the server for 90 days after the file is deleted, without the file name."
         },
         "cancelled": {
           "what": "A conversion you cancelled",
@@ -40,7 +40,7 @@
     },
     "unopenable": {
       "title": "When a converted file doesn't open in Revit",
-      "body": "If Revit refuses a converted file, you can press \"File doesn't open in Revit?\" on the result. Nothing is sent unless you tick the consent box and press Send. Then the server keeps your original file (chosen again if the page no longer holds it), a copy of the converted file, the conversion log and your note, if you wrote one, as a report for up to 30 days, only to find and fix the problem. The report holds no file name and no network address; you get a report code to quote. A conversion reported this way counts as failed in the usage statistics."
+      "body": "If Revit refuses a converted file, you can press \"File doesn't open in Revit?\" on the result. Nothing is sent unless you tick the consent box and press Send. Then the server keeps your original file (chosen again if the page no longer holds it), a copy of the converted file, the conversion log and your note, if you wrote one, as a report for up to 7 days, only to find and fix the problem. The report holds no file name and no network address; you get a report code to quote. A conversion reported this way counts as failed in the usage statistics."
     },
     "cookies": {
       "title": "Cookies and tracking",
@@ -48,7 +48,7 @@
     },
     "stats": {
       "title": "Usage statistics",
-      "body": "The server keeps running totals: conversions that finished, files that still fail, failed files sent for review, and the number of different visitors who converted a file. A visitor is recognised by a one-way, keyed hash of their network address (IPv6 addresses are grouped by /64 network), so the count is approximate: people who share a network count once, and a person who changes network may count twice. A file is recognised by a one-way, keyed hash of its content, so a failing file sent again counts once. The hash of a file that fails or does not open is kept until a conversion shows the file is fixed, and the file cannot be rebuilt from it. The address itself, file names and file contents are never stored for this. A converted file reported as not opening in Revit moves from finished to failed. The totals are shown publicly on the home page."
+      "body": "The server keeps running totals: conversions that finished, files that still fail, failing files kept and waiting for a fix, files fixed, and the number of different visitors who converted a file. A visitor is recognised by a one-way, keyed hash of their network address (IPv6 addresses are grouped by /64 network), so the count is approximate: people who share a network count once, and a person who changes network may count twice. A file is recognised by a one-way, keyed hash of its content, so a failing file sent again counts once. The hash of a file that fails or does not open is kept until a conversion or a check in Revit shows the file is fixed, and the file cannot be rebuilt from it. The address itself, file names and file contents are never stored for this. A converted file reported as not opening in Revit moves from finished to failed. The totals are shown publicly on the home page."
     },
     "logs": {
       "title": "Server logs",

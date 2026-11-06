@@ -83,6 +83,18 @@ describe('retention texts', () => {
     expect(convertVi.convert.error.expired).toContain('chân trang');
   });
 
+  it('warn before the upload that a failed file is kept for up to 7 days', () => {
+    expect(convertEn.convert.privacy).toMatch(/kept for up to 7 days.*you can delete it/);
+    expect(convertEn.convert.privacyContinue).toMatch(/kept for up to 7 days.*you can delete it/);
+    expect(convertVi.convert.privacy).toMatch(/giữ tối đa 7 ngày.*có thể xoá/);
+    expect(convertVi.convert.privacyContinue).toMatch(/giữ tối đa 7 ngày.*có thể xoá/);
+  });
+
+  it('no longer speak of 30 days', () => {
+    const texts = Object.values(locales).flatMap(stringsOf);
+    expect(texts.filter((text) => /\b30 (days|ngày)/.test(text))).toEqual([]);
+  });
+
   it('keep the converted file for 2 hours on the home page', () => {
     expect(convertEn.convert.lead).toContain('2 hours');
     expect(convertVi.convert.lead).toContain('2 giờ');

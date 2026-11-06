@@ -73,11 +73,11 @@ test('delete_now_removes_the_job', async ({ page, request }) => {
   expect(after.status()).toBe(404);
 });
 
-const COUNTS = ['people', 'succeeded', 'failed', 'contributed'] as const;
+const COUNTS = ['people', 'succeeded', 'failed', 'pending', 'fixed'] as const;
 
 type Totals = Record<(typeof COUNTS)[number], number>;
 
-/** The four totals as the home page shows them (in the order people, succeeded, failed, contributed). */
+/** The five totals as the home page shows them (in the order people, succeeded, failed, pending, fixed). */
 async function shownTotals(page: Page): Promise<Totals> {
   const totals = page.getByRole('region', { name: 'Usage so far' });
   await expect(totals).toBeVisible();
@@ -91,7 +91,7 @@ test('usage_stats_shown_without_interaction', async ({ page }) => {
   await page.goto('/');
   const totals = page.getByRole('region', { name: 'Usage so far' });
   await expect(totals).toBeVisible();
-  await expect(totals.getByRole('definition')).toHaveCount(4);
+  await expect(totals.getByRole('definition')).toHaveCount(5);
   // The succeeded total is visible with its label, with no interaction.
   await expect(totals.getByText('files downgraded')).toBeVisible();
   await expect(totals.getByRole('definition').nth(1)).toBeVisible();
@@ -168,7 +168,7 @@ test('report_unopenable_with_the_file_this_tab_holds', async ({ page, browser, r
     ...before,
     succeeded: before.succeeded - 1,
     failed: before.failed + 1,
-    contributed: before.contributed + 1,
+    pending: before.pending + 1,
   });
 
   // A reloaded tab shows the code and offers no second report.

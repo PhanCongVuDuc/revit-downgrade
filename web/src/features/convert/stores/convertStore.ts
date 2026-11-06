@@ -5,6 +5,7 @@ import {
   ApiError,
   createJob,
   deleteJob,
+  deleteJobReport,
   type DroppedElement,
   finishOpenReport,
   getDropped,
@@ -12,7 +13,6 @@ import {
   getJob,
   jobFileUrl,
   type JobStatus,
-  sendReport,
   type ServerInfo,
   startOpenReport,
   uploadFile,
@@ -21,6 +21,7 @@ import { readRevitFileInfo, RevitFileError, type RevitFileInfo } from '@/shared/
 import { acquireUploadLock, isUploadLockHeld } from '@/shared/locks/uploadLock';
 import { safeStorage } from '@/shared/storage/safeStorage';
 
+import { keptReportRegistry } from './keptReports';
 import { type UploadEntry, uploadRegistry } from './uploadRegistry';
 
 export type ConvertPhase = 'pick' | 'ready' | 'uploading' | 'queued' | 'running' | 'done' | 'failed' | 'error';
@@ -40,6 +41,12 @@ export const POLL_INTERVAL_MS = 2000;
 
 const JOB_ID = /^[0-9a-f]{32}$/;
 
+/**
+ * A request to delete a failed job's report: `gone` means the job is no longer on the server, so only the author can
+ * delete the file; `failed` that the server could not, or could not be reached.
+ */
+export type ReportDeletion = 'idle' | 'deleting' | 'gone' | 'failed';
+
 export const useConvertStore = defineStore('convert', () => {
   const phase = ref<ConvertPhase>('pick');
   const file = shallowRef<File | null>(null);
@@ -55,10 +62,14 @@ export const useConvertStore = defineStore('convert', () => {
   const dropped = ref<DroppedElement[] | null>(null);
   const error = ref<ConvertError | null>(null);
   const reportCode = ref<string | null>(null);
-  /** An earlier report already holds this same file: there is nothing new to send. */
+  /** This job's failure made the report, so the file in it is this visitor's. */
+  const reportOwned = ref(false);
+  /** The report this job owned was deleted. */
+  const reportDeleted = ref(false);
+  /** Where a request to delete that report stands. */
+  const reportDeletion = ref<ReportDeletion>('idle');
+  /** An earlier report already holds this same file. */
   const alreadyReported = ref(false);
-  /** Why the last report request failed: the ApiError code, or `network`. */
-  const reportError = ref<string | null>(null);
   /** The size of the file the current job was made from, from the server. */
   const jobSize = ref<number | null>(null);
   /** A "does not open in Revit" report is being sent. */
@@ -104,6 +115,7 @@ export const useConvertStore = defineStore('convert', () => {
   const uploads = uploadRegistry(safeStorage());
   // Entries of uploads that were never finished go after 6 hours, even if no file is ever chosen again.
   uploads.prune();
+  const keptReports = keptReportRegistry(safeStorage());
   // The earlier upload the ready card would continue when its button is pressed.
   let pendingContinue: { jobId: string; uploadUrl: string } | null = null;
   // The job whose exclusive upload lock this tab holds, from the start of its upload until it is complete, cancelled or
@@ -198,8 +210,10 @@ export const useConvertStore = defineStore('convert', () => {
     dropped.value = null;
     error.value = null;
     reportCode.value = null;
+    reportOwned.value = false;
+    reportDeleted.value = false;
+    reportDeletion.value = 'idle';
     alreadyReported.value = false;
-    reportError.value = null;
     jobSize.value = null;
     unopenableSending.value = false;
     unopenableProgress.value = 0;
@@ -352,12 +366,14 @@ export const useConvertStore = defineStore('convert', () => {
       if (token !== session) {
         return;
       }
-      if (cause instanceof ApiError && cause.status === 404) {
+      if (cause instanceof ApiError && (cause.status === 404 || cause.status === 410)) {
         uploads.remove(id);
-        fail('server_restarted');
-      } else if (cause instanceof ApiError && cause.status === 410) {
-        uploads.remove(id);
-        fail('expired');
+        const kept = keptReports.find(id);
+        if (kept !== null) {
+          showKeptReport(kept);
+        } else {
+          fail(cause.status === 404 ? 'server_restarted' : 'expired');
+        }
       } else if (
         cause instanceof ApiError &&
         (cause.status === 0 || cause.status === 429 || cause.status >= 500) &&
@@ -372,6 +388,15 @@ export const useConvertStore = defineStore('convert', () => {
     if (token === session) {
       await apply(id, current, token);
     }
+  }
+
+  /** The job is gone from the server but its report is not: the file is still kept, and only the author can delete it. */
+  function showKeptReport(code: string) {
+    reportCode.value = code;
+    reportOwned.value = true;
+    reportDeletion.value = 'gone';
+    error.value = { code: 'failed', message: null, retryAfterS: null };
+    phase.value = 'failed';
   }
 
   /** Checks a done job once more when its download expires, so the page says so instead of keeping a dead link. */
@@ -402,7 +427,14 @@ export const useConvertStore = defineStore('convert', () => {
     estimateS.value = current.estimateS;
     expiresAt.value = current.expiresAt;
     reportCode.value = current.reportCode;
+    reportOwned.value = current.reportOwned;
+    reportDeleted.value = current.reportDeleted;
     alreadyReported.value = current.alreadyReported;
+    if (current.reportDeleted) {
+      keptReports.remove(id);
+    } else if (current.state === 'failed' && current.reportOwned && current.reportCode !== null) {
+      keptReports.add(id, current.reportCode);
+    }
     jobSize.value = current.size;
     result.value = current.result;
     if (current.state !== 'waiting_upload') {
@@ -643,25 +675,29 @@ export const useConvertStore = defineStore('convert', () => {
     }
   }
 
-  /** Sends the failed job's file for review, once; resolves to whether a report code was received. */
-  async function consentReport(): Promise<boolean> {
+  /** Deletes the file this failed job left in its report, and says so only when the server has. */
+  async function deleteReport(): Promise<void> {
     const id = jobId.value;
-    if (phase.value !== 'failed' || !id || reportCode.value !== null) {
-      return false;
+    if (phase.value !== 'failed' || !id || !reportOwned.value || reportDeleted.value) {
+      return;
+    }
+    if (reportDeletion.value === 'deleting') {
+      return;
     }
     const token = session;
-    reportError.value = null;
+    reportDeletion.value = 'deleting';
     try {
-      const code = await sendReport(id);
+      await deleteJobReport(id);
+      keptReports.remove(id);
       if (token === session) {
-        reportCode.value = code;
+        reportDeleted.value = true;
+        reportDeletion.value = 'idle';
       }
-      return true;
     } catch (cause) {
       if (token === session) {
-        reportError.value = codeOf(cause);
+        const gone = cause instanceof ApiError && (cause.status === 404 || cause.status === 410);
+        reportDeletion.value = gone ? 'gone' : 'failed';
       }
-      return false;
     }
   }
 
@@ -784,8 +820,10 @@ export const useConvertStore = defineStore('convert', () => {
     dropped,
     error,
     reportCode,
+    reportOwned,
+    reportDeleted,
+    reportDeletion,
     alreadyReported,
-    reportError,
     jobSize,
     canReuseFile,
     unopenableSending,
@@ -804,7 +842,7 @@ export const useConvertStore = defineStore('convert', () => {
     retryUpload,
     cancel,
     deleteNow,
-    consentReport,
+    deleteReport,
     reportUnopenable,
     resume,
     $reset,

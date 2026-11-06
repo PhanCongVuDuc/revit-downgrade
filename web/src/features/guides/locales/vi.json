@@ -91,7 +91,7 @@
           {
             "heading": "Nếu có gì sai",
             "paragraphs": [
-              "Nếu chuyển đổi thất bại, hoặc file đã hạ không mở được, trang kết quả cho phép bạn gửi file để tôi tìm và sửa lỗi. Các trường hợp khác, thông tin liên hệ có ở cuối mỗi trang."
+              "Nếu chuyển đổi thất bại, file được giữ tối đa 7 ngày để tôi tìm và sửa lỗi, và bạn có thể xoá nó. Nếu file đã hạ không mở được, trang kết quả cho phép bạn gửi file cho tôi. Các trường hợp khác, thông tin liên hệ có ở cuối mỗi trang."
             ]
           }
         ]

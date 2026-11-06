@@ -119,7 +119,11 @@ pub struct Job {
     pub output_size: u64,
     pub cancel: CancellationToken,
     pub report_code: Option<String>,
-    /// A report sent under this engine build, from an earlier job, already holds this same file.
+    /// This job's failure made `report_code`: its input is in there, and it may delete it.
+    pub report_owned: bool,
+    /// The report this job owned was deleted through it.
+    pub report_deleted: bool,
+    /// A report made under this engine build, from an earlier job, already holds this same file.
     pub already_reported: bool,
     /// Keyed hash of the file, once a failed or finished job has been identified.
     pub file_id: Option<String>,
@@ -205,14 +209,14 @@ pub struct JobStore {
 }
 
 /// Disk space a job holds or has reserved: input plus output while it is unfinished, the
-/// output once done (plus the original while it is sent again for a report), the kept input
-/// after a failure.
+/// output once done (plus the original while it is sent again for a report), the input after a
+/// failure, unless that moved to a report of this job.
 fn disk_use(j: &Job) -> u64 {
     match j.state {
         JobState::WaitingUpload | JobState::Queued | JobState::Running => j.size.saturating_mul(2),
         JobState::Done if j.open_report.is_some() => j.output_size.saturating_add(j.size),
         JobState::Done => j.output_size,
-        JobState::Failed if j.report_code.is_none() => j.received,
+        JobState::Failed if !j.report_owned => j.received,
         _ => 0,
     }
 }
@@ -397,6 +401,8 @@ impl JobStore {
             output_size: 0,
             cancel: CancellationToken::new(),
             report_code: None,
+            report_owned: false,
+            report_deleted: false,
             already_reported: false,
             file_id: None,
             reporting: false,
@@ -895,6 +901,20 @@ impl JobStore {
         }
     }
 
+    /// Records that the job's failure made its report.
+    pub fn set_report_owned(&self, id: &JobId) {
+        if let Some(j) = self.lock().jobs.get_mut(id) {
+            j.report_owned = true;
+        }
+    }
+
+    /// Records that the report the job owned was deleted.
+    pub fn set_report_deleted(&self, id: &JobId) {
+        if let Some(j) = self.lock().jobs.get_mut(id) {
+            j.report_deleted = true;
+        }
+    }
+
     /// Remembers which file the job holds.
     pub fn set_file_id(&self, id: &JobId, file_id: Option<String>) {
         if let Some(j) = self.lock().jobs.get_mut(id) {
@@ -907,6 +927,11 @@ impl JobStore {
         if let Some(j) = self.lock().jobs.get_mut(id) {
             j.already_reported = true;
         }
+    }
+
+    /// The time on the store's clock.
+    pub fn now(&self) -> DateTime<Utc> {
+        self.clock.now()
     }
 
     /// True while a worker holds this job.
@@ -1312,6 +1337,24 @@ mod tests {
         assert_eq!(s.get(&a.id).unwrap().state, JobState::Queued);
         assert!(s.job_dir(&a).exists());
         assert!(!s.expire(&JobId::random(), c.now()));
+    }
+
+    #[test]
+    fn a_failed_job_counts_its_input_unless_its_report_took_it() {
+        let (s, _c, _d) = setup();
+        let a = s.create(req(), ip(1), &pairs()).unwrap();
+        s.add_received(&a.id, 1000);
+        s.mark_uploaded(&a.id);
+        s.take_next().unwrap();
+        s.finish(&a.id, Err((ErrorKind::Failed, "x".into())));
+        let job = |s: &JobStore| s.get(&a.id).unwrap();
+        assert_eq!(disk_use(&job(&s)), 1000);
+        // Another job's report holds the same file: this job still has its own copy.
+        s.set_report_code(&a.id, "R-AAAAAA".into());
+        s.set_already_reported(&a.id);
+        assert_eq!(disk_use(&job(&s)), 1000);
+        s.set_report_owned(&a.id);
+        assert_eq!(disk_use(&job(&s)), 0);
     }
 
     #[test]

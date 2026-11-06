@@ -10,7 +10,7 @@ import { authorNode, breadcrumbNode, graph, webPageNode, websiteNode } from '@/s
 const props = defineProps<{ page: 'privacy' | 'terms' }>();
 
 /** Date the two legal pages last changed in substance, shown on them. */
-const UPDATED = '2026-11-05';
+const UPDATED = '2026-11-06';
 
 const i18n = useI18n();
 const { t, locale } = i18n;

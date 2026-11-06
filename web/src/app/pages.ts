@@ -8,7 +8,7 @@ export interface SitePage {
 }
 
 /** Date the guides list and the "how it works" page last changed in substance. */
-const OTHER_PAGES_UPDATED = '2026-11-05';
+const OTHER_PAGES_UPDATED = '2026-11-06';
 
 /** Every page a search engine should find, in sitemap order. */
 export const SITE_PAGES: SitePage[] = [

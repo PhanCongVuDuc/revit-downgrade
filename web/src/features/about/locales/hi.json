@@ -22,15 +22,15 @@
         },
         "failed": {
           "what": "Fail हुए conversion की original file",
-          "when": "Fail होने के 15 मिनट बाद, ताकि आप चाहें तो उसे review के लिए भेज सकें"
+          "when": "समस्या ठीक करने के लिए report में ज़्यादा से ज़्यादा 7 दिन रखी जाती है, या जब तक आप \"मेरी file delete करें\" न दबाएँ। पहले से रखी file की copy 15 मिनट रहती है, या जब तक आप \"अभी delete करें\" न दबाएँ।"
         },
         "output": {
           "what": "Convert की गई file और हटाए गए elements की list",
           "when": "तैयार होने के 2 घंटे बाद, या जब आप \"अभी delete करें\" दबाएँ"
         },
         "report": {
-          "what": "वे files जो आपने review के लिए भेजना चुना (fail हुआ conversion, या ऐसी file जो Revit में नहीं खुलती)",
-          "when": "30 दिन बाद या जब आप कहें, जो भी पहले हो। ज़्यादा से ज़्यादा 20 GB रखे जाते हैं; सबसे पुरानी files पहले हटती हैं।"
+          "what": "Reports (fail हुआ conversion, या वह file जो आपने Revit में न खुलने पर भेजी)",
+          "when": "7 दिन बाद, या जब आप delete करें या कहें, जो भी पहले हो। ज़्यादा से ज़्यादा 20 GB रखे जाते हैं; सबसे पुरानी files पहले हटती हैं। File delete होने के बाद error message 90 दिन तक server पर रहता है, file के नाम के बिना।"
         },
         "cancelled": {
           "what": "आपका cancel किया हुआ conversion",
@@ -40,7 +40,7 @@
     },
     "unopenable": {
       "title": "जब convert की गई file Revit में नहीं खुलती",
-      "body": "अगर Revit convert की गई file को खोलने से मना करे, तो आप result पर \"File Revit में नहीं खुल रही?\" दबा सकते हैं। जब तक आप consent box पर tick करके \"भेजें\" नहीं दबाते, कुछ नहीं भेजा जाता। उसके बाद server आपकी original file (अगर page पर अब वह नहीं है तो उसे दोबारा चुना जाता है), convert की गई file की एक copy, conversion log और आपका note, अगर आपने लिखा हो, एक report के रूप में ज़्यादा से ज़्यादा 30 दिन तक रखता है, सिर्फ़ समस्या ढूँढने और ठीक करने के लिए। Report में न file का नाम होता है, न network address; आपको एक report code मिलता है जिसे आप बता सकते हैं। इस तरह report किया गया conversion usage statistics में failed गिना जाता है।"
+      "body": "अगर Revit convert की गई file को खोलने से मना करे, तो आप result पर \"File Revit में नहीं खुल रही?\" दबा सकते हैं। जब तक आप consent box पर tick करके \"भेजें\" नहीं दबाते, कुछ नहीं भेजा जाता। उसके बाद server आपकी original file (अगर page पर अब वह नहीं है तो उसे दोबारा चुना जाता है), convert की गई file की एक copy, conversion log और आपका note, अगर आपने लिखा हो, एक report के रूप में ज़्यादा से ज़्यादा 7 दिन तक रखता है, सिर्फ़ समस्या ढूँढने और ठीक करने के लिए। Report में न file का नाम होता है, न network address; आपको एक report code मिलता है जिसे आप बता सकते हैं। इस तरह report किया गया conversion usage statistics में failed गिना जाता है।"
     },
     "cookies": {
       "title": "Cookies और tracking",
@@ -48,7 +48,7 @@
     },
     "stats": {
       "title": "Usage statistics",
-      "body": "Server कुल संख्याएँ रखता है: पूरे हुए conversions, वे files जो अब भी fail होती हैं, review के लिए भेजी गई fail files, और file convert करने वाले अलग-अलग visitors की संख्या। Visitor की पहचान उसके network address के one-way, keyed hash से होती है (IPv6 addresses को /64 network के हिसाब से group किया जाता है), इसलिए यह गिनती अनुमानित है: एक ही network इस्तेमाल करने वाले लोग एक बार गिने जाते हैं, और network बदलने वाला व्यक्ति दो बार गिना जा सकता है। File की पहचान उसके content के one-way, keyed hash से होती है, इसलिए दोबारा भेजी गई fail file एक ही बार गिनी जाती है। जो file fail होती है या नहीं खुलती, उसका hash तब तक रखा जाता है जब तक कोई conversion यह न दिखा दे कि file ठीक हो गई है, और उस hash से file दोबारा नहीं बनाई जा सकती। इसके लिए address खुद, file के नाम और file का content कभी store नहीं किए जाते। जिस convert की गई file की report Revit में न खुलने की वजह से की जाती है, वह finished से failed में चली जाती है। ये कुल संख्याएँ home page पर सबको दिखती हैं।"
+      "body": "Server कुल संख्याएँ रखता है: पूरे हुए conversions, वे files जो अब भी fail होती हैं, रखी गई और fix का इंतज़ार कर रही files, fix हो चुकी files, और file convert करने वाले अलग-अलग visitors की संख्या। Visitor की पहचान उसके network address के one-way, keyed hash से होती है (IPv6 addresses को /64 network के हिसाब से group किया जाता है), इसलिए यह गिनती अनुमानित है: एक ही network इस्तेमाल करने वाले लोग एक बार गिने जाते हैं, और network बदलने वाला व्यक्ति दो बार गिना जा सकता है। File की पहचान उसके content के one-way, keyed hash से होती है, इसलिए दोबारा भेजी गई fail file एक ही बार गिनी जाती है। जो file fail होती है या नहीं खुलती, उसका hash तब तक रखा जाता है जब तक कोई conversion या Revit में जाँच यह न दिखा दे कि file ठीक हो गई है, और उस hash से file दोबारा नहीं बनाई जा सकती। इसके लिए address खुद, file के नाम और file का content कभी store नहीं किए जाते। जिस convert की गई file की report Revit में न खुलने की वजह से की जाती है, वह finished से failed में चली जाती है। ये कुल संख्याएँ home page पर सबको दिखती हैं।"
     },
     "logs": {
       "title": "Server logs",

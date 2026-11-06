@@ -6,6 +6,7 @@ use axum::extract::ConnectInfo;
 use axum::http::{Method, Request, StatusCode};
 use revit_downgrade_server::cleanup::{sweep, wipe_jobs_dir};
 use revit_downgrade_server::clock::ManualClock;
+use revit_downgrade_server::errors::ErrorLine;
 use revit_downgrade_server::jobs::{Job, NewJob};
 use revit_downgrade_server::model::{ErrorKind, FileKind, JobState};
 use revit_downgrade_server::{AppState, app};
@@ -39,7 +40,13 @@ fn setup() -> Fixture {
 }
 
 fn run_sweep(f: &Fixture) {
-    sweep(&f.state.store, &f.state.reports, f.state.clock.now());
+    sweep(
+        &f.state.store,
+        &f.state.reports,
+        &f.state.stats,
+        &f.state.errors,
+        f.state.clock.now(),
+    );
 }
 
 fn new_job(f: &Fixture, last: u8) -> Job {
@@ -92,15 +99,6 @@ fn done_job(f: &Fixture, last: u8) -> Job {
 
 fn advance(f: &Fixture, secs: u64) {
     f.clock.advance(Duration::from_secs(secs));
-}
-
-fn post_report(id: &str, body: &str) -> Request<Body> {
-    Request::builder()
-        .method(Method::POST)
-        .uri(format!("/api/jobs/{id}/report"))
-        .header("content-type", "application/json")
-        .body(Body::from(body.to_string()))
-        .unwrap()
 }
 
 async fn send(f: &Fixture, req: Request<Body>) -> axum::response::Response {
@@ -229,109 +227,6 @@ fn queued_and_running_untouched_by_sweep() {
     assert!(f.state.store.input_path(&queued).exists());
 }
 
-#[tokio::test]
-async fn consent_moves_input_to_reports_without_name() {
-    let f = setup();
-    let job = failed_job(&f, 1);
-    let id = job.id.to_string();
-    let resp = send(&f, post_report(&id, r#"{"consent":true}"#)).await;
-    assert_eq!(resp.status(), StatusCode::CREATED);
-    let code = body_json(resp).await["report_code"]
-        .as_str()
-        .unwrap()
-        .to_string();
-    assert!(code.starts_with("R-") && code.len() == 8, "{code}");
-    let dir = f.dir.path().join("reports").join(&code);
-    assert_eq!(
-        std::fs::read(dir.join("input.rvt")).unwrap(),
-        b"input bytes"
-    );
-    assert!(dir.join("log.jsonl").is_file());
-    assert!(!f.state.store.input_path(&job).exists());
-    let meta: Value =
-        serde_json::from_slice(&std::fs::read(dir.join("meta.json")).unwrap()).unwrap();
-    assert_eq!(meta["kind"], "rvt");
-    assert_eq!(meta["error_kind"], "failed");
-    assert_eq!(meta["size"], 11);
-    assert!(meta["engine_version"].is_string());
-    assert!(meta["failed_at"].is_string());
-    // Sweeping later keeps the report even though the job expires.
-    advance(&f, 16 * 60);
-    run_sweep(&f);
-    assert!(dir.join("input.rvt").is_file());
-}
-
-#[tokio::test]
-async fn report_code_shown_in_job_json() {
-    let f = setup();
-    let id = failed_job(&f, 1).id.to_string();
-    let v = body_json(send(&f, get(&format!("/api/jobs/{id}"))).await).await;
-    assert_eq!(v["report_code"], Value::Null);
-    let resp = send(&f, post_report(&id, r#"{"consent":true}"#)).await;
-    let code = body_json(resp).await["report_code"].clone();
-    let v = body_json(send(&f, get(&format!("/api/jobs/{id}"))).await).await;
-    assert_eq!(v["report_code"], code);
-}
-
-#[tokio::test]
-async fn report_on_done_job_is_409() {
-    let f = setup();
-    let id = done_job(&f, 1).id.to_string();
-    let resp = send(&f, post_report(&id, r#"{"consent":true}"#)).await;
-    assert_eq!(resp.status(), StatusCode::CONFLICT);
-    assert_eq!(body_json(resp).await["error"]["code"], "not_failed");
-    assert!(report_dirs(&f).is_empty());
-}
-
-#[tokio::test]
-async fn report_requires_exact_true() {
-    let f = setup();
-    let job = failed_job(&f, 1);
-    let id = job.id.to_string();
-    for body in [
-        "{}",
-        r#"{"consent":false}"#,
-        r#"{"consent":"true"}"#,
-        r#"{"consent":1}"#,
-        r#"{"consent":null}"#,
-        "not json",
-        "",
-    ] {
-        let resp = send(&f, post_report(&id, body)).await;
-        assert_eq!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY, "{body}");
-        assert_eq!(body_json(resp).await["error"]["code"], "consent_required");
-    }
-    assert!(f.state.store.input_path(&job).exists());
-    assert!(report_dirs(&f).is_empty());
-}
-
-#[tokio::test]
-async fn report_twice_is_409() {
-    let f = setup();
-    let id = failed_job(&f, 1).id.to_string();
-    let first = send(&f, post_report(&id, r#"{"consent":true}"#)).await;
-    assert_eq!(first.status(), StatusCode::CREATED);
-    let second = send(&f, post_report(&id, r#"{"consent":true}"#)).await;
-    assert_eq!(second.status(), StatusCode::CONFLICT);
-    assert_eq!(body_json(second).await["error"]["code"], "already_reported");
-    assert_eq!(report_dirs(&f).len(), 1);
-}
-
-#[tokio::test]
-async fn report_unknown_or_expired_job() {
-    let f = setup();
-    let resp = send(&f, post_report("zz", r#"{"consent":true}"#)).await;
-    assert_eq!(resp.status(), StatusCode::NOT_FOUND);
-    let resp = send(&f, post_report(&"0".repeat(32), r#"{"consent":true}"#)).await;
-    assert_eq!(resp.status(), StatusCode::NOT_FOUND);
-
-    let job = failed_job(&f, 1);
-    std::fs::remove_file(f.state.store.input_path(&job)).unwrap();
-    let resp = send(&f, post_report(&job.id.to_string(), r#"{"consent":true}"#)).await;
-    assert_eq!(resp.status(), StatusCode::GONE);
-    assert_eq!(body_json(resp).await["error"]["code"], "expired");
-}
-
 #[test]
 fn startup_wipes_jobs_dir() {
     let d = tempfile::tempdir().unwrap();
@@ -347,17 +242,6 @@ fn startup_wipes_jobs_dir() {
     let e = tempfile::tempdir().unwrap();
     wipe_jobs_dir(e.path()).unwrap();
     assert!(e.path().join("jobs").is_dir());
-}
-
-#[tokio::test]
-async fn sweep_also_enforces_report_retention() {
-    let f = setup();
-    let id = failed_job(&f, 1).id.to_string();
-    let resp = send(&f, post_report(&id, r#"{"consent":true}"#)).await;
-    assert_eq!(resp.status(), StatusCode::CREATED);
-    advance(&f, 30 * 24 * 3600 + 1);
-    run_sweep(&f);
-    assert!(report_dirs(&f).is_empty());
 }
 
 #[test]
@@ -419,33 +303,6 @@ fn live_job_dirs_untouched() {
     for job in [&waiting, &queued, &failed, &done] {
         assert!(f.state.store.job_dir(job).is_dir(), "{:?}", job.state);
     }
-}
-
-#[tokio::test]
-async fn report_on_expired_job_is_410() {
-    let f = setup();
-    let job = failed_job(&f, 1);
-    advance(&f, 16 * 60);
-    run_sweep(&f);
-    assert_eq!(f.state.store.get(&job.id).unwrap().state, JobState::Expired);
-    let resp = send(&f, post_report(&job.id.to_string(), r#"{"consent":true}"#)).await;
-    assert_eq!(resp.status(), StatusCode::GONE);
-    assert_eq!(body_json(resp).await["error"]["code"], "expired");
-    assert!(report_dirs(&f).is_empty());
-}
-
-#[tokio::test]
-async fn concurrent_reports_make_one_report() {
-    let f = setup();
-    let id = failed_job(&f, 1).id.to_string();
-    let (a, b) = tokio::join!(
-        send(&f, post_report(&id, r#"{"consent":true}"#)),
-        send(&f, post_report(&id, r#"{"consent":true}"#)),
-    );
-    let mut statuses = [a.status().as_u16(), b.status().as_u16()];
-    statuses.sort();
-    assert_eq!(statuses, [201, 409]);
-    assert_eq!(report_dirs(&f).len(), 1);
 }
 
 #[test]
@@ -530,4 +387,133 @@ async fn idle_open_report_closed_by_sweep() {
     assert!(after.open_report.is_none());
     assert!(!partial.exists());
     assert!(f.state.store.output_path(&job).is_file());
+}
+
+// Reports and the numbers.
+
+const WEEK: u64 = 7 * 24 * 3600;
+const FILE: &str = "00112233445566778899aabbccddeeff";
+
+/// `(failed, pending, fixed)`.
+fn tally(f: &Fixture) -> (u64, u64, u64) {
+    let s = f.state.stats.snapshot().expect("statistics available");
+    (s.failed, s.pending, s.fixed)
+}
+
+/// A report directory made just now, written as the given age says.
+fn report_on_disk(f: &Fixture, code: &str, age_s: i64) -> std::path::PathBuf {
+    let dir = f.dir.path().join("reports").join(code);
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(dir.join("input.rvt"), b"input bytes").unwrap();
+    let at = f.state.clock.now() - chrono::Duration::seconds(age_s);
+    let meta = serde_json::json!({
+        "engine_version": "e", "error_kind": "failed", "failed_at": at.to_rfc3339(), "kind": "rvt", "size": 11,
+    });
+    std::fs::write(dir.join("meta.json"), meta.to_string()).unwrap();
+    dir
+}
+
+/// A report the statistics follow, for a file that fails.
+fn tracked_report(f: &Fixture, code: &str, file: Option<&str>) -> std::path::PathBuf {
+    let dir = report_on_disk(f, code, 0);
+    let ip = std::net::IpAddr::from([10, 0, 0, 9]);
+    f.state.stats.record_failure_kept(ip, file, 2024, code, &[]);
+    dir
+}
+
+#[test]
+fn a_fixed_marker_is_counted_once() {
+    let f = setup();
+    let dir = tracked_report(&f, "R-AAAAAA", Some(FILE));
+    run_sweep(&f);
+    assert_eq!(tally(&f), (1, 1, 0));
+    std::fs::write(dir.join("FIXED.md"), b"checked in Revit 2024").unwrap();
+    run_sweep(&f);
+    assert_eq!(tally(&f), (0, 0, 1));
+    run_sweep(&f);
+    assert_eq!(tally(&f), (0, 0, 1));
+    assert!(dir.is_dir(), "a fixed report stays until its time is up");
+}
+
+#[test]
+fn a_fixed_marker_is_counted_before_its_report_expires() {
+    let f = setup();
+    let dir = tracked_report(&f, "R-AAAAAA", Some(FILE));
+    std::fs::write(dir.join("FIXED.md"), b"checked").unwrap();
+    advance(&f, WEEK + 1);
+    run_sweep(&f);
+    assert!(!dir.exists());
+    assert_eq!(tally(&f), (0, 0, 1));
+    run_sweep(&f);
+    assert_eq!(tally(&f), (0, 0, 1));
+}
+
+#[test]
+fn a_fixed_marker_on_a_report_not_tracked_counts_nothing() {
+    let f = setup();
+    let dir = report_on_disk(&f, "R-LEGACY", 3600);
+    std::fs::write(dir.join("FIXED.md"), b"checked").unwrap();
+    run_sweep(&f);
+    assert_eq!(tally(&f), (0, 0, 0));
+    assert!(dir.is_dir());
+}
+
+#[test]
+fn a_report_gone_by_hand_or_by_age_lowers_pending_only() {
+    let f = setup();
+    let by_hand = tracked_report(&f, "R-AAAAAA", Some(FILE));
+    tracked_report(&f, "R-BBBBBB", None);
+    assert_eq!(tally(&f), (2, 2, 0));
+    std::fs::remove_dir_all(by_hand).unwrap();
+    run_sweep(&f);
+    assert_eq!(tally(&f), (2, 1, 0));
+    advance(&f, WEEK + 1);
+    run_sweep(&f);
+    assert_eq!(tally(&f), (2, 0, 0));
+    assert!(report_dirs(&f).is_empty());
+}
+
+#[test]
+fn a_counted_report_that_goes_changes_no_number() {
+    let f = setup();
+    let dir = tracked_report(&f, "R-AAAAAA", Some(FILE));
+    std::fs::write(dir.join("FIXED.md"), b"checked").unwrap();
+    run_sweep(&f);
+    std::fs::remove_dir_all(&dir).unwrap();
+    run_sweep(&f);
+    assert_eq!(tally(&f), (0, 0, 1));
+    assert!(f.state.stats.tracked_reports().is_empty());
+}
+
+#[test]
+fn a_report_from_before_this_release_goes_after_7_days() {
+    let f = setup();
+    let stale = report_on_disk(&f, "R-OLDONE", WEEK as i64 + 1);
+    let fresh = report_on_disk(&f, "R-NEWONE", WEEK as i64 - 60);
+    run_sweep(&f);
+    assert!(!stale.exists());
+    assert!(fresh.is_dir());
+    assert_eq!(tally(&f), (0, 0, 0));
+}
+
+#[test]
+fn a_sweep_prunes_the_error_log() {
+    let f = setup();
+    let line = ErrorLine {
+        at: f.state.clock.now() - chrono::Duration::days(91),
+        report: None,
+        kind: "failed".into(),
+        message: None,
+        exit_code: None,
+        engine_version: "e".into(),
+        engine_build: "b".into(),
+        file_kind: "rvt".into(),
+        year: 2026,
+        target: 2024,
+    };
+    f.state.errors.append(&line);
+    let log = f.dir.path().join("errors").join("errors.jsonl");
+    assert!(!std::fs::read(&log).unwrap().is_empty());
+    run_sweep(&f);
+    assert!(std::fs::read(&log).unwrap().is_empty());
 }

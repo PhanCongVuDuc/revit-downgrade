@@ -1,23 +1,24 @@
 {
   "convert": {
     "title": "Hạ phiên bản file Revit về bản cũ hơn",
-    "lead": "Mở model mới bằng Revit cũ. Miễn phí. File tự xoá sau 2 giờ.",
+    "lead": "Mở model mới bằng Revit cũ. Miễn phí. File đã hạ tự xoá sau 2 giờ.",
     "versions": "Revit 2027 · 2026 · 2025 · 2024 · 2023 → xuống tới Revit 2022",
     "stats": {
       "label": "Số liệu sử dụng",
       "people": "người đã dùng",
       "succeeded": "file hạ thành công",
-      "failed": "file chưa hạ được",
-      "contributed": "file lỗi được gửi để sửa",
+      "failed": "file lỗi",
+      "pending": "file đang chờ fix",
+      "fixed": "file đã fix",
       "since": "Đếm từ {date}",
-      "help": "Hạ phiên bản file Revit rất khó và cần nhiều dữ liệu thật để làm đúng. Mỗi file lỗi bạn gửi giúp tôi sửa lỗi và cải thiện công cụ liên tục."
+      "help": "Hạ phiên bản file Revit rất khó và cần nhiều dữ liệu thật để làm đúng. Mỗi file lỗi được giữ lại giúp tôi sửa lỗi và cải thiện công cụ liên tục."
     },
     "pageTitle": "Hạ phiên bản file Revit online (2027 → 2022), miễn phí {'|'} Revit Downgrade",
     "description": "Hạ phiên bản file Revit miễn phí: mở file Revit 2027 đến 2023 (.rvt, .rfa, .rte, .rft) bằng Revit cũ hơn, xuống tới 2022. Không cần cài đặt.",
     "pairPage": {
       "title": "Hạ file Revit {from} về Revit {to}",
       "pageTitle": "Hạ file Revit {from} về {to} online, miễn phí {'|'} Revit Downgrade",
-      "description": "Chuyển file Revit {from} (.rvt, .rfa, .rte, .rft) để mở được bằng Revit {to}. Miễn phí, không cần cài đặt, file tự xoá sau 2 giờ.",
+      "description": "Chuyển file Revit {from} (.rvt, .rfa, .rte, .rft) để mở được bằng Revit {to}. Miễn phí, không cần cài đặt, file đã hạ tự xoá sau 2 giờ.",
       "details": {
         "title": "Về việc hạ Revit {from} xuống Revit {to}",
         "why": "Revit {to} không mở được file lưu bằng Revit {from}: mỗi bản Revit chỉ mở file của chính nó và các bản cũ hơn. Revit Downgrade viết lại file theo định dạng Revit {to}, nên file mở được trong Revit {to} như một file Revit bình thường, sửa được, không phải qua IFC hay bất kỳ cách xuất nào khác.",
@@ -106,7 +107,7 @@
         },
         "deleted": {
           "title": "Xoá sau 2 giờ",
-          "body": "Không bao giờ chia sẻ. Chỉ giữ lâu hơn nếu bạn tự gửi file lỗi để giúp sửa."
+          "body": "Không bao giờ chia sẻ. File hạ lỗi được giữ tối đa 7 ngày để sửa lỗi, và bạn có thể xoá nó."
         },
         "openSource": {
           "title": "Web mã nguồn mở",
@@ -149,8 +150,8 @@
     },
     "downgrade": "Hạ phiên bản",
     "continueUpload": "Tải lên tiếp",
-    "privacy": "File chỉ được gửi lên khi bạn bấm Hạ phiên bản. File tự xoá sau 2 giờ.",
-    "privacyContinue": "Không gửi thêm gì cho tới khi bạn bấm Tải lên tiếp. File tự xoá sau 2 giờ.",
+    "privacy": "File chỉ được gửi lên khi bạn bấm Hạ phiên bản. File đã hạ tự xoá sau 2 giờ. Nếu hạ lỗi, file được giữ tối đa 7 ngày để sửa lỗi, và bạn có thể xoá nó.",
+    "privacyContinue": "Không gửi thêm gì cho tới khi bạn bấm Tải lên tiếp. File đã hạ tự xoá sau 2 giờ. Nếu hạ lỗi, file được giữ tối đa 7 ngày để sửa lỗi, và bạn có thể xoá nó.",
     "chooseAnother": "Chọn file khác",
     "convertAnother": "Hạ file khác",
     "cancel": "Huỷ và xoá file",
@@ -200,18 +201,18 @@
       "unknown": "Chuyển đổi thất bại. Sự cố đã được ghi lại."
     },
     "report": {
-      "consent": "Cho phép Revit Downgrade giữ file này tối đa 30 ngày để tìm và sửa lỗi. File chỉ dùng để sửa công cụ, không chia sẻ, và bị xoá sau 30 ngày hoặc khi bạn yêu cầu (bạn sẽ nhận một mã để nêu khi yêu cầu).",
-      "send": "Gửi",
-      "sent": "Cảm ơn bạn. Mã báo cáo của bạn là {code}. Hãy nêu mã này nếu bạn muốn xoá file.",
-      "failed": "Không gửi được báo cáo ({code}). Vui lòng thử lại.",
-      "failed_already_reported": "Báo cáo cho file này đã được gửi.",
-      "failed_expired": "File không còn được giữ nên không thể gửi.",
-      "known": "Tôi đã có file này, bạn không cần gửi lại."
+      "kept": "File của bạn được giữ tối đa 7 ngày để sửa lỗi. Mã báo cáo của bạn là {code}.",
+      "known": "Một file giống hệt đang được giữ, nên file của bạn không được lưu thêm. Mã báo cáo của file đó là {code}.",
+      "delete": "Xoá file của tôi",
+      "deleting": "Đang xoá…",
+      "deleted": "File của bạn đã được xoá khỏi server.",
+      "deleteGone": "Trang này không còn xoá được file. Để xoá file, hãy email {email} và nêu mã {code}.",
+      "deleteFailed": "Chưa xoá được file. Hãy thử lại, hoặc email {email} và nêu mã {code}."
     },
     "unopenable": {
       "open": "File không mở được trong Revit?",
       "intro": "Nếu Revit không mở được file đã hạ, hãy gửi cho tôi để tìm và sửa lỗi.",
-      "consent": "Gửi file gốc, file đã hạ và nhật ký chuyển đổi. Các file chỉ dùng để sửa công cụ, được giữ tối đa 30 ngày, không chia sẻ, và bị xoá sau 30 ngày hoặc khi bạn yêu cầu (bạn sẽ nhận một mã để nêu khi yêu cầu).",
+      "consent": "Gửi file gốc, file đã hạ và nhật ký chuyển đổi. Các file chỉ dùng để sửa công cụ, được giữ tối đa 7 ngày, không chia sẻ, và bị xoá sau 7 ngày hoặc khi bạn yêu cầu (bạn sẽ nhận một mã để nêu khi yêu cầu).",
       "note": "Revit báo gì? (không bắt buộc)",
       "pick": "Trang này không còn giữ file gốc của bạn. Hãy chọn lại đúng file bạn đã hạ:",
       "send": "Gửi",
@@ -278,7 +279,7 @@
         },
         "safe": {
           "q": "File của tôi có an toàn không?",
-          "a": "File gốc bị xoá ngay khi hạ xong, file đã hạ bị xoá sau 2 giờ. File không bao giờ bị chia sẻ. File chỉ được giữ lâu hơn nếu bạn tự gửi để giúp sửa một lần hạ bị lỗi. Mã của website và server xử lý file là mã nguồn mở; riêng bộ chuyển đổi là mã đóng.",
+          "a": "File gốc bị xoá ngay khi hạ xong, file đã hạ bị xoá sau 2 giờ. File không bao giờ bị chia sẻ. Nếu hạ lỗi, file được giữ tối đa 7 ngày để sửa lỗi, bạn không cần tick gì, và có thể xoá ngay bằng nút Xoá file của tôi. Sau đó server chỉ giữ câu báo lỗi, không giữ file. Mã của website và server xử lý file là mã nguồn mở; riêng bộ chuyển đổi là mã đóng.",
           "more": "File được xử lý thế nào"
         },
         "workshared": {

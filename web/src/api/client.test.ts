@@ -4,12 +4,12 @@ import {
   ApiError,
   createJob,
   deleteJob,
+  deleteJobReport,
   finishOpenReport,
   getDropped,
   getInfo,
   getJob,
   getStats,
-  sendReport,
   startOpenReport,
   uploadFile,
 } from './index';
@@ -157,6 +157,9 @@ describe('api client', () => {
         error: null,
         result: { file_name: 'tower_2024.rvt', size: 999, dropped_count: 2 },
         report_code: null,
+        report_owned: false,
+        report_deleted: false,
+        already_reported: false,
         name: 'tower.rvt',
         size: 1234,
         kind: 'rvt',
@@ -173,6 +176,9 @@ describe('api client', () => {
       error: null,
       result: { fileName: 'tower_2024.rvt', size: 999, droppedCount: 2 },
       reportCode: null,
+      reportOwned: false,
+      reportDeleted: false,
+      alreadyReported: false,
       name: 'tower.rvt',
       size: 1234,
       kind: 'rvt',
@@ -182,21 +188,25 @@ describe('api client', () => {
     expect(fetchMock.mock.calls[0]?.[0]).toBe(`/api/jobs/${'b'.repeat(32)}`);
   });
 
-  it('reads the dropped list, deletes and reports', async () => {
+  it('deletes the report of a failed job', async () => {
+    const id = 'e'.repeat(32);
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    await expect(deleteJobReport(id)).resolves.toBeUndefined();
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`/api/jobs/${id}/report`);
+    expect(fetchMock.mock.calls[0]?.[1]?.method).toBe('DELETE');
+  });
+
+  it('reads the dropped list and deletes', async () => {
     const id = 'c'.repeat(32);
     fetchMock
       .mockResolvedValueOnce(json(200, [{ element_id: 7, class: 'Wall', reason: 'cascade', cascade_from: 3 }]))
-      .mockResolvedValueOnce(new Response(null, { status: 204 }))
-      .mockResolvedValueOnce(json(201, { report_code: 'R-ABC123' }));
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
     await expect(getDropped(id)).resolves.toEqual([{ elementId: 7, class: 'Wall', reason: 'cascade', cascadeFrom: 3 }]);
     await expect(deleteJob(id)).resolves.toBeUndefined();
-    await expect(sendReport(id)).resolves.toBe('R-ABC123');
     expect(fetchMock.mock.calls.map(([url, init]) => `${String(init?.method)} ${url as string}`)).toEqual([
       `GET /api/jobs/${id}/dropped`,
       `DELETE /api/jobs/${id}`,
-      `POST /api/jobs/${id}/report`,
     ]);
-    expect(JSON.parse(fetchMock.mock.calls[2]?.[1]?.body as string)).toEqual({ consent: true });
   });
 
   it('opens and finishes a "does not open" report', async () => {
@@ -237,7 +247,7 @@ describe('api client', () => {
 });
 
 describe('getStats', () => {
-  const totals = { since: '2026-10-29', people: 7, succeeded: 10, failed: 3, contributed: 1 };
+  const totals = { since: '2026-10-29', people: 7, succeeded: 10, failed: 3, pending: 1, fixed: 2 };
 
   it('reads /api/stats', async () => {
     fetchMock.mockResolvedValueOnce(json(200, totals));

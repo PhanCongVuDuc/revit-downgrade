@@ -95,7 +95,7 @@
           {
             "heading": "If something is wrong",
             "paragraphs": [
-              "If a conversion fails, or the converted file does not open, the result page lets you send the file to me so I can fix the cause. For anything else, the contact details are at the bottom of every page."
+              "If a conversion fails, the file is kept for up to 7 days so I can fix the cause, and you can delete it. If the converted file does not open, the result page lets you send the file to me. For anything else, the contact details are at the bottom of every page."
             ]
           }
         ]

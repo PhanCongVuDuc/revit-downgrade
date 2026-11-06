@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 
 import { loadUsageStats, type UsageStats as UsageStatsData } from '../stores/usageStats';
 
-const KEYS = ['people', 'succeeded', 'failed', 'contributed'] as const;
+const KEYS = ['people', 'succeeded', 'failed', 'pending', 'fixed'] as const;
 
 const { t, locale } = useI18n();
 const stats = ref<UsageStatsData | null>(null);
@@ -56,19 +56,25 @@ const since = computed(() =>
 
 <style scoped>
 .usage {
-  width: min(40rem, 100%);
+  width: min(46rem, 100%);
   margin-top: var(--space-6);
   text-align: center;
 }
 
-/* About the height of the numbers once shown: one row of four, or two rows of two on a narrow screen. */
+/* About the height of the numbers once shown: one row of five, two rows on a medium screen, three on a narrow one. */
 .pending {
   min-height: 10rem;
 }
 
+@media (width < 49rem) {
+  .pending {
+    min-height: 15rem;
+  }
+}
+
 @media (width < 37rem) {
   .pending {
-    min-height: 16rem;
+    min-height: 20.5rem;
   }
 }
 

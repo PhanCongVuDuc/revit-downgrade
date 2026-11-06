@@ -2,6 +2,7 @@ use revit_downgrade_server::cleanup::{spawn_cleanup, wipe_jobs_dir};
 use revit_downgrade_server::clock::{Clock, SystemClock};
 use revit_downgrade_server::config::Config;
 use revit_downgrade_server::engine::Engine;
+use revit_downgrade_server::errors::ErrorLog;
 use revit_downgrade_server::jobs::JobStore;
 use revit_downgrade_server::reports::Reports;
 use revit_downgrade_server::stats::{Stats, engine_build};
@@ -50,15 +51,25 @@ async fn run() -> anyhow::Result<()> {
         JobStore::new(config.data.clone(), clock.clone()).with_disk_budget(config.disk_budget),
     );
     let reports = Arc::new(Reports::new(config.data.join("reports")));
+    // Outside the jobs and reports directories too: it outlives both.
+    let errors = Arc::new(ErrorLog::new(config.data.join("errors")));
+    let engine_version = Arc::new(engine.version().await);
     spawn_workers(
         config.workers,
         store.clone(),
         engine.clone(),
         stats.clone(),
         reports.clone(),
+        errors.clone(),
+        engine_version.clone(),
     );
-    spawn_cleanup(store.clone(), reports.clone(), clock.clone());
-    let engine_version = Arc::new(engine.version().await);
+    spawn_cleanup(
+        store.clone(),
+        reports.clone(),
+        stats.clone(),
+        errors.clone(),
+        clock.clone(),
+    );
 
     let listen = config.listen;
     let state = AppState {
@@ -69,6 +80,7 @@ async fn run() -> anyhow::Result<()> {
         clock,
         reports,
         stats,
+        errors,
         engine_version,
     };
     let listener = tokio::net::TcpListener::bind(listen)

@@ -11,6 +11,9 @@ use tokio::process::Command;
 use tokio_util::sync::CancellationToken;
 
 const MAX_MESSAGE_CHARS: usize = 300;
+/// This many of the last lines of stderr are kept for it: after a panic the last line is only a
+/// general one, and the real message comes before it.
+const DETAIL_LINES: usize = 5;
 /// At most this much of each of stdout and stderr is kept; the rest is read and discarded.
 const MAX_PIPE_BYTES: usize = 64 * 1024;
 /// How long to keep reading the pipes after the engine exited (a helper it left behind may
@@ -22,10 +25,11 @@ const MAX_LOG_BYTES: u64 = 64 * 1024 * 1024;
 #[derive(Debug)]
 pub enum EngineError {
     Refused(String),
-    Corrupt,
-    Failed,
+    /// The last lines of stderr, here and in the next two. They are never shown to users.
+    Corrupt(String),
+    Failed(String),
     /// Exit code, or `None` when a signal ended the process.
-    Crashed(Option<i32>),
+    Crashed(Option<i32>, String),
     TimedOut,
     Cancelled,
     Io(std::io::Error),
@@ -36,9 +40,9 @@ impl EngineError {
     pub fn kind(&self) -> Option<ErrorKind> {
         match self {
             EngineError::Refused(_) => Some(ErrorKind::Refused),
-            EngineError::Corrupt => Some(ErrorKind::Corrupt),
-            EngineError::Failed | EngineError::Io(_) => Some(ErrorKind::Failed),
-            EngineError::Crashed(_) => Some(ErrorKind::Crashed),
+            EngineError::Corrupt(_) => Some(ErrorKind::Corrupt),
+            EngineError::Failed(_) | EngineError::Io(_) => Some(ErrorKind::Failed),
+            EngineError::Crashed(..) => Some(ErrorKind::Crashed),
             EngineError::TimedOut => Some(ErrorKind::TimedOut),
             EngineError::Cancelled => None,
         }
@@ -48,9 +52,21 @@ impl EngineError {
     pub fn exit_code(&self) -> Option<i32> {
         match self {
             EngineError::Refused(_) => Some(3),
-            EngineError::Corrupt => Some(4),
-            EngineError::Failed => Some(5),
-            EngineError::Crashed(code) => *code,
+            EngineError::Corrupt(_) => Some(4),
+            EngineError::Failed(_) => Some(5),
+            EngineError::Crashed(code, _) => *code,
+            _ => None,
+        }
+    }
+
+    /// What the engine or the system said about this failure, when anything. It can hold paths:
+    /// see `errors::clean_message`.
+    pub fn detail(&self) -> Option<String> {
+        match self {
+            EngineError::Corrupt(d) | EngineError::Failed(d) | EngineError::Crashed(_, d) => {
+                Some(d.clone()).filter(|d| !d.is_empty())
+            }
+            EngineError::Io(e) => Some(e.to_string()),
             _ => None,
         }
     }
@@ -60,9 +76,9 @@ impl std::fmt::Display for EngineError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             EngineError::Refused(m) => write!(f, "refused: {m}"),
-            EngineError::Corrupt => f.write_str("file is corrupt or unreadable"),
-            EngineError::Failed => f.write_str("conversion failed"),
-            EngineError::Crashed(_) => f.write_str("engine crashed"),
+            EngineError::Corrupt(_) => f.write_str("file is corrupt or unreadable"),
+            EngineError::Failed(_) => f.write_str("conversion failed"),
+            EngineError::Crashed(..) => f.write_str("engine crashed"),
             EngineError::TimedOut => f.write_str("time limit exceeded"),
             EngineError::Cancelled => f.write_str("cancelled"),
             EngineError::Io(e) => write!(f, "engine i/o error: {e}"),
@@ -201,10 +217,25 @@ fn check_status(c: &Captured) -> Result<(), EngineError> {
     match c.status.code() {
         Some(0) => Ok(()),
         Some(3) => Err(EngineError::Refused(last_line(&c.stderr))),
-        Some(4) => Err(EngineError::Corrupt),
-        Some(5) => Err(EngineError::Failed),
-        code => Err(EngineError::Crashed(code)),
+        Some(4) => Err(EngineError::Corrupt(detail(&c.stderr))),
+        Some(5) => Err(EngineError::Failed(detail(&c.stderr))),
+        code => Err(EngineError::Crashed(code, detail(&c.stderr))),
     }
+}
+
+/// The last lines of stderr that are not blank. `errors::clean_message` cuts them to length: a cut
+/// made here could split a path and leave a part no longer recognised as one.
+fn detail(stderr: &[u8]) -> String {
+    let text = String::from_utf8_lossy(stderr);
+    let mut lines: Vec<&str> = text
+        .lines()
+        .rev()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .take(DETAIL_LINES)
+        .collect();
+    lines.reverse();
+    lines.join("\n")
 }
 
 fn last_line(stderr: &[u8]) -> String {
@@ -365,7 +396,7 @@ pub fn public_message(raw: &str, data_dir: &Path) -> String {
     words.join(" ").chars().take(MAX_MESSAGE_CHARS).collect()
 }
 
-fn looks_like_path(word: &str) -> bool {
+pub(crate) fn looks_like_path(word: &str) -> bool {
     let w = word.trim_matches(|c: char| "\"'`()[]{}<>,;:".contains(c));
     let b = w.as_bytes();
     let drive =
@@ -487,8 +518,11 @@ mod tests {
     #[test]
     fn exit_codes_of_errors() {
         assert_eq!(EngineError::Refused("x".into()).exit_code(), Some(3));
-        assert_eq!(EngineError::Failed.exit_code(), Some(5));
-        assert_eq!(EngineError::Crashed(Some(9)).exit_code(), Some(9));
+        assert_eq!(EngineError::Failed(String::new()).exit_code(), Some(5));
+        assert_eq!(
+            EngineError::Crashed(Some(9), String::new()).exit_code(),
+            Some(9)
+        );
         assert_eq!(EngineError::TimedOut.exit_code(), None);
     }
 
@@ -496,5 +530,26 @@ mod tests {
     fn last_line_truncates_and_skips_blank() {
         assert_eq!(last_line(b"a\nb\n\n"), "b");
         assert_eq!(last_line("x".repeat(500).as_bytes()).len(), 300);
+    }
+
+    #[test]
+    fn detail_keeps_the_last_lines_of_stderr() {
+        assert_eq!(detail(b"a\nb\n\nc\n"), "a\nb\nc");
+        assert_eq!(detail(b"1\n2\n3\n4\n5\n6\n"), "2\n3\n4\n5\n6");
+        let long_then_last = format!("{}\nthe real reason", "x".repeat(1500));
+        assert_eq!(detail(long_then_last.as_bytes()), long_then_last);
+    }
+
+    #[test]
+    fn detail_is_what_the_engine_said() {
+        assert_eq!(
+            EngineError::Crashed(None, "boom".into())
+                .detail()
+                .as_deref(),
+            Some("boom")
+        );
+        assert_eq!(EngineError::Failed(String::new()).detail(), None);
+        assert_eq!(EngineError::TimedOut.detail(), None);
+        assert_eq!(EngineError::Refused("no".into()).detail(), None);
     }
 }
