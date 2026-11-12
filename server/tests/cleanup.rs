@@ -510,10 +510,36 @@ fn a_sweep_prunes_the_error_log() {
         file_kind: "rvt".into(),
         year: 2026,
         target: 2024,
+        confirmed_opens_in_revit: false,
     };
     f.state.errors.append(&line);
     let log = f.dir.path().join("errors").join("errors.jsonl");
     assert!(!std::fs::read(&log).unwrap().is_empty());
     run_sweep(&f);
     assert!(std::fs::read(&log).unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn a_job_left_waiting_for_a_check_is_removed_after_1h_and_counts_nothing() {
+    let f = setup();
+    let job = queued_job(&f, 1);
+    f.state.store.take_next().unwrap();
+    assert!(f.state.store.finish_needs_check(&job.id, true));
+    let before = f.state.stats.snapshot().unwrap();
+    advance(&f, 3600);
+    run_sweep(&f);
+    assert_eq!(f.state.store.get(&job.id).unwrap().state, JobState::NeedsCheck);
+    assert!(f.state.store.input_path(&job).is_file());
+    advance(&f, 1);
+    run_sweep(&f);
+    assert_eq!(f.state.store.get(&job.id).unwrap().state, JobState::Expired);
+    assert!(!f.state.store.job_dir(&job).exists());
+    let resp = send(&f, get(&format!("/api/jobs/{}", job.id))).await;
+    assert_eq!(resp.status(), StatusCode::GONE);
+    let after = f.state.stats.snapshot().unwrap();
+    assert_eq!(
+        (after.people, after.succeeded, after.failed, after.pending),
+        (before.people, before.succeeded, before.failed, before.pending)
+    );
+    assert!(report_dirs(&f).is_empty());
 }

@@ -391,10 +391,12 @@ async fn job_json_has_no_internal_fields() {
         keys,
         [
             "already_reported",
+            "confirmed_opens_in_revit",
             "elapsed_s",
             "error",
             "estimate_s",
             "expires_at",
+            "incomplete",
             "kind",
             "name",
             "position",
@@ -1988,4 +1990,151 @@ async fn a_report_of_1_gib_is_deleted_within_2_seconds() {
     assert_eq!(resp.status(), StatusCode::NO_CONTENT);
     assert!(took < Duration::from_secs(2), "took {took:?}");
     assert!(!dir.exists());
+}
+
+fn post_confirm(id: &str, body: &str) -> Request<Body> {
+    Request::builder()
+        .method(Method::POST)
+        .uri(format!("/api/jobs/{id}/confirm"))
+        .header("content-type", "application/json")
+        .body(Body::from(body.to_string()))
+        .unwrap()
+}
+
+fn error_lines(f: &Fixture) -> Vec<Value> {
+    std::fs::read_to_string(f.dir.path().join("errors").join("errors.jsonl"))
+        .unwrap_or_default()
+        .lines()
+        .map(|l| serde_json::from_str(l).unwrap())
+        .collect()
+}
+
+fn zero_stats(f: &Fixture) -> Value {
+    let since = f.state.clock.now().format("%Y-%m-%d").to_string();
+    json!({"since": since, "people": 0, "succeeded": 0, "failed": 0, "pending": 0, "fixed": 0})
+}
+
+#[tokio::test]
+async fn an_unreadable_file_waits_for_a_check_and_counts_nothing() {
+    for (mode, incomplete) in [("unreadable", false), ("incomplete", true)] {
+        let f = setup();
+        start_workers(&f);
+        let id = run_from(&f, "203.0.113.1", mode, "needs_check").await;
+        let v = body_json(send(&f, get(&format!("/api/jobs/{id}"))).await).await;
+        assert_eq!(v["incomplete"], incomplete, "{mode}");
+        assert_eq!(v["confirmed_opens_in_revit"], false);
+        assert_eq!(v["error"], Value::Null);
+        assert_eq!(v["report_code"], Value::Null);
+        assert_eq!(v["result"], Value::Null);
+        assert!(v["expires_at"].is_string());
+        // The file stays in the job for a confirmed conversion; nothing is kept or counted.
+        let job = job_of(&f, &id);
+        assert!(f.state.store.input_path(&job).is_file());
+        assert!(report_codes(&f).is_empty());
+        assert_eq!(stats(&f).await, zero_stats(&f));
+        let lines = error_lines(&f);
+        assert_eq!(lines.len(), 1);
+        assert_eq!(lines[0]["kind"], "needs_check");
+        assert_eq!(lines[0]["exit_code"], 4);
+        assert_eq!(lines[0]["report"], Value::Null);
+        assert!(lines[0].get("confirmed_opens_in_revit").is_none());
+        assert_eq!(
+            lines[0]["message"]
+                .as_str()
+                .unwrap()
+                .contains("file appears incomplete"),
+            incomplete
+        );
+    }
+}
+
+#[tokio::test]
+async fn a_confirmed_file_that_still_fails_is_kept_and_counted() {
+    let f = setup();
+    start_workers(&f);
+    let id = run_from(&f, "203.0.113.1", "unreadable", "needs_check").await;
+    let resp = send_from(&f, "203.0.113.1", post_confirm(&id, r#"{"opens_in_revit":true}"#)).await;
+    assert_eq!(resp.status(), StatusCode::NO_CONTENT);
+    let v = wait_for_state(&f, &id, "failed").await;
+    assert_eq!(v["error"]["kind"], "corrupt");
+    assert_eq!(v["confirmed_opens_in_revit"], true);
+    assert_eq!(v["incomplete"], false);
+    let code = v["report_code"].as_str().unwrap().to_string();
+    assert_eq!(v["report_owned"], true);
+    let meta: Value = serde_json::from_slice(
+        &std::fs::read(f.dir.path().join("reports").join(&code).join("meta.json")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(meta["confirmed_opens_in_revit"], true);
+    assert_eq!(meta["error_kind"], "corrupt");
+    let s = wait_for_stat(&f, "failed", 1).await;
+    assert_eq!((&s["pending"], &s["people"]), (&json!(1), &json!(1)));
+    let lines = error_lines(&f);
+    assert_eq!(lines.len(), 2);
+    assert_eq!(lines[1]["kind"], "corrupt");
+    assert_eq!(lines[1]["report"], json!(code));
+    assert_eq!(lines[1]["confirmed_opens_in_revit"], true);
+    // Confirming again is refused: the job no longer waits for a check.
+    let resp = send(&f, post_confirm(&id, r#"{"opens_in_revit":true}"#)).await;
+    assert_eq!(
+        error_code(resp).await,
+        (StatusCode::CONFLICT, json!("not_needs_check"))
+    );
+}
+
+#[tokio::test]
+async fn a_confirmed_file_that_converts_is_a_success() {
+    let f = setup();
+    start_workers(&f);
+    let id = run_from(&f, "203.0.113.1", "probe-corrupt", "needs_check").await;
+    let resp = send(&f, post_confirm(&id, r#"{"opens_in_revit":true}"#)).await;
+    assert_eq!(resp.status(), StatusCode::NO_CONTENT);
+    let v = wait_for_state(&f, &id, "done").await;
+    assert_eq!(v["confirmed_opens_in_revit"], true);
+    let s = wait_for_stat(&f, "succeeded", 1).await;
+    assert_eq!((&s["failed"], &s["pending"]), (&json!(0), &json!(0)));
+    assert!(report_codes(&f).is_empty());
+}
+
+#[tokio::test]
+async fn leaving_a_file_that_needs_a_check_counts_nothing() {
+    let f = setup();
+    start_workers(&f);
+    let id = run_from(&f, "203.0.113.1", "unreadable", "needs_check").await;
+    let dir = f.state.store.job_dir(&job_of(&f, &id));
+    let resp = send(&f, delete(&format!("/api/jobs/{id}"))).await;
+    assert_eq!(resp.status(), StatusCode::NO_CONTENT);
+    assert!(!dir.exists());
+    let resp = send(&f, get(&format!("/api/jobs/{id}"))).await;
+    assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    assert_eq!(stats(&f).await, zero_stats(&f));
+    assert!(report_codes(&f).is_empty());
+    // A new file can be sent right away.
+    run_from(&f, "203.0.113.1", "ok", "done").await;
+}
+
+#[tokio::test]
+async fn confirm_refusals() {
+    let f = setup();
+    start_workers(&f);
+    let id = run_from(&f, "203.0.113.1", "unreadable", "needs_check").await;
+    for body in [r#"{"opens_in_revit":false}"#, "{}", "nope"] {
+        let resp = send(&f, post_confirm(&id, body)).await;
+        assert_eq!(
+            error_code(resp).await,
+            (StatusCode::BAD_REQUEST, json!("bad_request")),
+            "{body}"
+        );
+    }
+    assert_eq!(job_of(&f, &id).state, revit_downgrade_server::model::JobState::NeedsCheck);
+    let resp = send(&f, post_confirm(&JobId::random().to_string(), r#"{"opens_in_revit":true}"#)).await;
+    assert_eq!(error_code(resp).await.0, StatusCode::NOT_FOUND);
+    let resp = send(&f, post_confirm("not-an-id", r#"{"opens_in_revit":true}"#)).await;
+    assert_eq!(error_code(resp).await.0, StatusCode::NOT_FOUND);
+    let done = run_from(&f, "203.0.113.2", "ok", "done").await;
+    let resp = send(&f, post_confirm(&done, r#"{"opens_in_revit":true}"#)).await;
+    assert_eq!(
+        error_code(resp).await,
+        (StatusCode::CONFLICT, json!("not_needs_check"))
+    );
 }

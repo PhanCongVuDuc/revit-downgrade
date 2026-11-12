@@ -14,6 +14,9 @@ pub enum JobState {
     WaitingUpload,
     Queued,
     Running,
+    /// The engine could not read the file in its first check, before converting. Nothing is converted, kept or
+    /// counted until the user confirms the file opens in Revit (`JobStore::confirm`).
+    NeedsCheck,
     Done,
     Failed,
     Cancelled,
@@ -204,6 +207,10 @@ mod tests {
         assert_eq!(
             serde_json::to_string(&ErrorKind::TimedOut).unwrap(),
             "\"timed_out\""
+        );
+        assert_eq!(
+            serde_json::to_string(&JobState::NeedsCheck).unwrap(),
+            "\"needs_check\""
         );
         assert_eq!(
             serde_json::to_string(&DropReason::NoRule).unwrap(),

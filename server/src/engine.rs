@@ -21,12 +21,16 @@ const MAX_PIPE_BYTES: usize = 64 * 1024;
 const PIPE_GRACE: Duration = Duration::from_secs(5);
 /// At most this much of the engine log is read.
 const MAX_LOG_BYTES: u64 = 64 * 1024 * 1024;
+/// What the engine writes to stderr when a file it cannot read ends in a run of zero bytes (CLI contract).
+pub const INCOMPLETE_MARK: &str = "file appears incomplete";
 
 #[derive(Debug)]
 pub enum EngineError {
     Refused(String),
-    /// The last lines of stderr, here and in the next two. They are never shown to users.
-    Corrupt(String),
+    /// The file could not be read. `detail` is the last lines of stderr, as in the next two; they are never shown to
+    /// users. `incomplete`: the file ends in a run of zero bytes, so it was most likely not fully downloaded or
+    /// copied (see `INCOMPLETE_MARK`).
+    Corrupt { detail: String, incomplete: bool },
     Failed(String),
     /// Exit code, or `None` when a signal ended the process.
     Crashed(Option<i32>, String),
@@ -40,7 +44,7 @@ impl EngineError {
     pub fn kind(&self) -> Option<ErrorKind> {
         match self {
             EngineError::Refused(_) => Some(ErrorKind::Refused),
-            EngineError::Corrupt(_) => Some(ErrorKind::Corrupt),
+            EngineError::Corrupt { .. } => Some(ErrorKind::Corrupt),
             EngineError::Failed(_) | EngineError::Io(_) => Some(ErrorKind::Failed),
             EngineError::Crashed(..) => Some(ErrorKind::Crashed),
             EngineError::TimedOut => Some(ErrorKind::TimedOut),
@@ -52,7 +56,7 @@ impl EngineError {
     pub fn exit_code(&self) -> Option<i32> {
         match self {
             EngineError::Refused(_) => Some(3),
-            EngineError::Corrupt(_) => Some(4),
+            EngineError::Corrupt { .. } => Some(4),
             EngineError::Failed(_) => Some(5),
             EngineError::Crashed(code, _) => *code,
             _ => None,
@@ -63,7 +67,9 @@ impl EngineError {
     /// see `errors::clean_message`.
     pub fn detail(&self) -> Option<String> {
         match self {
-            EngineError::Corrupt(d) | EngineError::Failed(d) | EngineError::Crashed(_, d) => {
+            EngineError::Corrupt { detail: d, .. }
+            | EngineError::Failed(d)
+            | EngineError::Crashed(_, d) => {
                 Some(d.clone()).filter(|d| !d.is_empty())
             }
             EngineError::Io(e) => Some(e.to_string()),
@@ -76,7 +82,7 @@ impl std::fmt::Display for EngineError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             EngineError::Refused(m) => write!(f, "refused: {m}"),
-            EngineError::Corrupt(_) => f.write_str("file is corrupt or unreadable"),
+            EngineError::Corrupt { .. } => f.write_str("file is corrupt or unreadable"),
             EngineError::Failed(_) => f.write_str("conversion failed"),
             EngineError::Crashed(..) => f.write_str("engine crashed"),
             EngineError::TimedOut => f.write_str("time limit exceeded"),
@@ -177,6 +183,19 @@ impl Engine {
         let mut cmd = Command::new(&self.path);
         cmd.arg("probe").arg(file).arg("--json");
         let c = capture(cmd, Some(self.probe_limit), Some(cancel)).await?;
+        if let Err(EngineError::Corrupt { detail, incomplete }) = check_status(&c) {
+            // With `--json` the engine also says on stdout why it could not read the file. An older engine says
+            // nothing there, and stderr still tells.
+            #[derive(Deserialize)]
+            struct Unreadable {
+                incomplete: bool,
+            }
+            let said = serde_json::from_slice::<Unreadable>(&c.stdout).is_ok_and(|u| u.incomplete);
+            return Err(EngineError::Corrupt {
+                detail,
+                incomplete: incomplete || said,
+            });
+        }
         check_status(&c)?;
         parse_json(&c.stdout)
     }
@@ -217,7 +236,11 @@ fn check_status(c: &Captured) -> Result<(), EngineError> {
     match c.status.code() {
         Some(0) => Ok(()),
         Some(3) => Err(EngineError::Refused(last_line(&c.stderr))),
-        Some(4) => Err(EngineError::Corrupt(detail(&c.stderr))),
+        Some(4) => {
+            let detail = detail(&c.stderr);
+            let incomplete = detail.contains(INCOMPLETE_MARK);
+            Err(EngineError::Corrupt { detail, incomplete })
+        }
         Some(5) => Err(EngineError::Failed(detail(&c.stderr))),
         code => Err(EngineError::Crashed(code, detail(&c.stderr))),
     }

@@ -1,6 +1,6 @@
 //! Background workers that run queued jobs through the conversion engine.
 
-use crate::engine::{DowngradeRequest, Engine, EngineError, public_message};
+use crate::engine::{DowngradeRequest, Engine, EngineError, Probe, public_message};
 use crate::errors::{ErrorLine, ErrorLog, clean_message};
 use crate::jobs::{Job, JobStore};
 use crate::model::{ErrorKind, time_limit};
@@ -12,6 +12,8 @@ use std::sync::Arc;
 use tokio::task::JoinHandle;
 
 const MIB: u64 = 1 << 20;
+/// `kind` of an error log line for a file the first check could not read (no conversion ran).
+pub const NEEDS_CHECK_KIND: &str = "needs_check";
 
 /// Starts `n` workers; each takes queued jobs one at a time, forever. Every job that ends done
 /// or failed is counted in `stats`; a failed conversion is also kept in `reports` and written to
@@ -91,39 +93,61 @@ async fn run_job_inner(store: &JobStore, engine: &Engine, counts: &Counts, job: 
     if job.cancel.is_cancelled() {
         return;
     }
+    // A file the user confirmed opens in Revit already failed this check: it goes straight to the conversion.
+    if !job.confirmed_opens_in_revit {
+        let probe = match engine.probe(&store.input_path(job), job.cancel.clone()).await {
+            Ok(p) => p,
+            Err(EngineError::Corrupt { detail, incomplete }) => {
+                return needs_check(store, counts, job, detail, incomplete).await;
+            }
+            Err(e) => return finish_error(store, counts, job, e).await,
+        };
+        if let Some((kind, message)) = check_probe(job, &probe) {
+            return fail(store, counts, job, kind, message.into(), None, None).await;
+        }
+    }
+    convert(store, engine, counts, job).await;
+}
+
+/// Why a file the engine read cannot go on to the conversion, if anything.
+fn check_probe(job: &Job, probe: &Probe) -> Option<(ErrorKind, &'static str)> {
+    if probe.kind != job.kind || probe.year != job.year {
+        return Some((
+            ErrorKind::Mismatch,
+            "The file is not what the browser reported.",
+        ));
+    }
+    if !probe.targets.contains(&job.target) {
+        return Some((
+            ErrorKind::Refused,
+            "This conversion is not supported for this file.",
+        ));
+    }
+    None
+}
+
+/// The first check could not read the file: the job waits for the user to check it in Revit. Nothing is converted,
+/// kept in a report or counted; only the error log gets a line, of kind `needs_check`, so that it is not taken for a
+/// failed conversion.
+async fn needs_check(store: &JobStore, counts: &Counts, job: &Job, detail: String, incomplete: bool) {
+    if !store.is_running(&job.id) {
+        return;
+    }
+    let detail = Some(detail).filter(|d| !d.is_empty());
+    write_error_line(store, counts, job, NEEDS_CHECK_KIND, Some(4), detail, None).await;
+    tracing::info!(
+        job_id = %job.id,
+        incomplete,
+        size_mib = job.size.div_ceil(MIB),
+        "file needs a check before converting"
+    );
+    store.finish_needs_check(&job.id, incomplete);
+}
+
+async fn convert(store: &JobStore, engine: &Engine, counts: &Counts, job: &Job) {
     let input = store.input_path(job);
     let output = store.output_path(job);
     let log = store.log_path(job);
-
-    let probe = match engine.probe(&input, job.cancel.clone()).await {
-        Ok(p) => p,
-        Err(e) => return finish_error(store, counts, job, e).await,
-    };
-    if probe.kind != job.kind || probe.year != job.year {
-        return fail(
-            store,
-            counts,
-            job,
-            ErrorKind::Mismatch,
-            "The file is not what the browser reported.".into(),
-            None,
-            None,
-        )
-        .await;
-    }
-    if !probe.targets.contains(&job.target) {
-        return fail(
-            store,
-            counts,
-            job,
-            ErrorKind::Refused,
-            "This conversion is not supported for this file.".into(),
-            None,
-            None,
-        )
-        .await;
-    }
-
     let req = DowngradeRequest {
         input: input.clone(),
         output: output.clone(),
@@ -174,7 +198,7 @@ async fn finish_error(store: &JobStore, counts: &Counts, job: &Job, e: EngineErr
     let detail = e.detail();
     let message = match e {
         EngineError::Refused(m) => public_message(&m, store.data_dir()),
-        EngineError::Corrupt(_) => "The file could not be read.".into(),
+        EngineError::Corrupt { .. } => "The file could not be read.".into(),
         EngineError::Crashed(..) => "The conversion engine stopped unexpectedly.".into(),
         EngineError::TimedOut => "The conversion took too long and was stopped.".into(),
         _ => "The conversion failed.".into(),
@@ -314,11 +338,32 @@ async fn write_error(
     detail: Option<String>,
     kept: &Kept,
 ) {
+    write_error_line(
+        store,
+        counts,
+        job,
+        kind.as_str(),
+        exit_code,
+        detail,
+        kept.code.clone(),
+    )
+    .await;
+}
+
+async fn write_error_line(
+    store: &JobStore,
+    counts: &Counts,
+    job: &Job,
+    kind: &str,
+    exit_code: Option<i32>,
+    detail: Option<String>,
+    report: Option<String>,
+) {
     let message = detail.map(|d| clean_message(&d, store.data_dir(), &job.name));
     let line = ErrorLine {
         at: store.now().trunc_subsecs(0),
-        report: kept.code.clone(),
-        kind: kind.as_str().to_string(),
+        report,
+        kind: kind.to_string(),
         message,
         exit_code,
         engine_version: counts.engine_version.to_string(),
@@ -326,6 +371,7 @@ async fn write_error(
         file_kind: job.kind.ext().to_string(),
         year: job.year,
         target: job.target,
+        confirmed_opens_in_revit: job.confirmed_opens_in_revit,
     };
     let errors = counts.errors.clone();
     count(job, move || errors.append(&line)).await;

@@ -67,6 +67,9 @@ struct Meta {
     reported_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     note: Option<String>,
+    /// The user said the file opens in Revit after the first check could not read it. Left out when false.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    confirmed_opens_in_revit: bool,
 }
 
 fn rfc3339(t: DateTime<Utc>) -> String {
@@ -197,6 +200,7 @@ impl Reports {
                 done_at: Some(rfc3339(done_at)),
                 reported_at: Some(rfc3339(now)),
                 note: note.map(str::to_string),
+                confirmed_opens_in_revit: job.confirmed_opens_in_revit,
             };
             write_meta(&dir, &meta)
         })();
@@ -261,6 +265,7 @@ impl Reports {
             done_at: None,
             reported_at: None,
             note: None,
+            confirmed_opens_in_revit: job.confirmed_opens_in_revit,
         };
         write_meta(dir, &meta)
     }

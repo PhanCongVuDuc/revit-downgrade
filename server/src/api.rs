@@ -35,6 +35,7 @@ pub fn routes() -> Router<AppState> {
         .route("/api/jobs/{id}", get(get_job).delete(delete_job))
         .route("/api/jobs/{id}/file", get(download_file))
         .route("/api/jobs/{id}/dropped", get(dropped))
+        .route("/api/jobs/{id}/confirm", post(confirm_job))
         .route(
             "/api/jobs/{id}/report",
             delete(delete_report).fallback(api_not_found),
@@ -206,6 +207,10 @@ struct JobOut {
     report_owned: bool,
     report_deleted: bool,
     already_reported: bool,
+    /// In `needs_check`: the file ends in a run of zero bytes, so it was most likely not fully downloaded or copied.
+    incomplete: bool,
+    /// The user said the file opens in Revit, so it was converted without the first check.
+    confirmed_opens_in_revit: bool,
     /// The job id is the capability: its holder sees the request it made, to resume an upload.
     name: String,
     size: u64,
@@ -263,6 +268,8 @@ async fn get_job(
             report_owned: job.report_owned,
             report_deleted: job.report_deleted,
             already_reported: job.already_reported,
+            incomplete: job.state == JobState::NeedsCheck && job.incomplete,
+            confirmed_opens_in_revit: job.confirmed_opens_in_revit,
             name: job.name.clone(),
             size: job.size,
             kind: job.kind,
@@ -366,6 +373,36 @@ async fn dropped(
 ) -> Result<impl IntoResponse, ApiError> {
     let dropped: Vec<DroppedElement> = done_job(&s, &raw)?.dropped;
     Ok(([(header::CACHE_CONTROL, NO_STORE)], Json(dropped)))
+}
+
+#[derive(Deserialize)]
+struct ConfirmRequest {
+    opens_in_revit: bool,
+}
+
+/// The user checked a file the first check could not read and says it opens in Revit: it is converted anyway, and
+/// from then on handled as any other conversion.
+async fn confirm_job(
+    State(s): State<AppState>,
+    Path(raw): Path<String>,
+    body: Result<Json<ConfirmRequest>, JsonRejection>,
+) -> Result<StatusCode, ApiError> {
+    let id: JobId = raw.parse().map_err(|_| not_found())?;
+    match body {
+        Ok(Json(ConfirmRequest {
+            opens_in_revit: true,
+        })) => {}
+        _ => {
+            return Err(ApiError::new(
+                StatusCode::BAD_REQUEST,
+                "bad_request",
+                "Confirm that the file opens in Revit.",
+            ));
+        }
+    }
+    s.store.confirm(&id)?;
+    tracing::info!(job_id = %id, "file confirmed as opening in Revit");
+    Ok(StatusCode::NO_CONTENT)
 }
 
 async fn delete_job(

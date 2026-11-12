@@ -1,4 +1,5 @@
-//! The error log: `<data>/errors/errors.jsonl`, one JSON line per failed conversion.
+//! The error log: `<data>/errors/errors.jsonl`, one JSON line per failed conversion, and per file the
+//! first check could not read (`kind` `needs_check`, no report).
 //!
 //! It keeps what the engine said after the file and the report are gone, for 90 days. A line never
 //! holds a file name, a path or an address: the engine's message goes through `clean_message`
@@ -32,6 +33,9 @@ pub struct ErrorLine {
     pub file_kind: String,
     pub year: u16,
     pub target: u16,
+    /// The user said the file opens in Revit after the first check could not read it. Left out when false.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub confirmed_opens_in_revit: bool,
 }
 
 /// The log file of one data directory.
@@ -266,6 +270,7 @@ mod tests {
             file_kind: "rvt".into(),
             year: 2026,
             target: 2024,
+            confirmed_opens_in_revit: false,
         }
     }
 

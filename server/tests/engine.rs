@@ -71,7 +71,7 @@ async fn corrupt_and_fail_map_to_kinds() {
         .await
         .unwrap_err();
     assert!(
-        matches!(&err, EngineError::Corrupt(m) if m == "The file is corrupt or unreadable"),
+        matches!(&err, EngineError::Corrupt { detail, incomplete: false } if detail == "The file is corrupt or unreadable"),
         "{err:?}"
     );
     assert_eq!(err.kind(), Some(ErrorKind::Corrupt));
@@ -234,4 +234,34 @@ async fn missing_log_after_success_is_error() {
         .unwrap_err();
     assert!(matches!(err, EngineError::Io(_)), "{err:?}");
     assert_eq!(err.kind(), Some(ErrorKind::Failed));
+}
+
+#[tokio::test]
+async fn probe_of_an_unreadable_file_says_whether_it_is_incomplete() {
+    let dir = tempfile::tempdir().unwrap();
+    for (mode, want) in [("unreadable", false), ("probe-corrupt", false), ("incomplete", true)] {
+        let input = write_marker(dir.path(), "rvt", mode, Some(2026));
+        let err = engine()
+            .probe(&input, CancellationToken::new())
+            .await
+            .unwrap_err();
+        match &err {
+            EngineError::Corrupt { incomplete, .. } => assert_eq!(*incomplete, want, "{mode}"),
+            other => panic!("{mode}: unexpected {other:?}"),
+        }
+        assert_eq!(err.kind(), Some(ErrorKind::Corrupt));
+    }
+    // A downgrade of an incomplete file says so on stderr.
+    let input = write_marker(dir.path(), "rvt", "incomplete", Some(2026));
+    let err = engine()
+        .downgrade(
+            request(dir.path(), input, Duration::from_secs(60)),
+            CancellationToken::new(),
+        )
+        .await
+        .unwrap_err();
+    assert!(
+        matches!(&err, EngineError::Corrupt { incomplete: true, .. }),
+        "{err:?}"
+    );
 }

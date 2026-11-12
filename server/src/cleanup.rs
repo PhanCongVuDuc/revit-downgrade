@@ -39,7 +39,9 @@ pub fn sweep(
             JobState::WaitingUpload => {
                 store.remove_stale_upload(&job.id, now);
             }
-            JobState::Done | JobState::Failed if job.expires_at.is_some_and(|t| t < now) => {
+            JobState::Done | JobState::Failed | JobState::NeedsCheck
+                if job.expires_at.is_some_and(|t| t < now) =>
+            {
                 store.expire(&job.id, now);
             }
             JobState::Done if job.open_report.is_some() => {

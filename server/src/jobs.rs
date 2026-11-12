@@ -20,6 +20,8 @@ const DONE_RETENTION_MIN: i64 = 120;
 /// How long a converted file can be downloaded, in seconds (`DONE_RETENTION_MIN`).
 pub const OUTPUT_TTL_S: u64 = DONE_RETENTION_MIN as u64 * 60;
 const FAILED_RETENTION_MIN: i64 = 15;
+/// A job waiting for the user to check the file in Revit is kept this long, then expires like any other.
+const NEEDS_CHECK_RETENTION_MIN: i64 = 60;
 const EXPIRED_RECORD_HOURS: i64 = 24;
 /// An unfinished upload (of a job, or of an open report) is dropped after this long without any
 /// accepted data...
@@ -131,6 +133,11 @@ pub struct Job {
     pub reporting: bool,
     /// The original being sent again for a "does not open" report, while it uploads.
     pub open_report: Option<OpenReport>,
+    /// In `NeedsCheck`: the file ends in a run of zero bytes, so it was most likely not fully downloaded or copied.
+    pub incomplete: bool,
+    /// The user said the file opens in Revit, after the first check could not read it: the conversion runs without
+    /// that check.
+    pub confirmed_opens_in_revit: bool,
     /// Insertion order, used to break ties in FIFO ordering.
     seq: u64,
 }
@@ -214,6 +221,7 @@ pub struct JobStore {
 fn disk_use(j: &Job) -> u64 {
     match j.state {
         JobState::WaitingUpload | JobState::Queued | JobState::Running => j.size.saturating_mul(2),
+        JobState::NeedsCheck => j.size,
         JobState::Done if j.open_report.is_some() => j.output_size.saturating_add(j.size),
         JobState::Done => j.output_size,
         JobState::Failed if !j.report_owned => j.received,
@@ -407,6 +415,8 @@ impl JobStore {
             file_id: None,
             reporting: false,
             open_report: None,
+            incomplete: false,
+            confirmed_opens_in_revit: false,
             seq,
         };
         if std::fs::create_dir_all(self.job_dir(&job)).is_err() {
@@ -562,6 +572,86 @@ impl JobStore {
             }
         }
         true
+    }
+
+    /// Moves a running job whose file the engine could not read to `NeedsCheck`, keeping its input for a confirmed
+    /// conversion. Returns `true` as `finish` does.
+    pub fn finish_needs_check(&self, id: &JobId, incomplete: bool) -> bool {
+        let now = self.clock.now();
+        let mut g = self.lock();
+        let Some(j) = g.jobs.get_mut(id) else {
+            return false;
+        };
+        if j.state != JobState::Running {
+            return false;
+        }
+        j.state = JobState::NeedsCheck;
+        j.incomplete = incomplete;
+        j.finished_at = Some(now);
+        j.expires_at = Some(now + Duration::minutes(NEEDS_CHECK_RETENTION_MIN));
+        true
+    }
+
+    /// Queues a `NeedsCheck` job again once the user says the file opens in Revit. It then converts without the first
+    /// check, and its outcome is counted and kept as any other. The job's client may have only one conversion in
+    /// progress, and the queue and disk limits apply as for a new job; the hourly limit does not (no job is made).
+    pub fn confirm(&self, id: &JobId) -> Result<(), ApiError> {
+        {
+            let mut g = self.lock();
+            let Some(j) = g.jobs.get(id) else {
+                return Err(api(StatusCode::NOT_FOUND, "not_found", "Job not found."));
+            };
+            match j.state {
+                JobState::NeedsCheck => {}
+                JobState::Expired => {
+                    return Err(api(StatusCode::GONE, "expired", "This job has expired."));
+                }
+                _ => {
+                    return Err(api(
+                        StatusCode::CONFLICT,
+                        "not_needs_check",
+                        "This conversion is not waiting for a check.",
+                    ));
+                }
+            }
+            let (ip, size) = (j.ip, j.size);
+            if g.jobs.values().any(|j| {
+                j.ip == ip && matches!(j.state, JobState::Queued | JobState::Running)
+            }) {
+                return Err(api(
+                    StatusCode::TOO_MANY_REQUESTS,
+                    "active_job",
+                    "You already have a conversion in progress.",
+                ));
+            }
+            if g.jobs
+                .values()
+                .filter(|j| j.state == JobState::Queued)
+                .count()
+                >= MAX_QUEUED
+            {
+                return Err(api(
+                    StatusCode::SERVICE_UNAVAILABLE,
+                    "queue_full",
+                    "The queue is full. Try again shortly.",
+                )
+                .retry_after(60));
+            }
+            // The input is already held; the output still needs room.
+            let in_use: u64 = g.jobs.values().map(disk_use).sum();
+            if in_use.saturating_add(size) > self.disk_budget {
+                return Err(server_full());
+            }
+            let j = g.jobs.get_mut(id).expect("job present");
+            j.state = JobState::Queued;
+            j.confirmed_opens_in_revit = true;
+            j.incomplete = false;
+            j.started_at = None;
+            j.finished_at = None;
+            j.expires_at = None;
+        }
+        self.notify.notify_one();
+        Ok(())
     }
 
     /// Cancels a job that has not finished yet and signals its token. The result says, decided
@@ -861,14 +951,19 @@ impl JobStore {
         self.lock().jobs.values().cloned().collect()
     }
 
-    /// Turns a finished (done or failed) job into `Expired`: its files are deleted and the record
+    /// Turns a finished (done, failed or needs-check) job into `Expired`: its files are deleted and the record
     /// stays for 24 hours so that clients get "gone" rather than "not found". Returns false when
     /// the job is missing or in another state.
     pub fn expire(&self, id: &JobId, now: DateTime<Utc>) -> bool {
         let job = {
             let mut g = self.lock();
             match g.jobs.get_mut(id) {
-                Some(j) if matches!(j.state, JobState::Done | JobState::Failed) => {
+                Some(j)
+                    if matches!(
+                        j.state,
+                        JobState::Done | JobState::Failed | JobState::NeedsCheck
+                    ) =>
+                {
                     j.state = JobState::Expired;
                     j.expires_at = Some(now + Duration::hours(EXPIRED_RECORD_HOURS));
                     j.dropped = Vec::new();
@@ -1909,5 +2004,75 @@ mod tests {
         s.open_report_start(&a.id, 1000, None, ip(1)).unwrap();
         assert!(s.set_report_code(&a.id, "R-AAAAAA".into()));
         assert!(s.get(&a.id).unwrap().open_report.is_none());
+    }
+
+    /// A job taken by a worker and moved to `NeedsCheck`, as its probe would.
+    fn needs_check_job(s: &JobStore, ip_last: u8) -> Job {
+        let j = s.create(req(), ip(ip_last), &pairs()).unwrap();
+        s.mark_uploaded(&j.id);
+        let taken = s.take_next().unwrap();
+        assert_eq!(taken.id, j.id);
+        assert!(s.finish_needs_check(&j.id, true));
+        s.get(&j.id).unwrap()
+    }
+
+    #[test]
+    fn needs_check_keeps_the_input_for_an_hour_then_expires() {
+        let (s, c, _d) = setup();
+        let j = needs_check_job(&s, 1);
+        assert_eq!(j.state, JobState::NeedsCheck);
+        assert!(j.incomplete);
+        assert_eq!(
+            j.expires_at.unwrap() - j.finished_at.unwrap(),
+            chrono::Duration::minutes(60)
+        );
+        // Only the input is held.
+        assert_eq!(disk_use(&j), j.size);
+        // Not running: finishing it again or making it need a check again does nothing.
+        assert!(!s.finish(&j.id, Ok(Vec::new())));
+        assert!(!s.finish_needs_check(&j.id, false));
+        c.advance(std::time::Duration::from_secs(61 * 60));
+        assert!(s.expire(&j.id, c.now()));
+        assert_eq!(s.get(&j.id).unwrap().state, JobState::Expired);
+        assert!(!s.job_dir(&j).exists());
+        assert_eq!(
+            s.confirm(&j.id).unwrap_err().code,
+            "expired"
+        );
+    }
+
+    #[test]
+    fn confirm_queues_the_job_again_once() {
+        let (s, _c, _d) = setup();
+        let j = needs_check_job(&s, 1);
+        // A needs-check job does not block a new one.
+        let other = s.create(req(), ip(1), &pairs()).unwrap();
+        s.mark_uploaded(&other.id);
+        assert_eq!(s.confirm(&j.id).unwrap_err().code, "active_job");
+        s.cancel(&other.id);
+        s.confirm(&j.id).unwrap();
+        let q = s.get(&j.id).unwrap();
+        assert_eq!(q.state, JobState::Queued);
+        assert!(q.confirmed_opens_in_revit);
+        assert!(!q.incomplete);
+        assert_eq!((q.started_at, q.finished_at, q.expires_at), (None, None, None));
+        assert_eq!(s.confirm(&j.id).unwrap_err().code, "not_needs_check");
+        assert_eq!(s.confirm(&JobId::random()).unwrap_err().code, "not_found");
+        let taken = s.take_next().unwrap();
+        assert_eq!(taken.id, j.id);
+        assert!(taken.confirmed_opens_in_revit);
+    }
+
+    #[test]
+    fn confirm_needs_room_for_the_output() {
+        let dir = tempfile::tempdir().unwrap();
+        let clock = Arc::new(ManualClock::new(
+            chrono::DateTime::from_timestamp(1_800_000_000, 0).unwrap(),
+        ));
+        let s = JobStore::new(dir.path().to_path_buf(), clock).with_disk_budget(3100);
+        let j = needs_check_job(&s, 1);
+        // 1000 held by the job, 2000 reserved by another: no room for a 1000-byte output.
+        let _other = s.create(req(), ip(2), &pairs()).unwrap();
+        assert_eq!(s.confirm(&j.id).unwrap_err().code, "server_full");
     }
 }

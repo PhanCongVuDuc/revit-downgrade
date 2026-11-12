@@ -557,6 +557,14 @@ async fn a_file_that_cannot_be_hashed_counts_as_a_file_of_its_own() {
         f.state.store.mark_uploaded(&job.id);
         jobs.push(job);
     }
+    // The first check cannot read it either: nothing is counted until the user confirms it opens in Revit.
+    for job in &jobs {
+        assert_eq!(wait_terminal(&f, &job.id).await.state, JobState::NeedsCheck);
+    }
+    assert_eq!(tally(&f), (0, 0, 0));
+    for job in &jobs {
+        f.state.store.confirm(&job.id).unwrap();
+    }
     for job in &jobs {
         let failed = wait_terminal(&f, &job.id).await;
         assert_eq!(failed.error.unwrap().kind, ErrorKind::Corrupt);
@@ -732,4 +740,30 @@ async fn paths_with_spaces_are_cleaned_from_what_the_engine_said() {
         lines[0]["message"],
         "Cannot read [path]: it is locked. Family in [file]. Also missing [path]"
     );
+}
+
+#[tokio::test]
+async fn an_unreadable_file_is_not_converted_kept_or_counted() {
+    let f = setup();
+    start(&f, 1);
+    let job = queue_job(&f, 1, 2026, 2024, "incomplete", 2026);
+    let waiting = wait_terminal(&f, &job.id).await;
+    assert_eq!(waiting.state, JobState::NeedsCheck);
+    assert!(waiting.incomplete);
+    assert!(waiting.error.is_none() && waiting.report_code.is_none());
+    // No conversion ran: no output, no log, the input is still there.
+    assert!(f.state.store.input_path(&job).is_file());
+    assert!(!f.state.store.output_path(&job).exists());
+    assert!(!f.state.store.log_path(&job).exists());
+    assert!(report_dirs(&f).is_empty());
+    assert_eq!(tally(&f), (0, 0, 0));
+
+    // Confirmed: converted without the check, and the failure is kept and counted as usual.
+    f.state.store.confirm(&job.id).unwrap();
+    let failed = wait_terminal(&f, &job.id).await;
+    assert_eq!(failed.state, JobState::Failed);
+    assert_eq!(failed.error.unwrap().kind, ErrorKind::Corrupt);
+    assert!(failed.report_owned && failed.confirmed_opens_in_revit);
+    assert_eq!(report_dirs(&f).len(), 1);
+    assert_eq!(tally(&f), (1, 1, 0));
 }
