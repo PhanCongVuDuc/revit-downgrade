@@ -1,6 +1,7 @@
 // The only module that talks to the server. Stores and src/app/ import it; components never do.
 export {
   ApiError,
+  confirmJob,
   createJob,
   deleteJob,
   deleteReport as deleteJobReport,

@@ -3,6 +3,7 @@ import { computed, ref, shallowRef, watch } from 'vue';
 
 import {
   ApiError,
+  confirmJob,
   createJob,
   deleteJob,
   deleteJobReport,
@@ -24,7 +25,11 @@ import { safeStorage } from '@/shared/storage/safeStorage';
 import { keptReportRegistry } from './keptReports';
 import { type UploadEntry, uploadRegistry } from './uploadRegistry';
 
-export type ConvertPhase = 'pick' | 'ready' | 'uploading' | 'queued' | 'running' | 'done' | 'failed' | 'error';
+/**
+ * `needs_check`: the server could not read the file, so it asks the user to check it before converting it anyway.
+ */
+export type ConvertPhase =
+  'pick' | 'ready' | 'uploading' | 'queued' | 'running' | 'needs_check' | 'done' | 'failed' | 'error';
 
 /**
  * What went wrong. In phase `error`: a reader code (`bad_extension`, `too_large`, `not_ole`, `not_revit`, `unreadable`),
@@ -70,6 +75,10 @@ export const useConvertStore = defineStore('convert', () => {
   const reportDeletion = ref<ReportDeletion>('idle');
   /** An earlier report already holds this same file. */
   const alreadyReported = ref(false);
+  /** In `needs_check`: the file ends in empty data, as if it was not fully downloaded or copied. */
+  const incomplete = ref(false);
+  /** The "convert anyway" request of a `needs_check` job is on its way. */
+  const confirming = ref(false);
   /** The size of the file the current job was made from, from the server. */
   const jobSize = ref<number | null>(null);
   /** A "does not open in Revit" report is being sent. */
@@ -214,6 +223,8 @@ export const useConvertStore = defineStore('convert', () => {
     reportDeleted.value = false;
     reportDeletion.value = 'idle';
     alreadyReported.value = false;
+    incomplete.value = false;
+    confirming.value = false;
     jobSize.value = null;
     unopenableSending.value = false;
     unopenableProgress.value = 0;
@@ -430,6 +441,7 @@ export const useConvertStore = defineStore('convert', () => {
     reportOwned.value = current.reportOwned;
     reportDeleted.value = current.reportDeleted;
     alreadyReported.value = current.alreadyReported;
+    incomplete.value = current.incomplete;
     if (current.reportDeleted) {
       keptReports.remove(id);
     } else if (current.state === 'failed' && current.reportOwned && current.reportCode !== null) {
@@ -455,6 +467,10 @@ export const useConvertStore = defineStore('convert', () => {
       case 'running':
         phase.value = current.state;
         schedulePoll(token);
+        return;
+      case 'needs_check':
+        // Waits for the user: nothing changes on the server until they answer.
+        phase.value = 'needs_check';
         return;
       case 'done':
         phase.value = 'done';
@@ -641,14 +657,54 @@ export const useConvertStore = defineStore('convert', () => {
     const uploadingHere =
       phase.value === 'uploading' || (phase.value === 'error' && error.value?.code === 'upload_failed');
     const pastUpload = phase.value === 'queued' || phase.value === 'running';
+    // A file waiting for a check is deleted by whoever leaves it: nothing about it is kept or counted.
+    const waitingForCheck = phase.value === 'needs_check';
     const mayDelete =
-      id !== null && ownsJob.value && ((uploadingHere && holdsLock(id)) || (pastUpload && uploadedThisSession));
+      id !== null &&
+      (waitingForCheck || (ownsJob.value && ((uploadingHere && holdsLock(id)) || (pastUpload && uploadedThisSession))));
     stop();
     clearAll();
     if (id && mayDelete) {
       uploads.remove(id);
       await deleteJob(id).catch(() => undefined);
     }
+  }
+
+  /**
+   * The user opened a `needs_check` file in Revit and it works: the server converts it anyway, and the card follows the
+   * job again from the queue.
+   */
+  async function confirmOpens(): Promise<void> {
+    const id = jobId.value;
+    if (phase.value !== 'needs_check' || !id || confirming.value) {
+      return;
+    }
+    const token = session;
+    confirming.value = true;
+    try {
+      await confirmJob(id);
+    } catch (cause) {
+      if (token !== session) {
+        return;
+      }
+      confirming.value = false;
+      if (cause instanceof ApiError && (cause.status === 404 || cause.status === 410)) {
+        fail(cause.status === 404 ? 'server_restarted' : 'expired');
+      } else if (cause instanceof ApiError && cause.code === 'not_needs_check') {
+        // Another tab confirmed it first: follow the job.
+        await poll(token);
+      } else {
+        failFrom(cause);
+      }
+      return;
+    }
+    if (token !== session) {
+      return;
+    }
+    confirming.value = false;
+    incomplete.value = false;
+    phase.value = 'queued';
+    await poll(token);
   }
 
   async function deleteNow(): Promise<void> {
@@ -824,6 +880,8 @@ export const useConvertStore = defineStore('convert', () => {
     reportDeleted,
     reportDeletion,
     alreadyReported,
+    incomplete,
+    confirming,
     jobSize,
     canReuseFile,
     unopenableSending,
@@ -841,6 +899,7 @@ export const useConvertStore = defineStore('convert', () => {
     submit,
     retryUpload,
     cancel,
+    confirmOpens,
     deleteNow,
     deleteReport,
     reportUnopenable,

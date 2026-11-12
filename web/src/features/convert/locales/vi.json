@@ -126,6 +126,7 @@
       "uploading": "Đang tải lên",
       "queued": "Đang xếp hàng",
       "running": "Đang chuyển đổi",
+      "needs_check": "Kiểm tra file",
       "done": "Đã chuyển đổi xong",
       "failed": "Chuyển đổi thất bại",
       "error": "Đã xảy ra lỗi"
@@ -199,6 +200,18 @@
       "mismatch": "File không đúng như trình duyệt báo. Vui lòng thử lại.",
       "disk_full": "Máy chủ hết dung lượng. Vui lòng thử lại sau.",
       "unknown": "Chuyển đổi thất bại. Sự cố đã được ghi lại."
+    },
+    "needsCheck": {
+      "damaged": "File này có vẻ bị hỏng hoặc chưa đầy đủ, nên chưa được hạ.",
+      "incomplete": "File này có vẻ chưa đầy đủ: phần cuối file trống, như thể file chưa tải hoặc chép xong. File chưa được hạ.",
+      "intro": "Hãy kiểm tra:",
+      "checkCopy": "File đã tải, đồng bộ hoặc chép xong chưa, kích thước có đúng không? Việc này hay gặp với file từ OneDrive, Google Drive, BIM 360 / ACC hoặc file đính kèm email.",
+      "checkRevit": "File có mở được bằng Revit {year} không?",
+      "nothingKept": "Chưa có gì được giữ lại. Chọn file khác thì file này bị xoá khỏi server; nếu bạn rời trang, file cũng tự bị xoá.",
+      "anywayIntro": "Nếu file mở và dùng được trong Revit, bạn vẫn có thể hạ nó. Nếu hạ lỗi, file được giữ tối đa 7 ngày để sửa lỗi, như mọi lần hạ lỗi khác.",
+      "opened": "Tôi đã mở file này bằng Revit {year} và nó dùng được",
+      "confirm": "Tôi đã mở được bằng Revit, vẫn hạ",
+      "confirming": "Đang bắt đầu…"
     },
     "report": {
       "kept": "File của bạn được giữ tối đa 7 ngày để sửa lỗi. Mã báo cáo của bạn là {code}.",

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   ApiError,
+  confirmJob,
   createJob,
   deleteJob,
   deleteJobReport,
@@ -179,6 +180,8 @@ describe('api client', () => {
       reportOwned: false,
       reportDeleted: false,
       alreadyReported: false,
+      incomplete: false,
+      confirmedOpensInRevit: false,
       name: 'tower.rvt',
       size: 1234,
       kind: 'rvt',
@@ -186,6 +189,42 @@ describe('api client', () => {
       target: 2024,
     });
     expect(fetchMock.mock.calls[0]?.[0]).toBe(`/api/jobs/${'b'.repeat(32)}`);
+  });
+
+  it('reads the check fields of a job and confirms it opens in Revit', async () => {
+    const id = 'c'.repeat(32);
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          state: 'needs_check',
+          position: null,
+          elapsed_s: 0,
+          estimate_s: 1,
+          expires_at: null,
+          error: null,
+          result: null,
+          report_code: null,
+          report_owned: false,
+          report_deleted: false,
+          already_reported: false,
+          incomplete: true,
+          confirmed_opens_in_revit: false,
+          name: 'a.rvt',
+          size: 1,
+          kind: 'rvt',
+          year: 2026,
+          target: 2025,
+        }),
+        { status: 200 },
+      ),
+    );
+    await expect(getJob(id)).resolves.toMatchObject({ state: 'needs_check', incomplete: true });
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+    await expect(confirmJob(id)).resolves.toBeUndefined();
+    const [url, init] = fetchMock.mock.calls[1] ?? [];
+    expect(url).toBe(`/api/jobs/${id}/confirm`);
+    expect((init as RequestInit).method).toBe('POST');
+    expect(JSON.parse((init as RequestInit).body as string)).toEqual({ opens_in_revit: true });
   });
 
   it('deletes the report of a failed job', async () => {

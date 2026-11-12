@@ -41,6 +41,7 @@ vi.mock('@/api', async (importOriginal) => {
     getJob: vi.fn(),
     getDropped: vi.fn(),
     deleteJob: vi.fn(),
+    confirmJob: vi.fn(),
     deleteJobReport: vi.fn(),
     startOpenReport: vi.fn(),
     finishOpenReport: vi.fn(),
@@ -69,6 +70,8 @@ function status(overrides: Partial<JobStatus>): JobStatus {
     reportOwned: false,
     reportDeleted: false,
     alreadyReported: false,
+    incomplete: false,
+    confirmedOpensInRevit: false,
     name: 'tower.rvt',
     size: 1000,
     kind: 'rvt',
@@ -763,19 +766,19 @@ describe('resume, cancel and delete', () => {
   });
 
   describe('deleteReport', () => {
-    it.each([
-      [new ApiError(404, 'not_found', 'gone')],
-      [new ApiError(410, 'expired', 'gone')],
-    ])('still gives the code when a kept job is reopened after it left the server', async (gone) => {
-      const first = await keptJob();
-      first.$reset();
-      mocked.getJob.mockRejectedValue(gone);
-      const store = useConvertStore();
-      await store.resume(JOB);
-      expect(store.phase).toBe('failed');
-      expect(store.reportCode).toBe('R-ABC123');
-      expect(store.reportDeletion).toBe('gone');
-    });
+    it.each([[new ApiError(404, 'not_found', 'gone')], [new ApiError(410, 'expired', 'gone')]])(
+      'still gives the code when a kept job is reopened after it left the server',
+      async (gone) => {
+        const first = await keptJob();
+        first.$reset();
+        mocked.getJob.mockRejectedValue(gone);
+        const store = useConvertStore();
+        await store.resume(JOB);
+        expect(store.phase).toBe('failed');
+        expect(store.reportCode).toBe('R-ABC123');
+        expect(store.reportDeletion).toBe('gone');
+      },
+    );
 
     it('does not bring back a report deleted from here', async () => {
       const first = await keptJob();
@@ -1019,5 +1022,95 @@ describe('reporting a file that does not open in Revit', () => {
     await store.resume(JOB);
     await expect(store.reportUnopenable('', new File(['x'], 'a.rvt'))).resolves.toBe(false);
     expect(mocked.startOpenReport).not.toHaveBeenCalled();
+  });
+});
+
+describe('a file the server could not read', () => {
+  async function waitingForCheck(incomplete = true) {
+    const store = await readyStore();
+    mocked.getJob.mockResolvedValueOnce(status({ state: 'needs_check', incomplete }));
+    await store.submit();
+    await settle();
+    return store;
+  }
+
+  it('waits for the user and stops polling', async () => {
+    const store = await waitingForCheck();
+    expect(store.phase).toBe('needs_check');
+    expect(store.incomplete).toBe(true);
+    expect(store.error).toBeNull();
+    expect(store.reportCode).toBeNull();
+    const calls = mocked.getJob.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS * 3);
+    expect(mocked.getJob.mock.calls).toHaveLength(calls);
+  });
+
+  it('converts anyway once confirmed, then follows the job as usual', async () => {
+    const store = await waitingForCheck(false);
+    expect(store.incomplete).toBe(false);
+    mocked.confirmJob.mockResolvedValue(undefined);
+    mocked.getJob
+      .mockResolvedValueOnce(status({ state: 'running', confirmedOpensInRevit: true }))
+      .mockResolvedValueOnce(
+        status({
+          state: 'failed',
+          error: { kind: 'corrupt', message: 'x' },
+          reportCode: 'R-ABC234',
+          reportOwned: true,
+        }),
+      );
+    await store.confirmOpens();
+    expect(mocked.confirmJob).toHaveBeenCalledExactlyOnceWith(JOB);
+    expect(store.phase).toBe('running');
+    await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+    expect(store.phase).toBe('failed');
+    expect(store.reportCode).toBe('R-ABC234');
+  });
+
+  it('sends one confirmation at a time', async () => {
+    const store = await waitingForCheck();
+    let finish: () => void = () => undefined;
+    mocked.confirmJob.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = () => {
+            resolve();
+          };
+        }),
+    );
+    mocked.getJob.mockResolvedValue(status({ state: 'queued' }));
+    const first = store.confirmOpens();
+    expect(store.confirming).toBe(true);
+    await store.confirmOpens();
+    finish();
+    await first;
+    expect(mocked.confirmJob).toHaveBeenCalledOnce();
+    expect(store.confirming).toBe(false);
+  });
+
+  it('shows why a confirmation was refused', async () => {
+    const store = await waitingForCheck();
+    mocked.confirmJob.mockRejectedValue(new ApiError(429, 'active_job', 'busy'));
+    await store.confirmOpens();
+    expect(store.phase).toBe('error');
+    expect(store.error?.code).toBe('active_job');
+  });
+
+  it('deletes the job when the user chooses another file', async () => {
+    const store = await waitingForCheck();
+    await store.cancel();
+    expect(mocked.deleteJob).toHaveBeenCalledExactlyOnceWith(JOB);
+    expect(store.phase).toBe('pick');
+    expect(store.jobId).toBeNull();
+  });
+
+  it('deletes it too when the job was opened from its link', async () => {
+    mocked.getJob.mockResolvedValue(status({ state: 'needs_check' }));
+    const store = useConvertStore();
+    await store.resume(JOB);
+    expect(store.phase).toBe('needs_check');
+    expect(store.ownsJob).toBe(false);
+    await store.cancel();
+    expect(mocked.deleteJob).toHaveBeenCalledExactlyOnceWith(JOB);
   });
 });

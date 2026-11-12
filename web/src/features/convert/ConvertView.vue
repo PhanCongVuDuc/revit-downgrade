@@ -15,6 +15,7 @@ import FaqSection from './components/FaqSection.vue';
 import FileSummary from './components/FileSummary.vue';
 import GuideLinks from './components/GuideLinks.vue';
 import GuideSections from './components/GuideSections.vue';
+import NeedsCheckPanel from './components/NeedsCheckPanel.vue';
 import PairDetails from './components/PairDetails.vue';
 import PairLinks from './components/PairLinks.vue';
 import ProgressPanel from './components/ProgressPanel.vue';
@@ -230,6 +231,14 @@ onMounted(() => {
         @delete-now="store.deleteNow"
         @convert-another="store.cancel"
         @report-unopenable="store.reportUnopenable"
+      />
+      <NeedsCheckPanel
+        v-else-if="store.phase === 'needs_check'"
+        :year="store.info?.year ?? 0"
+        :incomplete="store.incomplete"
+        :confirming="store.confirming"
+        @confirm="store.confirmOpens"
+        @choose-another="store.cancel"
       />
       <FailurePanel
         v-else-if="store.phase === 'failed' && store.error"

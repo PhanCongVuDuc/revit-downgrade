@@ -126,6 +126,7 @@
       "uploading": "Uploading",
       "queued": "In the queue",
       "running": "Converting",
+      "needs_check": "Check the file",
       "done": "Conversion finished",
       "failed": "Conversion failed",
       "error": "Something went wrong"
@@ -199,6 +200,18 @@
       "mismatch": "The file is not what the browser reported. Please try again.",
       "disk_full": "The server is out of space. Please try again later.",
       "unknown": "The conversion failed. The problem has been logged."
+    },
+    "needsCheck": {
+      "damaged": "This file looks damaged or incomplete, so it was not converted.",
+      "incomplete": "This file looks incomplete: its end is empty, as if it was not fully downloaded or copied. It was not converted.",
+      "intro": "Please check:",
+      "checkCopy": "Is the file fully downloaded, synced or copied, and is its size right? This often happens with files from OneDrive, Google Drive, BIM 360 / ACC or an email attachment.",
+      "checkRevit": "Does it open in Revit {year}?",
+      "nothingKept": "Nothing was kept. Choose another file and this one is deleted from the server; if you just leave the page, it is deleted automatically.",
+      "anywayIntro": "If the file opens and works in Revit, it can be converted anyway. If that fails, the file is kept for up to 7 days to fix the problem, as for any failed conversion.",
+      "opened": "I opened this file in Revit {year} and it works",
+      "confirm": "I opened it in Revit, convert anyway",
+      "confirming": "Starting…"
     },
     "report": {
       "kept": "Your file is kept for up to 7 days so the problem can be fixed. Your report code is {code}.",

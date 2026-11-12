@@ -128,6 +128,8 @@ interface WireJob {
   report_owned: boolean;
   report_deleted: boolean;
   already_reported: boolean;
+  incomplete?: boolean;
+  confirmed_opens_in_revit?: boolean;
   name: string;
   size: number;
   kind: FileKind;
@@ -151,6 +153,8 @@ export async function getJob(id: string): Promise<JobStatus> {
     reportOwned: wire.report_owned,
     reportDeleted: wire.report_deleted,
     alreadyReported: wire.already_reported,
+    incomplete: wire.incomplete ?? false,
+    confirmedOpensInRevit: wire.confirmed_opens_in_revit ?? false,
     name: wire.name,
     size: wire.size,
     kind: wire.kind,
@@ -174,6 +178,11 @@ export async function getDropped(id: string): Promise<DroppedElement[]> {
     reason: item.reason,
     cascadeFrom: item.cascade_from,
   }));
+}
+
+/** Says that a job in `needs_check` opens in Revit, so the server converts it anyway; the job is queued again. */
+export async function confirmJob(id: string): Promise<void> {
+  await request('POST', jobPath(id, '/confirm'), { opens_in_revit: true });
 }
 
 export async function deleteJob(id: string): Promise<void> {

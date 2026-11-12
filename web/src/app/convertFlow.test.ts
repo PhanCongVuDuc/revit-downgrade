@@ -62,6 +62,8 @@ function status(overrides: Partial<JobStatus>): JobStatus {
     reportOwned: false,
     reportDeleted: false,
     alreadyReported: false,
+    incomplete: false,
+    confirmedOpensInRevit: false,
     name: 'tower.rvt',
     size: 1000,
     kind: 'rvt',

@@ -126,6 +126,7 @@
       "uploading": "Upload हो रहा है",
       "queued": "Queue में है",
       "running": "Convert हो रहा है",
+      "needs_check": "File जाँचें",
       "done": "Conversion पूरा हुआ",
       "failed": "Conversion fail हो गया",
       "error": "कुछ गड़बड़ हो गई"
@@ -199,6 +200,18 @@
       "mismatch": "File वैसी नहीं है जैसी browser ने बताई थी। कृपया फिर से कोशिश करें।",
       "disk_full": "Server पर जगह नहीं बची है। कृपया थोड़ी देर बाद फिर से कोशिश करें।",
       "unknown": "Conversion fail हो गया। समस्या log कर ली गई है।"
+    },
+    "needsCheck": {
+      "damaged": "यह file खराब या अधूरी लगती है, इसलिए convert नहीं की गई।",
+      "incomplete": "यह file अधूरी लगती है: उसका आखिरी हिस्सा खाली है, जैसे वह पूरी download या copy नहीं हुई। File convert नहीं की गई।",
+      "intro": "कृपया जाँचें:",
+      "checkCopy": "क्या file पूरी download, sync या copy हो गई है, और उसका size सही है? OneDrive, Google Drive, BIM 360 / ACC या email attachment से आई files में ऐसा अक्सर होता है।",
+      "checkRevit": "क्या वह Revit {year} में खुलती है?",
+      "nothingKept": "कुछ भी रखा नहीं गया। दूसरी file चुनने पर यह file server से delete हो जाती है; अगर आप page छोड़ देते हैं, तो भी वह अपने-आप delete हो जाती है।",
+      "anywayIntro": "अगर file Revit में खुलकर ठीक काम करती है, तो उसे फिर भी convert किया जा सकता है। अगर conversion fail हो, तो file समस्या ठीक करने के लिए ज़्यादा से ज़्यादा 7 दिन रखी जाती है, जैसे हर fail हुए conversion में।",
+      "opened": "मैंने यह file Revit {year} में खोली और यह ठीक काम करती है",
+      "confirm": "Revit में खुल गई, फिर भी convert करें",
+      "confirming": "शुरू हो रहा है…"
     },
     "report": {
       "kept": "आपकी file समस्या ठीक करने के लिए ज़्यादा से ज़्यादा 7 दिन रखी जाती है। आपका report code {code} है।",

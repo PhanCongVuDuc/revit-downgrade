@@ -38,7 +38,12 @@ export interface CreatedJob {
   uploadUrl: string;
 }
 
-export type JobState = 'waiting_upload' | 'queued' | 'running' | 'done' | 'failed' | 'cancelled' | 'expired';
+/**
+ * `needs_check`: the server could not read the file in its first check, so nothing was converted, kept or counted. The
+ * user may confirm that it opens in Revit (`confirmJob`) to convert it anyway.
+ */
+export type JobState =
+  'waiting_upload' | 'queued' | 'running' | 'needs_check' | 'done' | 'failed' | 'cancelled' | 'expired';
 
 export type JobErrorKind = 'refused' | 'corrupt' | 'failed' | 'crashed' | 'timed_out' | 'mismatch' | 'disk_full';
 
@@ -58,6 +63,10 @@ export interface JobStatus {
   reportDeleted: boolean;
   /** An earlier report already holds this same file. */
   alreadyReported: boolean;
+  /** In `needs_check`: the file ends in empty data, so it was most likely not fully downloaded or copied. */
+  incomplete: boolean;
+  /** The user said the file opens in Revit, so it was converted without the first check. */
+  confirmedOpensInRevit: boolean;
   /** What the job was created with; the job id is the capability that reveals them. */
   name: string;
   size: number;

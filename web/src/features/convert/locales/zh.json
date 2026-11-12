@@ -126,6 +126,7 @@
       "uploading": "正在上传",
       "queued": "排队中",
       "running": "正在转换",
+      "needs_check": "请检查文件",
       "done": "转换完成",
       "failed": "转换失败",
       "error": "出错了"
@@ -199,6 +200,18 @@
       "mismatch": "文件与浏览器报告的不一致。请重试。",
       "disk_full": "服务器空间不足。请稍后重试。",
       "unknown": "转换失败。问题已记录。"
+    },
+    "needsCheck": {
+      "damaged": "这个文件看起来已损坏或不完整，因此没有转换。",
+      "incomplete": "这个文件看起来不完整：文件末尾是空的，好像没有下载或复制完。文件没有转换。",
+      "intro": "请检查：",
+      "checkCopy": "文件是否已完整下载、同步或复制，大小是否正确？来自 OneDrive、Google Drive、BIM 360 / ACC 或邮件附件的文件常出现这种情况。",
+      "checkRevit": "能否用 Revit {year} 打开？",
+      "nothingKept": "没有保留任何内容。选择其他文件后，这个文件会从服务器删除；如果你直接离开页面，它也会被自动删除。",
+      "anywayIntro": "如果文件能在 Revit 中打开并正常使用，仍然可以转换。如果转换失败，文件最多保留 7 天用于修复问题，和其他转换失败一样。",
+      "opened": "我已用 Revit {year} 打开这个文件，可以正常使用",
+      "confirm": "已在 Revit 中打开，仍然转换",
+      "confirming": "正在开始…"
     },
     "report": {
       "kept": "你的文件最多保留 7 天，用于修复问题。你的报告编号是 {code}。",
