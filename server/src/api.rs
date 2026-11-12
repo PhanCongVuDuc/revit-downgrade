@@ -6,7 +6,7 @@ use crate::config::IpCidr;
 use crate::jobs::{
     CancelOutcome, Job, JobId, NewJob, OUTPUT_TTL_S, OpenReportStart, ReportClaim, ReportKind,
 };
-use crate::model::{ApiError, DroppedElement, ErrorKind, FileKind, JobState, estimate};
+use crate::model::{ApiError, DroppedElement, ErrorKind, FileKind, JobState};
 use axum::Json;
 use axum::Router;
 use axum::body::Body;
@@ -255,7 +255,7 @@ async fn get_job(
             state: job.state,
             position,
             elapsed_s,
-            estimate_s: estimate(job.size, steps).as_secs(),
+            estimate_s: s.store.estimate(job.size, steps).as_secs(),
             expires_at: job
                 .expires_at
                 .map(|t| t.to_rfc3339_opts(SecondsFormat::Secs, true)),

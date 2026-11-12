@@ -456,7 +456,8 @@ async fn queued_job_shows_position_and_estimate() {
     let v = body_json(send(&f, get(&format!("/api/jobs/{id}"))).await).await;
     assert_eq!(v["state"], "queued");
     assert_eq!(v["position"], 0);
-    assert_eq!(v["estimate_s"], 3 * 2);
+    // (1 s + 0.19 s x 3 MiB x 2 steps) x 1.15, rounded up.
+    assert_eq!(v["estimate_s"], 3);
     assert_eq!(v["elapsed_s"], 0);
 }
 

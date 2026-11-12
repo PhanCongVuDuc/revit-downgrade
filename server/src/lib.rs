@@ -4,6 +4,7 @@ pub mod clock;
 pub mod config;
 pub mod engine;
 pub mod errors;
+pub mod eta;
 pub mod jobs;
 pub mod model;
 pub mod reports;

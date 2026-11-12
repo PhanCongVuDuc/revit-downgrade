@@ -2,6 +2,7 @@
 
 use crate::clock::Clock;
 use crate::config::MAX_BYTES;
+use crate::eta::Eta;
 use crate::model::{ApiError, DroppedElement, ErrorKind, FileKind, JobState};
 use axum::http::StatusCode;
 use chrono::{DateTime, Duration, Utc};
@@ -213,6 +214,8 @@ pub struct JobStore {
     inner: Mutex<Inner>,
     notify: Notify,
     disk_budget: u64,
+    /// Learns how long conversions take, for the estimate shown while one runs.
+    eta: Eta,
 }
 
 /// Disk space a job holds or has reserved: input plus output while it is unfinished, the
@@ -268,6 +271,7 @@ impl JobStore {
             inner: Mutex::new(Inner::default()),
             notify: Notify::new(),
             disk_budget: DEFAULT_DISK_BUDGET,
+            eta: Eta::new(),
         }
     }
 
@@ -275,6 +279,11 @@ impl JobStore {
     pub fn with_disk_budget(mut self, bytes: u64) -> JobStore {
         self.disk_budget = bytes;
         self
+    }
+
+    /// How long a conversion of `bytes` over `steps` versions is expected to take (shown to the user).
+    pub fn estimate(&self, bytes: u64, steps: u32) -> std::time::Duration {
+        self.eta.estimate(bytes, steps)
     }
 
     pub fn data_dir(&self) -> &Path {
@@ -560,6 +569,11 @@ impl JobStore {
         j.finished_at = Some(now);
         match outcome {
             Ok(dropped) => {
+                // A finished conversion tells how long the next ones take.
+                if let Some(took) = j.started_at.and_then(|t| (now - t).to_std().ok()) {
+                    let steps = u32::from(j.year.saturating_sub(j.target));
+                    self.eta.observe(j.size, steps, took);
+                }
                 j.state = JobState::Done;
                 j.dropped = dropped;
                 j.output_size = output_size;
@@ -2074,5 +2088,21 @@ mod tests {
         // 1000 held by the job, 2000 reserved by another: no room for a 1000-byte output.
         let _other = s.create(req(), ip(2), &pairs()).unwrap();
         assert_eq!(s.confirm(&j.id).unwrap_err().code, "server_full");
+    }
+
+    #[test]
+    fn a_finished_conversion_tunes_the_estimate() {
+        let (s, c, _d) = setup();
+        let mut r = req();
+        r.size = 100 << 20;
+        // 2026 -> 2024: 2 steps, 200 MiB x steps.
+        let before = s.estimate(r.size, 2);
+        assert_eq!(before.as_secs(), 45);
+        let j = s.create(r, ip(1), &pairs()).unwrap();
+        s.mark_uploaded(&j.id);
+        s.take_next().unwrap();
+        c.advance(Duration::from_secs(11));
+        assert!(s.finish_done(&j.id, Vec::new(), 1));
+        assert!(s.estimate(100 << 20, 2) < before);
     }
 }

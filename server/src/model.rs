@@ -159,10 +159,6 @@ pub fn time_limit(bytes: u64, steps: u32) -> Duration {
     Duration::from_secs(300 + 4 * mib_ceil(bytes) * u64::from(steps))
 }
 
-/// Estimate shown to the user: 1 s x ceil(MiB) x steps.
-pub fn estimate(bytes: u64, steps: u32) -> Duration {
-    Duration::from_secs(mib_ceil(bytes) * u64::from(steps))
-}
 
 #[cfg(test)]
 mod tests {
@@ -181,8 +177,6 @@ mod tests {
             time_limit(149 * MIB + 1, 2),
             Duration::from_secs(300 + 4 * 150 * 2)
         );
-        assert_eq!(estimate(149 * MIB, 2), Duration::from_secs(298));
-        assert_eq!(estimate(1, 1), Duration::from_secs(1));
     }
 
     #[test]
