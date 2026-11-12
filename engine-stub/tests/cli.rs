@@ -252,3 +252,42 @@ fn hang_mode_writes_pid_file_next_to_out() {
     let pid = fs::read_to_string(dir.path().join("out.rvt.pid")).unwrap();
     assert!(pid.trim().parse::<u32>().is_ok());
 }
+
+fn probe_json(name: &str) -> assert_cmd::assert::Assert {
+    let dir = tempfile::tempdir().unwrap();
+    let f = dir.path().join(name);
+    fs::write(&f, b"x").unwrap();
+    stub().arg("probe").arg(&f).arg("--json").assert()
+}
+
+#[test]
+fn probe_unreadable_modes_exit_4_with_a_reason() {
+    for (name, incomplete) in [
+        ("x_probe-corrupt_2026.rvt", false),
+        ("x_unreadable_2026.rvt", false),
+        ("x_incomplete_2026.rvt", true),
+    ] {
+        let a = probe_json(name).code(4);
+        let out = a.get_output();
+        let v: Value = serde_json::from_slice(&out.stdout).unwrap();
+        assert_eq!(v["error"], "corrupt", "{name}");
+        assert_eq!(v["incomplete"], incomplete, "{name}");
+        assert_eq!(v["zero_from"].is_u64(), incomplete, "{name}");
+        assert_eq!(
+            String::from_utf8_lossy(&out.stderr).contains("file appears incomplete"),
+            incomplete,
+            "{name}"
+        );
+    }
+}
+
+#[test]
+fn probe_corrupt_mode_still_converts() {
+    let (a, out, _d) = run_mode("x_probe-corrupt_2026.rvt");
+    a.success();
+    assert!(out.exists());
+    let (a, _, _d) = run_mode("x_unreadable_2026.rvt");
+    a.code(4);
+    let (a, _, _d) = run_mode("x_incomplete_2026.rvt");
+    a.code(4).stderr(contains("file appears incomplete"));
+}

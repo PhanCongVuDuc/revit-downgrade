@@ -11,9 +11,16 @@ use std::process::exit;
 
 const MIN_YEAR: u32 = 2022;
 const MAX_YEAR: u32 = 2027;
-const MODES: [&str; 10] = [
+// Matched by name in this order, so a mode comes before any mode its name contains.
+const MODES: [&str; 13] = [
     "ok",
     "refuse",
+    // `probe` cannot read the file; `downgrade` converts it all the same (a file Revit opens).
+    "probe-corrupt",
+    // Both commands cannot read the file.
+    "unreadable",
+    // Both commands cannot read the file, and it ends in zero bytes (a download that did not finish).
+    "incomplete",
     "corrupt",
     "fail",
     "hang",
@@ -176,12 +183,37 @@ fn hang_forever() -> ! {
     }
 }
 
-fn probe(file: &Path) {
+const INCOMPLETE: &str =
+    "The file is not readable: file appears incomplete (trailing zero bytes from offset 0x8700000 to the end, 30% of the file)";
+
+/// `probe` exit 4: with `--json`, the reason also goes to stdout.
+fn probe_unreadable(json: bool, incomplete: bool) -> ! {
+    if json {
+        let zero_from = incomplete.then_some(0x870_0000u64);
+        println!(
+            "{}",
+            json!({"error": "corrupt", "incomplete": incomplete, "zero_from": zero_from})
+        );
+    }
+    fail(
+        4,
+        if incomplete {
+            INCOMPLETE
+        } else {
+            "The file is not readable: Malformed FAT"
+        },
+    )
+}
+
+fn probe(file: &Path, json: bool) {
     let kind = kind_of(file);
     let bytes = read(file);
     let sel = select(file, &bytes);
-    if sel.mode == "probe-hang" {
-        hang_forever();
+    match sel.mode {
+        "probe-hang" => hang_forever(),
+        "probe-corrupt" | "unreadable" => probe_unreadable(json, false),
+        "incomplete" => probe_unreadable(json, true),
+        _ => {}
     }
     check_year(sel.year);
     println!(
@@ -233,6 +265,8 @@ fn downgrade(input: &Path, to: u32, out: &Path, log: &Path) {
     match sel.mode {
         "refuse" => fail(3, "Worksharing central files are not supported yet"),
         "corrupt" => fail(4, "The file is corrupt or unreadable"),
+        "unreadable" => fail(4, "The file is not readable: Malformed FAT"),
+        "incomplete" => fail(4, INCOMPLETE),
         "fail" => {
             // A real conversion leaves its log behind when it fails.
             let _ = write_log(log, kind, sel.year, to);
@@ -294,7 +328,7 @@ fn main() {
             }
             println!("{}", json!({"pairs": pairs}));
         }
-        Some(Cmd::Probe { file, .. }) => probe(&file),
+        Some(Cmd::Probe { file, json }) => probe(&file, json),
         Some(Cmd::Downgrade {
             input,
             to,
